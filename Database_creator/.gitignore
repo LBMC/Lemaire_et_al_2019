@@ -1,5 +1,5 @@
 result/
 data/
-src/fasterDB_connector.py
+src/conf.py
 .idea/
 src/__pycache__/

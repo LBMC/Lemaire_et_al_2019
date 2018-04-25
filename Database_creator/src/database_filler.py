@@ -69,3 +69,46 @@ def fill_intron_table(cnx, new_db):
     cursor.executemany("INSERT INTO intron_genomiques VALUES (?, ?, ?, ?)", result)
     new_db.commit()
 
+
+def fill_exon_partial_table(cnx, new_db):
+    """
+    Fill the table **exon_partial** in ``new_db``
+
+    :param cnx: (pymysql object) connection to fasterDB human
+    :param new_db: (sqlite3 object) connection to ``new_db``
+    """
+    cursor = cnx.cursor()
+    query = """
+    SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t1.exon_types, t2.fragment_start_on_gene, t2.fragment_end_on_gene, t2.offset_before_exon, t2.offset_after_exon
+    FROM (
+        SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t2.exon_types
+        FROM fasterdb_humain.exons_genomiques t1, fasterdb_protein.hsapiens_exonsstatus_improved t2
+        WHERE t1.id_gene = t2.id_gene
+        AND t1.pos_sur_gene = t2.pos_sur_gene
+    )t1 LEFT JOIN Nicolas.hsapiens_exonpeptides_filtered t2 ON t1.id_gene = t2.gene_id
+    AND t1.pos_sur_gene = t2.exon_position_on_gene;
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor = new_db.cursor()
+    cursor.executemany("INSERT INTO exon_partial VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    new_db.commit()
+
+
+def fill_force_table(cnx, new_db):
+    """
+    Fill the table **force_splicing_site** in ``new_db``
+
+    :param cnx: (pymysql object) connection to fasterDB human
+    :param new_db: (sqlite3 object) connection to ``new_db``
+    """
+    cursor = cnx.cursor()
+    query = """
+    SELECT id_gene, est_site_donor, exon_pos, force, est_alternatif
+    FROM force_splicing_site;
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor = new_db.cursor()
+    cursor.executemany("INSERT INTO force_splicing_site VALUES (?, ?, ?, ?, ?)", result)
+    new_db.commit()

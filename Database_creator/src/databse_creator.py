@@ -39,7 +39,6 @@ def new_db_connection(path2db):
     return sqlite3.connect(path2db + "fasterDB_lite.db")
 
 
-
 def creation_of_gene_table(new_db):
     """
     Create a genes table in ``new_db``
@@ -49,14 +48,14 @@ def creation_of_gene_table(new_db):
     cursor = new_db.cursor()
     query = """
     CREATE TABLE genes (
-        id smallint(5) NOT NULL,
+        id int(10),
         official_symbol VARCHAR(17) NOT NULL,
         chromosome VARCHAR(2) NOT NULL,
         strand tinyint(1) NOT NULL,
         start_on_chromosome int(10) NOT NULL,
         end_on_chromosome int(10) NOT NULL,
         sequence mediumtext NOT NULL,
-        PRYMARY KEY (id)
+        PRIMARY KEY (id)
     );
     """
     cursor.execute(query)
@@ -71,13 +70,13 @@ def creation_of_intron_table(new_db):
     """
     cursor = new_db.cursor()
     query = """
-    CREATE TABLE intron_genomiques (
-        id_gene int(10) NOT NULL,
-        pos_sur_gene int(10) NOT NULL,
+    CREATE TABLE intron_genomiques(
+        id_gene int(10),
+        pos_sur_gene int(10),
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
-        PRIMARY KEY(id_gene, pos_sur_gene) NOT NULL,
-        FOREIGN KEY (id_gene) REFERENCE genes(id)
+        PRIMARY KEY(id_gene, pos_sur_gene),
+        FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
     """
     cursor.execute(query)
@@ -102,8 +101,8 @@ def creation_of_exon_table(new_db):
         cds_end_on_gene int(10),
         offset_before_exon tinyint(2),
         offset_after_exon tinyint(2),
-        PRIMARY KEY(id_gene, pos_sur_gene) NOT NULL,
-        FOREIGN KEY (id_gene) REFERENCE genes(id)
+        PRIMARY KEY(id_gene, pos_sur_gene),
+        FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
     """
     cursor.execute(query)
@@ -114,4 +113,15 @@ def database_creator():
     """
     Create an empty database
     """
-    pass
+    out_path = os.path.realpath(__file__)
+    out_path = "/".join(out_path.split("/")[:-2]) + "/result/"
+    if not os.path.isdir(out_path):
+        out_path = os.path.dirname(os.path.realpath(__file__))
+    new_db = new_db_connection(out_path)
+    creation_of_gene_table(new_db)
+    creation_of_intron_table(new_db)
+    creation_of_exon_table(new_db)
+
+
+if __name__ == "__main__":
+    database_creator()

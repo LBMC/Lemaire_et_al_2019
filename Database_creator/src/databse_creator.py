@@ -15,6 +15,7 @@ Description:
 import pymysql
 import sqlite3
 import conf
+import os
 
 
 # Functions
@@ -27,7 +28,7 @@ def connection(dest):
         db = conf.fasterDB
     else:
         db = conf.my_db
-    cnx = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database="Nicolas")
+    cnx = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database=db)
     return cnx
 
 
@@ -107,3 +108,10 @@ def creation_of_exon_table(new_db):
     """
     cursor.execute(query)
     new_db.commit()
+
+
+def database_creator():
+    """
+    Create an empty database
+    """
+    pass

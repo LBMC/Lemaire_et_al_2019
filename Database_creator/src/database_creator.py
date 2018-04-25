@@ -71,7 +71,7 @@ def creation_of_intron_table(new_db):
 
 def creation_of_exon_table(new_db):
     """
-    Create an exon_genomiques table in ``new_db``
+    Create an exon_partial table in ``new_db``
 
     :param new_db: (sqlite3 object) all the info we need to connect to sqlite3
     """
@@ -136,6 +136,7 @@ def database_creator():
     creation_of_gene_table(new_db)
     creation_of_intron_table(new_db)
     creation_of_exon_table(new_db)
+    creation_of_full_exon_table(new_db)
     return out_path + base_name
 
 

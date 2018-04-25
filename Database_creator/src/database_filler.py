@@ -34,7 +34,7 @@ def connection(dest):
 
 def fill_gene_table_content(cnx, new_db):
     """
-    Fill the table gene in ``new_db``
+    Fill the table **genes** in ``new_db``
 
     :param cnx: (pymysql object) connection to fasterDB human
     :param new_db: (sqlite3 object) connection to ``new_db``
@@ -51,6 +51,21 @@ def fill_gene_table_content(cnx, new_db):
     new_db.commit()
 
 
+def fill_intron_table(cnx, new_db):
+    """
+    Fill the table **intron** in ``new_db``
 
-
+    :param cnx: (pymysql object) connection to fasterDB human
+    :param new_db: (sqlite3 object) connection to ``new_db``
+    """
+    cursor = cnx.cursor()
+    query = """
+    SELECT id_gene, pos_sur_gene, start_sur_gene, end_sur_gene
+    FROM introns_genomiques;
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor = new_db.cursor()
+    cursor.executemany("INSERT INTO intron_genomiques VALUES (?, ?, ?, ?)", result)
+    new_db.commit()
 

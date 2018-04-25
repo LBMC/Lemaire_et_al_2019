@@ -3,3 +3,4 @@ data/
 src/conf.py
 .idea/
 src/__pycache__/
+src/*.pyc

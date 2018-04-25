@@ -12,26 +12,12 @@ Description:
 """
 
 # sets the environment
-import pymysql
 import sqlite3
 import conf
 import os
 
 
 # Functions
-def connection(dest):
-    """
-    :param dest: (string) the database for which we want a connection
-    :return: (pymysql object to connected to the wanted database)
-    """
-    if dest == "fasterDB":
-        db = conf.fasterDB
-    else:
-        db = conf.my_db
-    cnx = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database=db)
-    return cnx
-
-
 def new_db_connection(path2db, base_name):
     """
     :param path2db: (string) path where the database will be or is located

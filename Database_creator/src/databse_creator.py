@@ -3,7 +3,7 @@
 """
 Description:
 
-    This script will be use to create a database containing 3 tables : \
+    This script will be use to create a database containing 3 empty tables : \
 
     * exon_genomiques
     * intron_genomiques

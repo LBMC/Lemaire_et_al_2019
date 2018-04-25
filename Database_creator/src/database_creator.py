@@ -18,12 +18,11 @@ import os
 
 
 # Functions
-def new_db_connection(path2db, base_name):
+def new_db_connection(file_name):
     """
-    :param path2db: (string) path where the database will be or is located
-    :param base_name: (string) the name of the database to create
+    :param file_name: (string) file where the databse will be created
     """
-    return sqlite3.connect(path2db + base_name)
+    return sqlite3.connect(file_name)
 
 
 def creation_of_gene_table(new_db):
@@ -105,7 +104,7 @@ def database_creator():
     out_path = "/".join(out_path.split("/")[:-2]) + "/result/"
     if not os.path.isdir(out_path):
         out_path = os.path.dirname(os.path.realpath(__file__)) + "/"
-    new_db = new_db_connection(out_path, base_name)
+    new_db = new_db_connection(out_path + base_name)
     creation_of_gene_table(new_db)
     creation_of_intron_table(new_db)
     creation_of_exon_table(new_db)

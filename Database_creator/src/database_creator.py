@@ -58,10 +58,10 @@ def creation_of_intron_table(new_db):
     query = """
     CREATE TABLE intron_genomiques(
         id_gene int(10),
-        pos_sur_gene int(10),
+        pos_on_gene int(10),
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
-        PRIMARY KEY(id_gene, pos_sur_gene),
+        PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
     """
@@ -79,7 +79,7 @@ def creation_of_exon_table(new_db):
     query = """
     CREATE TABLE exon_partial (
         id_gene int(10) NOT NULL,
-        pos_sur_gene int(10) NOT NULL,
+        pos_on_gene int(10) NOT NULL,
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
         exon_type VARCHAR(3),
@@ -87,7 +87,7 @@ def creation_of_exon_table(new_db):
         cds_end_on_gene int(10),
         offset_before_exon tinyint(2),
         offset_after_exon tinyint(2),
-        PRIMARY KEY(id_gene, pos_sur_gene),
+        PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
     """
@@ -105,7 +105,7 @@ def creation_of_full_exon_table(new_db):
     query = """
     CREATE TABLE exon_genomiques (
         id_gene int(10) NOT NULL,
-        pos_sur_gene int(10) NOT NULL,
+        pos_on_gene int(10) NOT NULL,
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
         exon_type VARCHAR(3),
@@ -115,10 +115,32 @@ def creation_of_full_exon_table(new_db):
         offset_after_exon tinyint(2),
         force_donor int,
         force_acceptor int,
-        PRIMARY KEY(id_gene, pos_sur_gene),
+        PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
     """
+    cursor.execute(query)
+    new_db.commit()
+
+
+def creation_of_force_splicing_table(new_db):
+    """
+       Create a force splicing site table in ``new_db``
+
+       :param new_db: (sqlite3 object) all the info we need to connect to sqlite3
+       """
+    cursor = new_db.cursor()
+    query = """
+       CREATE TABLE force_splicing_site (
+           id_gene int(10) NOT NULL,
+           is_donor tinyint(1),
+           pos_on_gene int(10) NOT NULL,
+           force float,
+           is_alternative tinyint(1),
+           PRIMARY KEY(id_gene, pos_on_gene),
+           FOREIGN KEY (id_gene) REFERENCES genes(id)
+       );
+       """
     cursor.execute(query)
     new_db.commit()
 
@@ -137,6 +159,7 @@ def database_creator():
     creation_of_intron_table(new_db)
     creation_of_exon_table(new_db)
     creation_of_full_exon_table(new_db)
+    creation_of_force_splicing_table(new_db)
     return out_path + base_name
 
 

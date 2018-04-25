@@ -64,19 +64,44 @@ def creation_of_gene_table(new_db):
 
 def creation_of_intron_table(new_db):
     """
-    Create an intron_genomiquee table in ``new_db``
+    Create an intron_genomiques table in ``new_db``
 
     :param new_db: (sqlite3 object) all the info we need to connect to sqlite3
     """
     cursor = new_db.cursor()
     query = """
     CREATE TABLE intron_genomiques (
-        id int(10),
         id_gene int(10) NOT NULL,
         pos_sur_gene int(10) NOT NULL,
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
-        Primary KEY(id) NOT NULL,
+        PRIMARY KEY(id_gene, pos_sur_gene) NOT NULL,
+        FOREIGN KEY (id_gene) REFERENCE genes(id)
+    );
+    """
+    cursor.execute(query)
+    new_db.commit()
+
+
+def creation_of_exon_table(new_db):
+    """
+    Create an exon_genomiques table in ``new_db``
+
+    :param new_db: (sqlite3 object) all the info we need to connect to sqlite3
+    """
+    cursor = new_db.cursor()
+    query = """
+    CREATE TABLE exon_genomiques (
+        id_gene int(10) NOT NULL,
+        pos_sur_gene int(10) NOT NULL,
+        start_on_gene int(10) NOT NULL,
+        end_on_gene int(10) NOT NULL,
+        exon_type VARCHAR(3),
+        cds_start_on_gene int(10),
+        cds_end_on_gene int(10),
+        offset_before_exon tinyint(2),
+        offset_after_exon tinyint(2),
+        PRIMARY KEY(id_gene, pos_sur_gene) NOT NULL,
         FOREIGN KEY (id_gene) REFERENCE genes(id)
     );
     """

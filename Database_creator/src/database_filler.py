@@ -15,20 +15,16 @@ Description:
 import pymysql
 import sqlite3
 import conf
+import database_creator
 
 
 
 # Functions
-def connection(dest):
+def connection():
     """
-    :param dest: (string) the database for which we want a connection
-    :return: (pymysql object to connected to the wanted database)
+    :return: (pymysql object to connected to the fasterDB database)
     """
-    if dest == "fasterDB":
-        db = conf.fasterDB
-    else:
-        db = conf.my_db
-    cnx = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database=db)
+    cnx = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database=conf.fasterDB)
     return cnx
 
 

@@ -136,8 +136,7 @@ def creation_of_force_splicing_table(new_db):
            is_donor tinyint(1),
            pos_on_gene int(10) NOT NULL,
            force float,
-           is_alternative tinyint(1),
-           PRIMARY KEY(id_gene, pos_on_gene),
+           FOREIGN KEY(id_gene, pos_on_gene) REFERENCES exon_partial(id_gene, pos_on_gene),
            FOREIGN KEY (id_gene) REFERENCES genes(id)
        );
        """
@@ -160,6 +159,7 @@ def database_creator():
     creation_of_exon_table(new_db)
     creation_of_full_exon_table(new_db)
     creation_of_force_splicing_table(new_db)
+    new_db.close()
     return out_path + base_name
 
 

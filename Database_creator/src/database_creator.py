@@ -56,7 +56,7 @@ def creation_of_intron_table(new_db):
     """
     cursor = new_db.cursor()
     query = """
-    CREATE TABLE introns_genomiques(
+    CREATE TABLE introns(
         id_gene int(10),
         pos_on_gene int(10),
         start_on_gene int(10) NOT NULL,
@@ -103,7 +103,7 @@ def creation_of_full_exon_table(new_db):
     """
     cursor = new_db.cursor()
     query = """
-    CREATE TABLE exons_genomiques (
+    CREATE TABLE exons (
         id_gene int(10) NOT NULL,
         pos_on_gene int(10) NOT NULL,
         start_on_gene int(10) NOT NULL,

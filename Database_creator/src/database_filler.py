@@ -100,11 +100,59 @@ def fill_force_table(cnx, new_db):
     """
     cursor = cnx.cursor()
     query = """
-    SELECT id_gene, est_site_donor, exon_pos, force, est_alternatif
-    FROM force_splicing_site;
+    SELECT id_gene, est_site_donor, exon_pos, `force`
+    FROM force_splicing_site WHERE est_alternatif=0
     """
     cursor.execute(query)
     result = cursor.fetchall()
     cursor = new_db.cursor()
-    cursor.executemany("INSERT INTO force_splicing_site VALUES (?, ?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO force_splicing_site VALUES (?, ?, ?, ?)", result)
     new_db.commit()
+
+
+def fill_exon_genomiques_table(new_db):
+    """
+    Fill the table **exon_genomiques** in ``new_db``
+
+    :param new_db: (sqlite3 object) connection to ``new_db``
+    """
+    cursor = new_db.cursor()
+    query = """
+    SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t1.force_donor, t2.force as force_acceptor
+    FROM(
+        SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t2.force as force_donor
+        FROM exon_partial t1 LEFT JOIN (SELECT * FROM force_splicing_site WHERE is_donor = 1) t2
+        ON t1.id_gene = t2.id_gene
+        AND t1.pos_on_gene = t2.pos_on_gene) t1
+    LEFT JOIN (SELECT * FROM force_splicing_site WHERE is_donor = 0) t2
+    ON t1.id_gene = t2.id_gene
+    AND t1.pos_on_gene = t2.pos_on_gene
+    """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.executemany("INSERT INTO exon_genomiques VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    new_db.commit()
+
+
+def database_maker():
+    print("database_creation")
+    base_name = database_creator.database_creator()
+    print("establishing connextion betwwen 2 cards")
+    new_db = database_creator.new_db_connection(base_name)
+    cnx = connection()
+    print("filling genes content tables")
+    fill_gene_table_content(cnx, new_db)
+    print("filling intron table")
+    fill_intron_table(cnx, new_db)
+    print("filling partial exon table...")
+    fill_exon_partial_table(cnx, new_db)
+    print("force table")
+    fill_force_table(cnx, new_db)
+    print("filling full force table")
+    fill_exon_genomiques_table(new_db)
+    print("succefully ending...")
+    cnx.close()
+    new_db.close()
+
+if __name__ == "__main__":
+    database_maker()

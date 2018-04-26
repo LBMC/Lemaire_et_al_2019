@@ -8,6 +8,6 @@ Source code of the database_creator script
 Source code of the database_filler script
 =========================================
 
-.. automodule:: filler
+.. automodule:: database_filler
    :members:
 

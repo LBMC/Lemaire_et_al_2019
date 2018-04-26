@@ -18,7 +18,7 @@ At the end the *FasterDB Lite* databse created have the following relational sch
 
 .. note::
 
-	This new database will next be use by many programs.
+	This new database will next be used by many programs.
 
 
 Prerequisite

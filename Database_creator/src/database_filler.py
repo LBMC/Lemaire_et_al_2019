@@ -62,7 +62,7 @@ def fill_intron_table(cnx, new_db):
     cursor.execute(query)
     result = cursor.fetchall()
     cursor = new_db.cursor()
-    cursor.executemany("INSERT INTO intron_genomiques VALUES (?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO introns VALUES (?, ?, ?, ?)", result)
     new_db.commit()
 
 
@@ -130,11 +130,25 @@ def fill_exon_genomiques_table(new_db):
     """
     cursor.execute(query)
     result = cursor.fetchall()
-    cursor.executemany("INSERT INTO exon_genomiques VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO exons VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    new_db.commit()
+
+
+def remove_exon_patial_and_force_splicing_site(new_db):
+    """
+    This function will destroy the tables **force_splicing_site** and **exon_partial** tables
+    :param new_db: (sqlite3 object) connection to ``new_db``
+    """
+    cursor = new_db.cursor()
+    cursor.execute("DROP TABLE force_splicing_site;")
+    cursor.execute("DROP TABLE exon_partial;")
     new_db.commit()
 
 
 def database_maker():
+    """
+    :return:  Create the fasterDB lite database
+    """
     print("database_creation")
     base_name = database_creator.database_creator()
     print("establishing connextion betwwen 2 cards")
@@ -150,6 +164,8 @@ def database_maker():
     fill_force_table(cnx, new_db)
     print("filling full force table")
     fill_exon_genomiques_table(new_db)
+    print("removing tables exon_partial and force_splicing_site")
+    remove_exon_patial_and_force_splicing_site(new_db)
     print("succefully ending...")
     cnx.close()
     new_db.close()

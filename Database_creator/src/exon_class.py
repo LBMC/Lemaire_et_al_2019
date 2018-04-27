@@ -47,8 +47,24 @@ class ExonClassMain:
         AND pos_on_gene = """ + str(self.position) + """ ;
         """
         cursor.execute(query)
-        if cursor.arraysize == 0:
+        result = cursor.fetchone()
+        if result is None:
             return (None, None, None, None)
-        return cursor.fetchone()
+        return result
 
 
+class ExonClass(ExonClassMain):
+    """
+    Contains every data of interest
+    """
+    def __init__(self, cnx, gene_name, gene_id, exon_position):
+        """
+        Initiate the creation of an exon
+
+        :param cnx: (pymysql object) connection to fasterDB
+        :param gene_name: (string) official symbol for an exons
+        :param exon_position:  (int) the position of the exon on the gene
+        """
+        ExonClassMain.__init__(self, cnx, gene_name, gene_id, exon_position)
+        self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
+        self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)

@@ -19,7 +19,7 @@ class ExonClassMain:
         """
         Initiate the creation of an exon
 
-        :param cnx: (sqlite3 object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB Lite
         :param gene_name: (string) official symbol for an exons
         :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
@@ -36,7 +36,7 @@ class ExonClassMain:
         """
         Check if an exon exist
 
-        :param cnx: (sqlite3 object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB Lite
         :return: (int) the length of the exon
         """
         cursor = cnx.cursor()
@@ -61,7 +61,7 @@ class ExonClass(ExonClassMain):
         """
         Initiate the creation of an exon
 
-        :param cnx: (sqlite3 object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB Lite
         :param gene_name: (string) official symbol for an exons
         :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
@@ -79,7 +79,7 @@ class Gene:
         """
         Initiate the creation of a gene
 
-        :param cnx: (sqlite3 object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB Lite
         :param gene_name: (string) official symbol for an exons
         :param gene_id: (int) the id of the gene
         """
@@ -88,14 +88,33 @@ class Gene:
         self.nb_intron = None
         self.median_intron_size = None
         self.iupac = None
+        self.length = None
 
-    def get_iupac_and_gene_length(self):
+    def get_iupac_and_gene_length(self, cnx):
         """
-        Ge
+        Get iupac information and length of a gene
+
+        :param cnx: (sqlite3 object) connection to fasterDB
         :return:
+            - iupac : (list of float) a list containing the frequency \
+            of A, C, G, T, S, W, R, Y, K, M iupac nucleotide frequency
+            - length : (int) the length of a gene
         """
-
-
+        cursor = cnx.cursor()
+        query = """SELECT sequence
+                   FROM genes
+                   WHERE id = """ + self.id + """;"""
+        cursor.execute(query)
+        result = cursor.fetchall()
+        if len(result) > 1:
+            print("Multiple sequence were retrive from a single gene id")
+            print("Exiting...")
+            exit(1)
+        sequence = result[0][0]
+        self.length = len(sequence)
+        iupac = iupac_frequencies(sequence)
+        res = ";".join(list(map(str,iupac)))
+        self.iupac = res
 
 
 # simple function for getting iupac frequencies
@@ -111,8 +130,9 @@ def iupac_frequencies(sequence):
     result = []
     for nt in ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]:
         if nt not in iupac:
-            result.append(float(sequence.count(nt)) / len(sequence))
+            result.append(round((float(sequence.count(nt)) / len(sequence)) * 100, 1))
         else:
-            result.append(float(sequence.count(iupac[nt][0]) + sequence.count(iupac[nt][1])) / len(sequence))
+            result.append(round((float(sequence.count(iupac[nt][0]) +
+                                       sequence.count(iupac[nt][1])) / len(sequence)) * 100, 1))
     return result
 

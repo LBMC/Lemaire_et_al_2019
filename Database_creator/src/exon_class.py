@@ -111,14 +111,14 @@ class Gene:
         sequence = result[0][0]
         self.length = len(sequence)
         iupac = iupac_frequencies(sequence)
-        res = ";".join(list(map(str,iupac)))
+        res = ";".join(list(map(str, iupac)))
         self.iupac = res
 
     def get_nb_intron_and_median_intron_size(self, cnx):
         """
         Get the number of intron in a gene and the median intron size
 
-        :param cnx: (sqlite3 object)
+        :param cnx: (sqlite3 object) connection to fasterDB
         """
         cursor = cnx.cursor()
         query = """SELECT end_on_gene - start_on_gene + 1
@@ -128,6 +128,16 @@ class Gene:
         result = cursor.fetchall()
         self.nb_intron = len(result)
         self.median_intron_size = np.median([size[0] for size in result])
+
+    def gene_filler(self, cnx):
+        """
+        Executes the functions ``get_iupac_and_gene_length`` and \
+        ``get_nb_intron_and_median_intron_size``
+        :param cnx:(sqlite3 object) connection to fasterDB
+        :return:
+        """
+        self.get_iupac_and_gene_length(cnx)
+        self.get_nb_intron_and_median_intron_size(cnx)
 
 
 # simple function for getting iupac frequencies

@@ -19,12 +19,12 @@ class ExonClassMain:
         """
         Initiate the creation of an exon
 
-        :param cnx: (pymysql object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB
         :param gene_name: (string) official symbol for an exons
+        :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
         """
-        self.gene_name = gene_name
-        self.gene_id = gene_id
+        self.gene = Gene(cnx, gene_name, gene_id)
         self.position = exon_position
         length, exon_type, donor, acceptor = self.get_exon_info(cnx)
         self.length = length
@@ -36,7 +36,7 @@ class ExonClassMain:
         """
         Check if an exon exist
 
-        :param cnx: (pymysql object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB
         :return: (int) the length of the exon
         """
         cursor = cnx.cursor()
@@ -61,10 +61,30 @@ class ExonClass(ExonClassMain):
         """
         Initiate the creation of an exon
 
-        :param cnx: (pymysql object) connection to fasterDB
+        :param cnx: (sqlite3 object) connection to fasterDB
         :param gene_name: (string) official symbol for an exons
+        :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
         """
         ExonClassMain.__init__(self, cnx, gene_name, gene_id, exon_position)
         self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
         self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)
+
+
+class Gene:
+    """
+    Contains every info of interest for a gene
+    """
+    def __init__(self, cnx, gene_name, gene_id):
+        """
+        Initiate the creation of a gene
+
+        :param cnx: (sqlite3 object) connection to fasterDB
+        :param gene_name: (string) official symbol for an exons
+        :param gene_id: (int) the id of the gene
+        """
+        self.name = gene_name
+        self.id = gene_id
+        self.nb_intron = None
+        self.median_intron_size = None
+        self.iupac = None

@@ -9,6 +9,8 @@ Description:
 
 """
 
+import numpy as np
+
 
 class ExonClassMain:
     """
@@ -95,10 +97,6 @@ class Gene:
         Get iupac information and length of a gene
 
         :param cnx: (sqlite3 object) connection to fasterDB
-        :return:
-            - iupac : (list of float) a list containing the frequency \
-            of A, C, G, T, S, W, R, Y, K, M iupac nucleotide frequency
-            - length : (int) the length of a gene
         """
         cursor = cnx.cursor()
         query = """SELECT sequence
@@ -115,6 +113,21 @@ class Gene:
         iupac = iupac_frequencies(sequence)
         res = ";".join(list(map(str,iupac)))
         self.iupac = res
+
+    def get_nb_intron_and_median_intron_size(self, cnx):
+        """
+        Get the number of intron in a gene and the median intron size
+
+        :param cnx: (sqlite3 object)
+        """
+        cursor = cnx.cursor()
+        query = """SELECT end_on_gene - start_on_gene + 1
+                    FROM introns
+                    WHERE id_gene = """ + self.id + ";"
+        cursor.execute(query)
+        result = cursor.fetchall()
+        self.nb_intron = len(result)
+        self.median_intron_size = np.median([size[0] for size in result])
 
 
 # simple function for getting iupac frequencies

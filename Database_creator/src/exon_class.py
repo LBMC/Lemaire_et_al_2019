@@ -26,11 +26,13 @@ class ExonClassMain:
         self.gene_name = gene_name
         self.gene_id = gene_id
         self.position = exon_position
-        self.length = self.get_exon_length(cnx)
-        self.acceptor = self.get_force(cnx, 0)
-        self.donor = self.get_force(cnx, 1)
+        length, exon_type, donor, acceptor = self.get_exon_info(cnx)
+        self.length = length
+        self.acceptor = acceptor
+        self.donor = donor
+        self.exon_type = exon_type
 
-    def get_exon_length(self, cnx):
+    def get_exon_info(self, cnx):
         """
         Check if an exon exist
 
@@ -39,35 +41,14 @@ class ExonClassMain:
         """
         cursor = cnx.cursor()
         query = """
-        SELECT end_on_gene - start_on_gene + 1
+        SELECT end_on_gene - start_on_gene + 1, exon_type, force_donor, force_acceptor
         FROM exons
         WHERE id_gene = \"""" + str(self.gene_id) + """\"
         AND pos_on_gene = """ + str(self.position) + """ ;
         """
-        cde = cursor.execute(query)
-        if cde == 0:
-            return None
-        return cursor.fetchone()[0]
+        cursor.execute(query)
+        if cursor.arraysize == 0:
+            return (None, None, None, None)
+        return cursor.fetchone()
 
-    def get_force(self, cnx, isdonor):
-        """
-        Get the force of the donor or the acceptor of an exons
 
-        :param cnx: (pymysql object) connection to fasterDB
-        :param isdonor: (int) 1 for donor 0 for acceptor
-        """
-        cursor = cnx.cursor()
-        if isdonor == 1:
-            column = "force_donor"
-        else:
-            column = "force_acceptor"
-        query = """
-        SELECT """ + column + """
-        FROM exons
-        WHERE id_gene = """ + str(self.gene_id) + """
-        AND pos_on_gene = """ + str(self.position) + """ ; """
-        cde = cursor.execute(query)
-        if cde == 0:
-            return None
-        result = cursor.fetchall()[0]
-        return result

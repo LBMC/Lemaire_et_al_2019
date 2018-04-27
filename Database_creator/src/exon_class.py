@@ -88,3 +88,31 @@ class Gene:
         self.nb_intron = None
         self.median_intron_size = None
         self.iupac = None
+
+    def get_iupac_and_gene_length(self):
+        """
+        Ge
+        :return:
+        """
+
+
+
+
+# simple function for getting iupac frequencies
+def iupac_frequencies(sequence):
+    """
+    Get iupac frequencies info for a sequence
+
+    :param sequence: (string) a nucleotide sequence
+    :return: (list of float) the frequency of nucleotides A, C, G, T, S, W, R, Y, K, M respectively
+    """
+    iupac = {"S": ["C", "G"], "W": ["A", "T"], "R": ["A", "G"],
+             "Y": ["C", "T"], "K": ["T", "G"], "M": ["A", "C"]}
+    result = []
+    for nt in ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]:
+        if nt not in iupac:
+            result.append(float(sequence.count(nt)) / len(sequence))
+        else:
+            result.append(float(sequence.count(iupac[nt][0]) + sequence.count(iupac[nt][1])) / len(sequence))
+    return result
+

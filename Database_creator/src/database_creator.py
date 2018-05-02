@@ -16,6 +16,9 @@ import sqlite3
 import conf
 import os
 
+base_name = "fasterDB_lite.db"
+out_path = "/".join(os.path.realpath(__file__).split("/")[:-2]) +  "/result/"
+
 
 # Functions
 def new_db_connection(file_name):
@@ -148,11 +151,6 @@ def database_creator():
     """
     Create an empty database
     """
-    base_name = "fasterDB_lite.db"
-    out_path = os.path.realpath(__file__)
-    out_path = "/".join(out_path.split("/")[:-2]) + "/result/"
-    if not os.path.isdir(out_path):
-        out_path = os.path.dirname(os.path.realpath(__file__)) + "/"
     new_db = new_db_connection(out_path + base_name)
     creation_of_gene_table(new_db)
     creation_of_intron_table(new_db)

@@ -97,6 +97,8 @@ class ExonClass(ExonClassMain):
             exit(1)
         start = result[0][0] - 1
         stop = result[0][1]
+        if start >= stop:
+            return None
         sequence = self.gene.sequence[start:stop]
         printd("Exon sequence:")
         printd(sequence)
@@ -159,7 +161,10 @@ class Gene:
         cursor.execute(query)
         result = cursor.fetchall()
         self.nb_intron = len(result)
-        self.median_intron_size = np.median([size[0] for size in result])
+        if not result:
+            self.median_intron_size = None
+        else:
+            self.median_intron_size = int(np.median([size[0] for size in result]))
 
     def gene_filler(self, cnx):
         """
@@ -261,8 +266,8 @@ def set_debug(debug=0):
 
     :param debug: (int) 0 no debug, 1 debug mode
     """
-    d = debug
     global d
+    d = debug
 
 
 def printd(message):

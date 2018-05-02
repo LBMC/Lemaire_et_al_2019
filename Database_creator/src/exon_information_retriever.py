@@ -82,23 +82,6 @@ def get_exon_tuple(exon_list):
     return list_tuple
 
 
-def write_result(list_tuple):
-    """
-
-    :param list_tuple: (list of **list info exon**). **list info exon** contains every information \
-    necessary for an exon.
-    """
-    with open(out_path + "info_exon.txt", "w") as outfile:
-        header = "gene_symbol, gene_id, exon_pos, exon_type, gene_size, nb_intron_gene, median_intron_size, " \
-                 "iupac_gene, upstream_exon_size, exon_size, downstream_eoxn_size, upstream_intron_size, " \
-                 "downstream_intron_size, upstream_exon_acceptor, exon_acceptor, downstream_exon_acceptor, " \
-                 "upstream_exon_donor, exon_donor, downstream_exon_donor, iupac_exon, iupac_upstream_intron_dist, " \
-                 "iupac_upstream_intron_proxi, iupac_downstream_intron_proxi, iupac_downstream_intron_dist\n"
-        outfile.write(header.replace(", ", "\t"))
-        for mytuple in list_tuple:
-            outfile.write(str(mytuple).replace("[", "").replace("]", "").replace(", ", "\t") + "\n")
-
-
 def sed_connection():
     """
     Connection to SED database

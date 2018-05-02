@@ -153,6 +153,8 @@ def main():
     sed_cnx = sed_connection()
     create_sed_exon_table(sed_cnx)
     sed_filler(sed_cnx, list_tuple)
+    cnx.close()
+    sed_cnx.close()
 
 
 if __name__ == "__main__":

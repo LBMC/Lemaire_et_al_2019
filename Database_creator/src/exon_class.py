@@ -10,6 +10,7 @@ Description:
 """
 
 import numpy as np
+d = 0
 
 
 class ExonClassMain:
@@ -32,7 +33,7 @@ class ExonClassMain:
         self.length = length
         self.acceptor = acceptor
         self.donor = donor
-        self.exon_type = exon_type
+        self.type = exon_type
 
     def get_exon_info(self, cnx):
         """
@@ -68,6 +69,7 @@ class ExonClass(ExonClassMain):
         :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
         """
+        printd("Exon " + str(gene_name) + "_" + str(exon_position))
         ExonClassMain.__init__(self, cnx, gene_name, gene_id, exon_position)
         self.gene.gene_filler(cnx)
         self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
@@ -97,6 +99,8 @@ class ExonClass(ExonClassMain):
         start = result[0][0] - 1
         stop = result[0][1]
         sequence = self.gene.sequence[start:stop]
+        printd("Exon sequence:")
+        printd(sequence)
         iupac = iupac_frequencies(sequence)
         return ";".join(list(map(str, iupac)))
 
@@ -213,6 +217,8 @@ class Intron:
         start = result[0][0] - 1
         end = result[0][1]
         sequence = gene_seq[start:end]
+        printd("Intron " + self.location + " sequence : ")
+        printd(sequence)
         if self.location == "upstream":
             sequence = sequence[::-1]
         proxi_seq = sequence[0:25]
@@ -246,3 +252,23 @@ def iupac_frequencies(sequence):
             result.append(round((float(sequence.count(iupac[nt][0]) +
                                        sequence.count(iupac[nt][1])) / len(sequence)) * 100, 1))
     return result
+
+
+def set_debug(debug=0):
+    """
+    Set debug mod if ``debug`` == 1
+
+    :param debug: (int) 0 no debug, 1 debug mode
+    """
+    d = debug
+    global d
+
+
+def printd(message):
+    """
+
+    :param message: (string) message we want to print
+    :return:
+    """
+    if d == 1:
+        print(message)

@@ -10,7 +10,6 @@ Description:
 """
 
 import numpy as np
-d = 0
 
 
 class ExonClassMain:
@@ -75,7 +74,7 @@ class ExonClass(ExonClassMain):
         self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
         self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)
         self.upstream_intron = Intron(cnx, gene_id, self.position - 1, self.gene.sequence, "upstream")
-        self.downstream_intron = Intron(cnx, gene_id, self.position - 1, self.gene.sequence, "downstream")
+        self.downstream_intron = Intron(cnx, gene_id, self.position, self.gene.sequence, "downstream")
         self.iupac = self.get_iupac_exon(cnx)
         # once the exon is fully created we delete the gene sequence for memory efficiency
         self.gene.sequence = None
@@ -88,8 +87,8 @@ class ExonClass(ExonClassMain):
         cursor = cnx.cursor()
         query = """SELECT start_on_gene, end_on_gene
                    FROM exons
-                   WHERE id_gene = """ + self.gene.id + """
-                   AND pos_on_gene = """ + self.position + ";"
+                   WHERE id_gene = """ + str(self.gene.id) + """
+                   AND pos_on_gene = """ + str(self.position) + ";"
         cursor.execute(query)
         result = cursor.fetchall()
         if len(result) > 1:
@@ -214,6 +213,8 @@ class Intron:
             print("Error : multiple intron find from a simple intron id")
             print("exiting...")
             exit(1)
+        if not result:
+            return None, None, None
         start = result[0][0] - 1
         end = result[0][1]
         sequence = gene_seq[start:end]
@@ -222,7 +223,7 @@ class Intron:
         if self.location == "upstream":
             sequence = sequence[::-1]
         proxi_seq = sequence[0:25]
-        distal_seq = sequence[26:100]
+        distal_seq = sequence[26:101]
         if len(proxi_seq) > 0:
             iupac_poxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
         else:

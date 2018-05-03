@@ -22,3 +22,13 @@ make html
 ```
 
 Then launch doc/build/html/index.html on you navigator to see the detailled documentation
+
+Then you have to create a file in the `src/` folder named `conf.py`. It must be like:
+
+```python
+host=<Auboeuf_team_server>
+password=<your_password>
+user=<your_username>
+fasterDB="fasterdb_humain"
+```
+

@@ -81,7 +81,7 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
   * `sys v3.5.2 <https://docs.python.org/3.5/library/sys.html>`_
 
 
-Exectuted commands to create the *FasterDB Lite* database
+Exectuted commands to create the *Sed* database
 ---------------------------------------------------------
 
 .. code-block:: bash

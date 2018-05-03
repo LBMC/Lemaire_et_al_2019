@@ -202,7 +202,7 @@ class Intron:
 
         :param cnx: (sqlite3 object) allows connection to **FasterDB Lite** database
         :param gene_seq: (string) the sequence of the gene, gene_id
-        result :
+        :return: The following information is returned
             - length: (int) intron length
             - proximal: (string) the proximal (0:25) frequency in the intron
             - distal: (string)  the proximal (26:100) iupac frequency in the intorn

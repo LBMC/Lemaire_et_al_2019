@@ -11,6 +11,7 @@ Welcome to Faster_DB's documentation!
    :caption: Contents:
 
    README.rst
+   sed.rst
    api.rst
 
 Indices and tables

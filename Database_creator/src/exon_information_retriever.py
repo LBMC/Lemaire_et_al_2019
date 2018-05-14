@@ -140,6 +140,10 @@ def sed_filler(sed_cnx, list_tuple):
         "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         list_tuple)
     sed_cnx.commit()
+    # creation of an index on gene_symbol and exon_pos
+    query = """ CREATE INDEX sed_index on sed(gene_symbol, exon_pos);"""
+    cursor.execute(query)
+    cursor.commit()
 
 
 def main():

@@ -72,6 +72,14 @@ Here is described every field in the table sed:
   The choice of keeping redundancy was made to improve the speed of programs that will use *Sed database*; Indeed, for one exon we have all the data we need. Despite this redundancy, the size of the database is reasonable (a little more than 100 Mo).
 
 
+Issue
+-----
+
+.. warning::
+
+        There are 4 exons in fasterDB having a length below 0 nucleotide. Those exons are present in FasterDB too.
+
+
 Prerequisite
 ------------
 

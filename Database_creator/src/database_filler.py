@@ -75,10 +75,10 @@ def fill_exon_partial_table(cnx, new_db):
     """
     cursor = cnx.cursor()
     query = """
-    SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t1.exon_types, t2.fragment_start_on_gene, t2.fragment_end_on_gene, t2.offset_before_exon, t2.offset_after_exon
+    SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t1.exon_types, t2.fragment_start_on_gene, t2.fragment_end_on_gene, t2.offset_before_exon, t2.offset_after_exon, t1.chromosome, t1.start_sur_chromosome, t1.end_sur_chromosome
     FROM (
-        SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t2.exon_types
-        FROM fasterdb_humain.exons_genomiques t1, fasterdb_protein.hsapiens_exonsstatus_improved t2
+        SELECT t1.id_gene, t1.pos_sur_gene, t1.start_sur_gene, t1.end_sur_gene, t2.exon_types, t1.chromosome, t1.start_sur_chromosome, t1.end_sur_chromosome
+        FROM fasterdb_humain.exons_genomiques_bis t1, fasterdb_protein.hsapiens_exonsstatus_improved t2
         WHERE t1.id_gene = t2.id_gene
         AND t1.pos_sur_gene = t2.pos_sur_gene
     )t1 LEFT JOIN Nicolas.hsapiens_exonpeptides_filtered t2 ON t1.id_gene = t2.gene_id
@@ -87,7 +87,7 @@ def fill_exon_partial_table(cnx, new_db):
     cursor.execute(query)
     result = cursor.fetchall()
     cursor = new_db.cursor()
-    cursor.executemany("INSERT INTO exon_partial VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO exon_partial VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
     new_db.commit()
 
 
@@ -118,9 +118,9 @@ def fill_exon_genomiques_table(new_db):
     """
     cursor = new_db.cursor()
     query = """
-    SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t1.force_donor, t2.force as force_acceptor
+    SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t1.force_donor, t2.force as force_acceptor, t1.chromosome, t1.start_on_chromosome, t1.end_on_chromosome
     FROM(
-        SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t2.force as force_donor
+        SELECT t1.id_gene, t1.pos_on_gene, t1.start_on_gene, t1.end_on_gene, t1.exon_type, t1.cds_start_on_gene, t1.cds_end_on_gene, t1.offset_before_exon, t1.offset_after_exon, t1.chromosome, t1.start_on_chromosome, t1.end_on_chromosome, t2.force as force_donor
         FROM exon_partial t1 LEFT JOIN (SELECT * FROM force_splicing_site WHERE is_donor = 1) t2
         ON t1.id_gene = t2.id_gene
         AND t1.pos_on_gene = t2.pos_on_gene) t1
@@ -130,7 +130,7 @@ def fill_exon_genomiques_table(new_db):
     """
     cursor.execute(query)
     result = cursor.fetchall()
-    cursor.executemany("INSERT INTO exons VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO exons VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", result)
     new_db.commit()
 
 

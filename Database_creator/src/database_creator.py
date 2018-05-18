@@ -90,6 +90,9 @@ def creation_of_exon_table(new_db):
         cds_end_on_gene int(10),
         offset_before_exon tinyint(2),
         offset_after_exon tinyint(2),
+        chromosome VARCHAR(2),
+        start_on_chromosome INT(12),
+        end_on_chromosome INT(12),
         PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );
@@ -118,6 +121,9 @@ def creation_of_full_exon_table(new_db):
         offset_after_exon tinyint(2),
         force_donor int,
         force_acceptor int,
+        chromosome VARCHAR(2),
+        start_on_chromosome INT(12),
+        end_on_chromosome INT(12),
         PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );

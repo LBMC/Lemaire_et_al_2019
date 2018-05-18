@@ -30,7 +30,7 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
   * `pymysql v0.8.0 <http://pymysql.readthedocs.io/en/latest/user/examples.html>`_ : To connect to the real *FasterDB* database
 
 
-Exectuted commands to create the *Sed* database
+Exectuted commands to create the *FasterDB_Lite* database
 ---------------------------------------------------------
 
 .. code-block:: bash

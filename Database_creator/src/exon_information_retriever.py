@@ -204,7 +204,7 @@ def creation_ase_event_table(sed_cnx):
     CREATE TABLE ase_event (
         id INT,
         id_project INT NOT NULL,
-        id_gene INT NOT NULL,
+        gene_id INT NOT NULL,
         gene_symbol VARCHAR(20) NOT NULL,
         exon_skipped INT NOT NULL,
         chromosome VARCHAR(1) NOT NULL,
@@ -216,8 +216,7 @@ def creation_ase_event_table(sed_cnx):
         pvalue_glm_cor FLOAT,
         PRIMARY KEY (id),
         FOREIGN KEY (id_project) REFERENCES rnaseq_projects(id),
-        FOREIGN KEY (id_gene) REFERENCES sed(id_gene),
-        FOREIGN KEY (exon_skipped) REFERENCES sed(exon_pos)
+        FOREIGN KEY (gene_id, exon_skipped) REFERENCES sed(gene_id, exon_pos)
     );
     """
     cursor.execute(query)

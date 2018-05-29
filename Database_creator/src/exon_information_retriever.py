@@ -328,6 +328,8 @@ def fill_ase_event_content(sed_cnx, seddb, fasterdblite):
     cursor.executemany("INSERT INTO ase_event VALUES %s" % my_tuple, result)
     query = """ CREATE INDEX sed_project on ase_event(id_project);"""
     cursor.execute(query)
+    query = """ CREATE INDEX sed_regulation on ase_event(id_project, delta_psi);"""
+    cursor.execute(query)
     sed_cnx.commit()
 
 

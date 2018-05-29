@@ -6,7 +6,7 @@ Description
 
 This program contains the following scripts:
   * ``exon_class.py`` : This script aims to calculates lots of information for every exons from **FasterDB-Lite database**
-  * ``database_filler.py``: This script will create and empty **Sed database** and then fill it thanks to ``exon_class.py``
+  * ``exon_information_retrieverr.py``: This script will create and empty **Sed database** and then fill it (table **sed**) thanks to ``exon_class.py``. Then it will create 2 additional tables : **rnaseq_project** and  **ase_events** thanks to splicing lore database.
 
 
 At the end the **Sed (Simple Exons description) database** created have the following relational schema :
@@ -19,7 +19,7 @@ At the end the **Sed (Simple Exons description) database** created have the foll
 Here is described every field in the table sed:
 
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|            Field                    |                                                                           Description                                                                                |
+|          **Field**                  |                                                                         **Description**                                                                              |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |           gene_symbol               | HGNC symbol of the gene                                                                                                                                              |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -66,6 +66,64 @@ Here is described every field in the table sed:
 |  iupac_upstream_intron_dist         | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [26;100] of the downstream intron                                       |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+Description of the **rnaseq_projects** table:
+
+.. note::
+
+	A project here is an experiment where the trancriptome of a cell line depleted for a splicing factor is compared to the trancriptiome wild-type of the same cell line
+
+
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|          **Field**                  |                                                                         **Description**                                                                              |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|            id                       | The id of the project : an unique identifier for a project on a particular cell line for a particular splicing factor                                                |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           project_name              | The name of the project : like this : SFname_DBID_CellLine where SFname is a name of a plicing factor, DBid is an id project like GSE00000 and cell line a cell line |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           source_db                 | The database where the project was downloaded (GEO, DRAsearch, EBI, HOME, ENCODE)                                                                                    |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           db_id_project             | The id of the project in the database where the project is located                                                                                                   |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           sf_name                   | the name of the splicing factor studied in the project                                                                                                               |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           cl_name                   | The name of the cell line used in the project                                                                                                                        |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
+Description of the **ase_event** table:
+
+This table describe the exons that are differentially skipped in each project defined in **rnaseq_projects**. Those value were obtain using farline.
+
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|            **Field**                |                                                                         **Description**                                                                              |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           id                        |  An unique identifier of a splicing event in a particular project on a particular cell line/splicing factor                                                          |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           id_project                |  Foreing key of the field id in rnaseq_projects table                                                                                                                |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           id_gene                   | The gene id of the gene that contains the exon differentially splicing in the project identified by id_project                                                       |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           gene_symbol               | The HGNC symbol of the gene that contains the exon differentially splicing in the project identified by id_project                                                   |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           exon_skipped              | The exon position skipped on the gene identified by gene_id                                                                                                          |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           chromosome                | The chromosome where the exon differentially spliced is located                                                                                                      |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           start                     | Chromosome coordinates where  the exon differentially spliced begins                                                                                                 |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           stop                      | Chromosome coordinates where  the exon differentially spliced ends                                                                                                   |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           exons_flanquant           | The position of the surrounding exons of the one differentially spliced in the gene                                                                                  |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           deltapsi                  | The differential inclusion of the exon differentially  spliced (negative value: exon less included in the absence of a splicing factor)                              |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           pvalue                    | The pvalue of the splicing events                                                                                                                                    |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|           pvalue_glm_cor            | The pvalue corrected (if many biological replicate are available)                                                                                                    |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
 .. note::
 
   This schema induce a lots of redundancy in the database. Indeed, we keep for each exon, data about its gene, so, for a gene we have the same data repeated as many times as the number of exons within the gene.
@@ -77,7 +135,7 @@ Issue
 
 .. warning::
 
-        There are 4 exons in fasterDB having a length below 0 nucleotide. Those exons are present in FasterDB too.
+        There are 4 exons in fasterDB having a length below 0 nucleotide. Those exons are present in SED database too.
 
 
 Prerequisite

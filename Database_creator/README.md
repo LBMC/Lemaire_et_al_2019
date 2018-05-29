@@ -27,6 +27,7 @@ Then you have to create a file in the `src/` folder named `conf.py`. It must be 
 
 ```python
 host=<Auboeuf_team_server>
+sl_host=<splicing_lore_ip_server>
 password=<your_password>
 user=<your_username>
 fasterDB="fasterdb_humain"

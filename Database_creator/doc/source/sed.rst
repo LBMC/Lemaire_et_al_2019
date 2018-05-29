@@ -145,7 +145,8 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
   * `numpy v1.14.0 <https://docs.scipy.org/doc/numpy-1.14.0/user/quickstart.html>`_
   * `sqlite3 v2.6.0 <https://docs.python.org/3.5/library/sqlite3.html>`_ : To create *Sed* database
   * `sys v3.5.2 <https://docs.python.org/3.5/library/sys.html>`_
-
+  * `re v2.2.1 <https://docs.python.org/3.5/library/re.html>`_
+  * `pymysql v0.8.0 <https://pymysql.readthedocs.io/en/latest/>`_
 
 Exectuted commands to create the *Sed* database
 ---------------------------------------------------------

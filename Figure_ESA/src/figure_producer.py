@@ -40,3 +40,25 @@ def get_interest_project(cnx):
     return id
 
 
+def get_ase_events(cnx, id_project, regulation):
+    """
+    Get every exon up or down regulated in a particular project.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param id_project: (int) a project id
+    :param regulation: (string)) up or down
+    :return: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene)
+    """
+    if regulation == "up":
+        regulation = ">= 0.1"
+    else:
+        regulation = "<= -0.1"
+    cursor = cnx.cursor()
+    query = """SELECT gene_id, exon_skipped
+               FROM ase_event
+               WHERE id_project = %s
+               AND delta_psi %s
+               AND pvalue_glm_cor <= 0.05""" % (id_project, regulation)
+    cursor.execute(query)
+    return cursor.fetchall()
+

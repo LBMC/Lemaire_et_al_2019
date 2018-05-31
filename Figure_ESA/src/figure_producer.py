@@ -179,9 +179,9 @@ def create_figure(cnx, id_projects, name_projects, target_column, regulation, ou
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=False)
     new_name = [x[0] for x in e]
     new_result = [x[1] for x in e]
-    c = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(result))]
+    c = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(new_result))]
     data = []
-    for i in range(len(result)):
+    for i in range(len(new_result)):
         if i in list(range(5)) + list(range(len(new_result)-5, len(new_result))):
             data.append({"y": new_result[i], "type": "violin",
                          "name": new_name[i], "visible": True, "marker": {"color": c[i]},
@@ -236,9 +236,9 @@ def create_figure_iupac(cnx, id_projects, name_projects, target_column, regulati
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=False)
     new_name = [x[0] for x in e]
     new_result = [x[1] for x in e]
-    c = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(result))]
+    c = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(new_result))]
     data = []
-    for i in range(len(result)):
+    for i in range(len(new_result)):
         if i in list(range(5)) + list(range(len(new_result)-5, len(new_result))):
             data.append({"y": new_result[i], "type": "violin",
                          "name": new_name[i], "visible": True, "marker": {"color": c[i]},

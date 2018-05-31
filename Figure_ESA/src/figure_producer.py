@@ -95,3 +95,28 @@ def get_list_of_value(cnx, exon_list, target_column):
             res.append(r)
     return res
 
+
+def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
+    """
+    Get the individual values of nt ``nt`` in ``target_column`` of every exon in ``exon_list``.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param exon_list: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene)
+    :param target_column: (string) the column for which we want to get information on exons.
+    :param nt: (string) a nucleotide
+    :return: (list of float) values of ``target_column`` for the exons in  ``exon_list``.
+    """
+    cursor = cnx.cursor()
+    res = []
+    for exon in exon_list:
+        query = """SELECT %s
+                   FROM sed
+                   where gene_id = %s
+                   AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+        cursor.execute(query)
+        r = cursor.fetchone()[0]
+        if r is not None:
+            res.append(float(r.split(";")[nt_dic[nt]]))
+    return res
+
+

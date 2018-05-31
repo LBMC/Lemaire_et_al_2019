@@ -256,6 +256,7 @@ def fill_rnaseq_projects_content(cnx, sed_cnx):
     FROM rnaseq_projects_SF t1, Splicing_factors t2, Cell_line t3
     WHERE t1.id_SF = t2.id_SF
     AND t1.id_cell_line = t3.id_cell_line
+    AND t1.show_in_website = 1
     """
     cursor.execute(query)
     result = cursor.fetchall()
@@ -327,7 +328,7 @@ def fill_ase_event_content(sed_cnx, seddb, fasterdblite):
     cursor.executemany("INSERT INTO ase_event VALUES %s" % my_tuple, result)
     query = """ CREATE INDEX sed_project on ase_event(id_project);"""
     cursor.execute(query)
-    query = """ CREATE INDEX sed_regulation on ase_event(id_project, delta_psi);"""
+    query = """ CREATE INDEX sed_regulation on ase_event(id_project, delta_psi, pvalue);"""
     cursor.execute(query)
     sed_cnx.commit()
 

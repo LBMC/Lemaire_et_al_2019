@@ -33,11 +33,12 @@ def get_interest_project(cnx):
     :return: (list of int) list of id_project
     """
     cursor = cnx.cursor()
-    query = "SELECT id FROM rnaseq_projects"
+    query = "SELECT id, project_name FROM rnaseq_projects"
     cursor.execute(query)
     res = cursor.fetchall()
-    id = [val[0] for val in res]
-    return id
+    idp = [val[0] for val in res]
+    name = [val[1] for val in res]
+    return idp, name
 
 
 def get_ase_events(cnx, id_project, regulation):

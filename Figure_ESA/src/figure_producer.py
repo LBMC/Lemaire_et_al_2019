@@ -90,6 +90,8 @@ def get_list_of_value(cnx, exon_list, target_column):
                    where gene_id = %s
                    AND exon_pos = %s """ % (target_column, exon[0], exon[1])
         cursor.execute(query)
-        res.append(cursor.fetchone()[0])
+        r = cursor.fetchone()[0]
+        if r is not None:
+            res.append(r)
     return res
 

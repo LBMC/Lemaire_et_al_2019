@@ -61,7 +61,16 @@ def get_ase_events(cnx, id_project, regulation):
                AND delta_psi %s
                AND pvalue_glm_cor <= 0.05""" % (id_project, regulation)
     cursor.execute(query)
-    return cursor.fetchall()
+    res = cursor.fetchall()
+    if len(res) == 0:
+            query = """SELECT gene_id, exon_skipped
+               FROM ase_event
+               WHERE id_project = %s
+               AND delta_psi %s
+               AND pvalue <= 0.05""" % (id_project, regulation)
+            cursor.execute(query)
+            res = cursor.fetchall()
+    return res
 
 
 def get_list_of_value(cnx, exon_list, target_column):

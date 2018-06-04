@@ -11,6 +11,7 @@ Welcome to SL Projects Figure Creator's documentation!
    :caption: Contents:
 
    README.rst
+   exon_project.rst
    api.rst
 
 Indices and tables

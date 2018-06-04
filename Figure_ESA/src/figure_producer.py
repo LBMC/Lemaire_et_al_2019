@@ -293,7 +293,10 @@ def main():
     """
     Launch the creation of figures.
     """
-    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/"
+    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures/"
+    # If the output directory does not exist, then we create it !
+    if not os.path.isdir(output):
+        os.mkdir(output)
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     regs = ["up", "down"]
     cnx = connexion(seddb)

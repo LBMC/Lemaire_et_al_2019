@@ -4,3 +4,4 @@ data/
 doc/build/*
 src/*.pyc
 src/__pycache__/
+src/control/

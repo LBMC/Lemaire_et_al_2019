@@ -4,7 +4,7 @@ Exon projectr's Documentation
 Description
 ------------
 
-This project aims aims, for each project to show the number of regulated exon contained in the same gene.
+This script aims, for each project to show the number of regulated exons contained in the same gene.
 
 
 For each project it will produce this kind of graphics :

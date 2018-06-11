@@ -52,7 +52,11 @@ def get_control_exon_information(cnx, exon_type):
     cursor.execute(query)
     names = [description[0] for description in cursor.description]
     result = cursor.fetchall()
-    return names, result
+    # turn tuple into list
+    nresult = []
+    for exon in result:
+        nresult.append(list(exon))
+    return names, nresult
 
 
 def get_iupac_nt(iupac_string, nt):
@@ -138,16 +142,46 @@ def write_control_file(exon_type, control_file, str2write):
         ctrl_file.write("%s_dic = %s\n" % (exon_type, str2write))
 
 
+def remove_redundant_gene_information(exon_list):
+    """
+    Remove redundant gene data.
+
+    If two exons are regulated by the same gene, the information at gene level for those exons \
+    will only be used once.
+
+    :param exon_list: (2 list of list (one for up exon the other for down exon)) that contains every exons \
+     given in input by the user.
+    :return: the input exons list without redundant data at gene level
+    """
+    gene_dic = {}
+    redundant_dic = {}
+    for exon in exon_list:
+        if exon[1] not in gene_dic:
+            gene_dic[exon[1]] = 1
+        else:
+            gene_dic[exon[1]] += 1
+            redundant_dic[exon[1]] = gene_dic[exon[1]]
+    for gene in redundant_dic:
+        for exon in exon_list:
+            if exon[1] == gene:
+                exon[4:8] = [None] * 4
+                redundant_dic[gene] -= 1
+            if redundant_dic[gene] == 1:
+                break
+    return exon_list
+
+
 def control_handler(cnx, exon_type):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
     control_file = control_folder + "/control.py"
-    ctrl_dic = get_control_information(exon_type, control_file)
-    if ctrl_dic is None:
+    ctrl_list = get_control_information(exon_type, control_file)
+    if ctrl_list is None:
         print("Control dictionary was not found !")
         print("Creating control information")
         names, exon_tuple = get_control_exon_information(cnx, exon_type)
+        exon_tuple = remove_redundant_gene_information(exon_tuple)
         tmp = create_a_temporary_dictionary(names, exon_tuple)
-        ctrl_dic = get_summary_dictionaries(names, tmp)
-        write_control_file(exon_type, control_file, str(ctrl_dic))
-    return ctrl_dic
+        ctrl_list = get_summary_dictionaries(names, tmp)
+        write_control_file(exon_type, control_file, str(ctrl_list))
+    return ctrl_list

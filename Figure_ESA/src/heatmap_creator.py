@@ -11,7 +11,7 @@ import figure_producer
 import exon_control_handler
 import os
 import random
-
+nt_list = ["A", "C", "G", "T"]
 
 # functions
 def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulations):
@@ -61,7 +61,6 @@ def create_matrix_iupac(cnx, id_projects, names, target_columns, control_dic, re
     :return: (lif of list of float) the medians value for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     """
-    nt_list = figure_producer.nt_dic.keys()
     new_targets = [target_columns[i].replace("iupac", "%s_nt" % nt)
                    for i in range(len(target_columns)) for nt in nt_list]
     project_names = []
@@ -156,7 +155,9 @@ def simple_heatmap(data_array, labelsy, labelsx, output, name=""):
             y=dendro_leaves,
             z=data_arrange,
             colorbar={"x": -0.05},
-            colorscale='Viridis'
+            colorscale="Picnic",
+            zmin=-50,
+            zmax=50
         )
     ]
     heatmap[0]['x'] = figure['layout']['xaxis']['tickvals']
@@ -211,6 +212,8 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
     :param output: (string)  path where the results will be created
     :param name: (string) partial name of the file
     """
+    for i in range(len(data_array)):
+        data_array[i][0] += random.random() / 1000000000
     d = {labelsy[i]: {labelsx[j]: [i, j] for j in range(len(labelsx))} for i in range(len(labelsy))}
     # Initialize figure by creating upper dendrogram
     data_side = data_array.transpose()
@@ -243,7 +246,9 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
             y=dendro_leaves,
             z=data_arrange,
             colorbar={"x": -0.05},
-            colorscale='Viridis'
+            colorscale="Picnic",
+            zmin=-50,
+            zmax=50
         )
     ]
 
@@ -327,7 +332,6 @@ def main():
         heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
                         "all_iupac_" + "_".join(regulations))
         # Iupac by iupac
-        nt_list = ["A", "C", "G", "T"]
         for target_column in target_columns:
             projects_tab, project_names, new_targets = create_matrix_iupac(cnx, id_projects, name_projects,
                                                                            [target_column], ctrl_dic, regulations)

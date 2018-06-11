@@ -314,7 +314,7 @@ def main():
     ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
     for regulations in [["up"], ["down"], ["up", "down"]]:
         # Creating heatmap
-        target_columns = ["gene_size", "median_intron_size", "upstream_exon_size", "exon_size", "downstream_exon_size"]
+        target_columns = ["gene_size", "nb_intron_gene", "median_intron_size", "upstream_exon_size", "exon_size", "downstream_exon_size", "upstream_intron_size", "downstream_intron_size"]
         projects_tab, project_names = create_matrix(cnx, id_projects, name_projects, target_columns, ctrl_dic,
                                                     regulations)
         heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,

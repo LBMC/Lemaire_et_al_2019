@@ -89,15 +89,29 @@ def get_list_of_value(cnx, exon_list, target_column):
     """
     cursor = cnx.cursor()
     res = []
-    for exon in exon_list:
-        query = """SELECT %s
-                   FROM sed
-                   where gene_id = %s
-                   AND exon_pos = %s """ % (target_column, exon[0], exon[1])
-        cursor.execute(query)
-        r = cursor.fetchone()[0]
-        if r is not None:
-            res.append(r)
+    if target_column not in ["gene_size", "nb_intron_gene", "median_intron_size", "iupac_gene"]:
+        for exon in exon_list:
+            query = """SELECT %s
+                       FROM sed
+                       where gene_id = %s
+                       AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+            cursor.execute(query)
+            r = cursor.fetchone()[0]
+            if r is not None:
+                res.append(r)
+    else:
+        redundancy_gene_dic = {}
+        for exon in exon_list:
+            if exon[0] not in redundancy_gene_dic.keys():
+                query = """SELECT %s
+                           FROM sed
+                           where gene_id = %s
+                           AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+                cursor.execute(query)
+                r = cursor.fetchone()[0]
+                if r is not None:
+                    res.append(r)
+                redundancy_gene_dic[exon[0]] = 1
     return res
 
 
@@ -113,15 +127,29 @@ def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
     """
     cursor = cnx.cursor()
     res = []
-    for exon in exon_list:
-        query = """SELECT %s
-                   FROM sed
-                   where gene_id = %s
-                   AND exon_pos = %s """ % (target_column, exon[0], exon[1])
-        cursor.execute(query)
-        r = cursor.fetchone()[0]
-        if r is not None:
-            res.append(float(r.split(";")[nt_dic[nt]]))
+    if target_column not in ["iupac_gene"]:
+        for exon in exon_list:
+            query = """SELECT %s
+                       FROM sed
+                       where gene_id = %s
+                       AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+            cursor.execute(query)
+            r = cursor.fetchone()[0]
+            if r is not None:
+                res.append(float(r.split(";")[nt_dic[nt]]))
+    else:
+        redundancy_gene_dic = {}
+        for exon in exon_list:
+            if exon[0] not in redundancy_gene_dic.keys():
+                query = """SELECT %s
+                       FROM sed
+                       where gene_id = %s
+                       AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+                cursor.execute(query)
+                r = cursor.fetchone()[0]
+                if r is not None:
+                    res.append(float(r.split(";")[nt_dic[nt]]))
+                redundancy_gene_dic[exon[0]] = 1
     return res
 
 

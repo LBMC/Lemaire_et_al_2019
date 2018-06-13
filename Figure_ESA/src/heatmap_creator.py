@@ -9,33 +9,40 @@ import plotly.figure_factory as ff
 import numpy as np
 import figure_producer
 import exon_control_handler
+import union_dataset_function
 import os
 import random
+import sys
 nt_list = ["A", "C", "G", "T"]
 
 # functions
-def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulations):
+def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulations, union=None):
     """
     Create a matrix of relative medians (toward control) for non_iupac characteristics of an exon set.
 
     :param cnx: (sqlite3 connect object) connexion to sed database
     :param id_projects: (list of ints) the list of splicing lore project id.
     :param names: (list of strings) the list of projects name (corresponding - in the same order - of the projects \
-    in ``id_projects``).
+    in ``id_projects``) or if union is not none: list of sf_name.
     :param target_columns: (list of strings) list of interest characteristics for a set of exons.
     :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
     teh control set of exons.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     :return: (lif of list of float) the medians value for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     """
     project_names = []
     projects_tab = [[] for i in range(len(target_columns) + 1)]
-    for i in range(len(id_projects)):
+    for i in range(len(names)):
         for regulation in regulations:
             project_res = []
             project_names.append("%s_%s" % (names[i], regulation))
-            exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+            if not union:
+                exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+            else:
+                exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
             for j in range(len(target_columns)):
                 values = np.array(figure_producer.get_list_of_value(cnx, exon_list, target_columns[j]))
                 median_obs = np.median(values[~np.isnan(values)])
@@ -46,18 +53,20 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
     return projects_tab, project_names
 
 
-def create_matrix_iupac(cnx, id_projects, names, target_columns, control_dic, regulations):
+def create_matrix_iupac(cnx, id_projects, names, target_columns, control_dic, regulations, union=None):
     """
     Create a matrix of relative medians (toward control) for iupac characteristics of an exon set.
 
     :param cnx: (sqlite3 connect object) connexion to sed database
     :param id_projects: (list of ints) the list of splicing lore project id.
     :param names: (list of strings) the list of projects name (corresponding - in the same order - of the projects \
-    in ``id_projects``).
+    in ``id_projects``) or if union is not none: list of sf_name.
     :param target_columns: (list of strings) list of interest characteristics for a set of exons.
     :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
     teh control set of exons.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     :return: (lif of list of float) the medians value for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     """
@@ -65,11 +74,14 @@ def create_matrix_iupac(cnx, id_projects, names, target_columns, control_dic, re
                    for i in range(len(target_columns)) for nt in nt_list]
     project_names = []
     projects_tab = []
-    for i in range(len(id_projects)):
+    for i in range(len(names)):
         for regulation in regulations:
             project_res = []
             project_names.append("%s_%s" % (names[i], regulation))
-            exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+            if not union:
+                exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+            else:
+                exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
             for j in range(len(target_columns)):
                 for nt in nt_list:
                     values = np.array(figure_producer.get_list_of_value_iupac(cnx, exon_list, target_columns[j], nt))
@@ -81,31 +93,35 @@ def create_matrix_iupac(cnx, id_projects, names, target_columns, control_dic, re
     return projects_tab, project_names, new_targets
 
 
-def create_matrix_nt(cnx, id_projects, names, target_column, control_dic, nt, regulations):
+def create_matrix_nt(cnx, id_projects, names, target_column, control_dic, nt, regulations, union=None):
     """
     Create a matrix of relative medians (toward control) for a single nt of an exon set.
 
     :param cnx: (sqlite3 connect object) connexion to sed database
     :param id_projects: (list of ints) the list of splicing lore project id.
     :param names: (list of strings) the list of projects name (corresponding - in the same order - of the projects \
-    in ``id_projects``).
+    in ``id_projects``) or if union is not none: list of sf_name.
     :param target_column: (string) characteristic of interest for a set of exons.
     :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
     teh control set of exons.
     :param nt: (string) a nucleotides.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     :return: (lif of list of float) the medians value for a project (line) for the characteristic of \
     interest on one nucleotide (number of value in one line corresponding to a project).
     """
     new_targets = target_column.replace("iupac", "%s_nt" % nt)
     project_names = []
     projects_tab = []
-    for i in range(len(id_projects)):
+    for i in range(len(names)):
         for regulation in regulations:
             project_res = []
             project_names.append("%s_%s" % (names[i], regulation))
-            exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
-
+            if not union:
+                exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+            else:
+                exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
             values = np.array(figure_producer.get_list_of_value_iupac(cnx, exon_list, target_column, nt))
             median_obs = np.median(values[~np.isnan(values)])
             final_value = float(median_obs - control_dic[target_column][nt]) / control_dic[target_column][nt] * 100
@@ -304,43 +320,83 @@ def main():
     Launch the main function.
     """
     exon_type = "CCE"
-    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/heatmap/"
-    # If the output directory does not exist, then we create it !
-    if not os.path.isdir(output):
-        os.mkdir(output)
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
-    id_projects, name_projects = figure_producer.get_interest_project(cnx)
     ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
-    for regulations in [["up"], ["down"], ["up", "down"]]:
-        # Creating heatmap
-        target_columns = ["gene_size", "nb_intron_gene", "median_intron_size", "upstream_exon_size", "exon_size", "downstream_exon_size", "upstream_intron_size", "downstream_intron_size"]
-        projects_tab, project_names = create_matrix(cnx, id_projects, name_projects, target_columns, ctrl_dic,
-                                                    regulations)
-        heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,
-                        "non_iupac_" + "_".join(regulations))
-        # Creating dendrograms
-        for i in range(1, len(projects_tab)):
-            simple_heatmap(projects_tab[i], project_names, target_columns[i-1], output, "_".join(regulations))
+    if len(sys.argv) < 2:
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/heatmap_test/"
+        # If the output directory does not exist, then we create it !
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        id_projects, name_projects = figure_producer.get_interest_project(cnx)
+        for regulations in [["up"], ["down"], ["up", "down"]]:
+            # Creating heatmap
+            target_columns = ["gene_size", "nb_intron_gene", "median_intron_size", "upstream_exon_size", "exon_size", "downstream_exon_size", "upstream_intron_size", "downstream_intron_size"]
+            projects_tab, project_names = create_matrix(cnx, id_projects, name_projects, target_columns, ctrl_dic,
+                                                        regulations)
+            heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,
+                            "non_iupac_" + "_".join(regulations))
+            # Creating dendrograms
+            for i in range(1, len(projects_tab)):
+                simple_heatmap(projects_tab[i], project_names, target_columns[i-1], output, "_".join(regulations))
 
-        # handling iupac heatmap
-        #  All iupac at once
-        target_columns = ["iupac_exon", "iupac_gene", "iupac_upstream_intron_dist", "iupac_upstream_intron_proxi",
-                          "iupac_downstream_intron_proxi", "iupac_downstream_intron_dist"]
-        projects_tab, project_names, new_targets = create_matrix_iupac(cnx, id_projects, name_projects,
-                                                                       target_columns, ctrl_dic, regulations)
-        heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
-                        "all_iupac_" + "_".join(regulations))
-        # Iupac by iupac
-        for target_column in target_columns:
+            # handling iupac heatmap
+            #  All iupac at once
+            target_columns = ["iupac_exon", "iupac_gene", "iupac_upstream_intron_dist", "iupac_upstream_intron_proxi",
+                              "iupac_downstream_intron_proxi", "iupac_downstream_intron_dist"]
             projects_tab, project_names, new_targets = create_matrix_iupac(cnx, id_projects, name_projects,
-                                                                           [target_column], ctrl_dic, regulations)
+                                                                           target_columns, ctrl_dic, regulations)
             heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
-                            target_column + "_" + "_".join(regulations))
-            for nt in nt_list:
-                projects_tab, project_names, new_target = create_matrix_nt(cnx, id_projects, name_projects,
-                                                                           target_column, ctrl_dic, nt, regulations)
-                simple_heatmap(projects_tab, project_names, new_target, output, "_".join(regulations))
+                            "all_iupac_" + "_".join(regulations))
+            # Iupac by iupac
+            for target_column in target_columns:
+                projects_tab, project_names, new_targets = create_matrix_iupac(cnx, id_projects, name_projects,
+                                                                               [target_column], ctrl_dic, regulations)
+                heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
+                                target_column + "_" + "_".join(regulations))
+                for nt in nt_list:
+                    projects_tab, project_names, new_target = create_matrix_nt(cnx, id_projects, name_projects,
+                                                                               target_column, ctrl_dic, nt, regulations)
+                    simple_heatmap(projects_tab, project_names, new_target, output, "_".join(regulations))
+    if sys.argv[1] == "union":
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/heatmap_union/"
+        # If the output directory does not exist, then we create it !
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        name_projects = union_dataset_function.get_splicing_factor_name(cnx)
+        for regulations in [["up"], ["down"], ["up", "down"]]:
+            # Creating heatmap
+            target_columns = ["gene_size", "nb_intron_gene", "median_intron_size", "upstream_exon_size", "exon_size",
+                              "downstream_exon_size", "upstream_intron_size", "downstream_intron_size"]
+            projects_tab, project_names = create_matrix(cnx, None, name_projects, target_columns, ctrl_dic,
+                                                        regulations, "union")
+            heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,
+                            "non_iupac_" + "_".join(regulations))
+            # Creating dendrograms
+            for i in range(1, len(projects_tab)):
+                simple_heatmap(projects_tab[i], project_names, target_columns[i - 1], output, "_".join(regulations))
+
+            # handling iupac heatmap
+            #  All iupac at once
+            target_columns = ["iupac_exon", "iupac_gene", "iupac_upstream_intron_dist", "iupac_upstream_intron_proxi",
+                              "iupac_downstream_intron_proxi", "iupac_downstream_intron_dist"]
+            projects_tab, project_names, new_targets = create_matrix_iupac(cnx, None, name_projects,
+                                                                           target_columns, ctrl_dic, regulations,
+                                                                           "union")
+            heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
+                            "all_iupac_" + "_".join(regulations))
+            # Iupac by iupac
+            for target_column in target_columns:
+                projects_tab, project_names, new_targets = create_matrix_iupac(cnx, None, name_projects,
+                                                                               [target_column], ctrl_dic, regulations,
+                                                                               "union")
+                heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
+                                target_column + "_" + "_".join(regulations))
+                for nt in nt_list:
+                    projects_tab, project_names, new_target = create_matrix_nt(cnx, None, name_projects,
+                                                                               target_column, ctrl_dic, nt, regulations,
+                                                                               "union")
+                    simple_heatmap(projects_tab, project_names, new_target, output, "_".join(regulations))
 
 
 if __name__ == "__main__":

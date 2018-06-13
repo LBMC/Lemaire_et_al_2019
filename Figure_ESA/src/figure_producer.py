@@ -16,6 +16,8 @@ import plotly.graph_objs as go
 import numpy as np
 import plotly
 import os
+import sys
+import union_dataset_function
 nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7, "K": 8, "M": 9}
 
 
@@ -153,56 +155,78 @@ def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
     return res
 
 
-def get_values_for_many_projects(cnx, id_projects, target_column, regulation):
+def get_values_for_many_projects(cnx, id_projects_sf_names, target_column, regulation, union):
     """
     Return the value of ``target_column`` for each ``regulation`` exons for projects in ``id_projects``.
 
     :param cnx: (sqlite3 connection object) connexion to sed database
-    :param id_projects: (list) list project id
+    :param id_projects_sf_names: (list of str or  int) list project id if union is none. List of sf_name \
+    else
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string)) up or down
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     :return: (list of list of float) each sublist of float corresponds to the values of ``target_column`` \
     for every regulated exon in a given project.
     """
     results = []
-    for id_project in id_projects:
-        exon_list = get_ase_events(cnx, id_project, regulation)
-        results.append(get_list_of_value(cnx, exon_list, target_column))
+    if not union:
+        for id_project in id_projects_sf_names:
+            exon_list = get_ase_events(cnx, id_project, regulation)
+            results.append(get_list_of_value(cnx, exon_list, target_column))
+    else:
+        for sf_name in id_projects_sf_names:
+            exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
+            results.append(get_list_of_value(cnx, exon_list, target_column))
     return results
 
 
-def get_values_for_many_projects_iupac(cnx, id_projects, target_column, regulation, nt):
+def get_values_for_many_projects_iupac(cnx, id_projects_sf_names, target_column, regulation, nt, union):
     """
     Return the frequency of the nucleotide ``nt`` of ``target_column`` for each ``regulation`` \
     exons for projects in ``id_projects``.
 
     :param cnx: (sqlite3 connection object) connexion to sed database
-    :param id_projects: (list) list project id
+    :param id_projects_sf_names: (list of str or  int) list project id if union is none. List of sf_name \
+    else
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string) up or down
     :param nt: (string) a nucleotide
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     :return: (list of list of float) each sublist of float corresponds to the values of ``target_column`` \
     for every regulated exon in a given project.
     """
+
     results = []
-    for id_project in id_projects:
-        exon_list = get_ase_events(cnx, id_project, regulation)
-        results.append(get_list_of_value_iupac(cnx, exon_list, target_column, nt))
+    if not union:
+        for id_project in id_projects_sf_names:
+            exon_list = get_ase_events(cnx, id_project, regulation)
+            results.append(get_list_of_value_iupac(cnx, exon_list, target_column, nt))
+    else:
+        for sf_name in id_projects_sf_names:
+            exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
+            results.append(get_list_of_value_iupac(cnx, exon_list, target_column, nt))
     return results
 
 
-def create_figure(cnx, id_projects, name_projects, target_column, regulation, output):
+def create_figure(cnx, id_projects, name_projects, target_column, regulation, output, union=None):
     """
     Create a figure for every column in sed database whose name does not contain "iupac".
 
     :param cnx: (sqlite3 connection object) connexion to sed database
     :param id_projects: (list) list project id
-    :param name_projects: (list of string) the list of project name in the same order that list id
+    :param name_projects: (list of string) the list of project name (or sf name) in the same order that list id
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string) up or down
     :param output: (string) path where the result will be created
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     """
-    result = get_values_for_many_projects(cnx, id_projects, target_column, regulation)
+    if not union:
+        result = get_values_for_many_projects(cnx, id_projects, target_column, regulation, union)
+    else:
+        result = get_values_for_many_projects(cnx, name_projects, target_column, regulation, union)
     d = {name_projects[i]: result[i] for i in range(len(result))}
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=False)
     new_name = [x[0] for x in e]
@@ -246,19 +270,25 @@ def create_figure(cnx, id_projects, name_projects, target_column, regulation, ou
                         auto_open=False, validate=False)
 
 
-def create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt):
+def create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt, union=None):
     """
     Create a figure for every column in sed database whose name contains "iupac".
 
     :param cnx: (sqlite3 connection object) connexion to sed database
     :param id_projects: (list) list project id
-    :param name_projects: (list of string) the list of project name in the same order that list id
+    :param name_projects: (list of string) the list of project name (or sf_name if union is not none) \
+     in the same order that list id
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string) up or down
     :param output: (string) path where the result will be created
     :param nt: (string) the nt of interest
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
     """
-    result = get_values_for_many_projects_iupac(cnx, id_projects, target_column, regulation, nt)
+    if not union:
+        result = get_values_for_many_projects_iupac(cnx, id_projects, target_column, regulation, nt, union)
+    else:
+        result = get_values_for_many_projects_iupac(cnx, name_projects, target_column, regulation, nt, union)
     target_column = target_column.replace("iupac", "%s_nt" % nt)
     d = {name_projects[i]: result[i] for i in range(len(result))}
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=False)
@@ -321,24 +351,43 @@ def main():
     """
     Launch the creation of figures.
     """
-    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures/"
-    # If the output directory does not exist, then we create it !
-    if not os.path.isdir(output):
-        os.mkdir(output)
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     regs = ["up", "down"]
     cnx = connexion(seddb)
     columns = get_column_of_interest(cnx)
-    id_projects, name_projects = get_interest_project(cnx)
-    for regulation in regs:
-        print(regulation)
-        for target_column in columns:
-            print("   %s" % target_column)
-            if "iupac" not in target_column:
-                create_figure(cnx, id_projects, name_projects, target_column, regulation, output)
-            else:
-                for nt in nt_dic.keys():
-                    create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt)
+    if len(sys.argv) < 2:
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_test/"
+        # If the output directory does not exist, then we create it !
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        id_projects, name_projects = get_interest_project(cnx)
+        for regulation in regs:
+            print(regulation)
+            for target_column in columns:
+                print("   %s" % target_column)
+                if "iupac" not in target_column:
+                    create_figure(cnx, id_projects, name_projects, target_column, regulation, output)
+                else:
+                    for nt in nt_dic.keys():
+                        create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt)
+    if sys.argv[1] == "union":
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_union/"
+        # If the output directory does not exist, then we create it !
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        name_projects = union_dataset_function.get_splicing_factor_name(cnx)
+        for regulation in regs:
+            print(regulation)
+            for target_column in columns:
+                print("   %s" % target_column)
+                if "iupac" not in target_column:
+                    create_figure(cnx, None, name_projects, target_column, regulation, output, "union")
+                else:
+                    for nt in nt_dic.keys():
+                        create_figure_iupac(cnx, None, name_projects, target_column, regulation, output, nt,
+                                            "union")
+    else:
+        print("wrong arg !")
 
 if __name__ == "__main__":
     main()

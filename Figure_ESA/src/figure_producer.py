@@ -356,7 +356,7 @@ def main():
     cnx = connexion(seddb)
     columns = get_column_of_interest(cnx)
     if len(sys.argv) < 2:
-        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_test/"
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)

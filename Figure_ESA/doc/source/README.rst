@@ -4,12 +4,18 @@ SL Projects Figure Creator's Documentation
 Description
 ------------
 
-This script aims to create a lots of figures that shows, for each exons differentially spliced in a rnaseq project, their distribution for many caracteristics described in **SED database.**
+This script aims to create a lots of figures that shows, for each exons differentially spliced in a **rnaseq project** or by a **splicing factor**, their distribution for many caracteristics described in **SED database.**
 
 
-.. note:: 
+.. note::
 
   **Reminder:** The rnaseq_project refers to every project analysed by FarRLine and stored in Splicing Lore database (the copied in SE database). Each project (rnaseq-data) shows exons that are up- or down-regulated in a cell line where a splicing factor is depleted (compared to a control condition in the same cell line when the splicing factor is persent).
+
+.. note::
+
+  The exon regulated by a splicing factor correponds to  every exons regulated by this splicing factor in at least one cell line and always \
+  showing the same regulation if shown in multiple cell line. If a exon is seen multiple times with the same \
+  regulation in different cell line, it is only displayed once.
 
 After launching the script a lots of files should be created in the ``result/`` folder of the `Figure_ESA` directory.
 They sould be named like this: **<prefix_name>_<regulation>_exons_figure.html**
@@ -62,7 +68,6 @@ They sould be named like this: **<prefix_name>_<regulation>_exons_figure.html**
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-
 Finally, each graphics look like this:
 
 .. figure:: images/img.png
@@ -84,4 +89,7 @@ Command Line executed to create the graphics
 
 .. code:: bash
 
+  # figure displayed for exons regulated in every projects
   python3 src/figure_producer.py
+  # figure displayed for every exons regulated by a splicing factor.
+  python3 src/figure_producer.py union

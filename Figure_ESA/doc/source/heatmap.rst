@@ -4,7 +4,7 @@ heatmap_creator's Documentation
 Description
 ------------
 
-This script aims, to cluster every splicing lore project by relative medians of characteristics of interest.
+This script aims, to cluster exons regulated by every **splicing lore project** or **splicing factor** by relative medians of characteristics of interest.
 
 For a given characteristic :math:`X` the relative median is calculated as follow:
 
@@ -13,8 +13,8 @@ For a given characteristic :math:`X` the relative median is calculated as follow
   relative\_median = \frac{median(X_{obs}) - median(X_{ctrl})}{median(X_{ctrl})}
 
 Where:
-  * :math:`X_{obs} = \{ {X_{{obs}_1}, ..., X_{{obs}_n}} \}`  where :math:`X_{{obs}_i}` is the value of :math:`X` for the exon :math:`i` of the interest the of exons.
-  * :math:`X_{ctrl} = \{{X_{{ctrl}_1}, ..., X_{{ctrl}_m}}\}`  where :math:`X_{{ctrl}_j}` is the value of :math:`X` for the exon :math:`j` of the interest the of exons.
+  * :math:`X_{obs} = \{ {X_{{obs}_1}, ..., X_{{obs}_n}} \}`  where :math:`X_{{obs}_i}` is the value of :math:`X` for the exon :math:`i` of the interest sets of exons.
+  * :math:`X_{ctrl} = \{{X_{{ctrl}_1}, ..., X_{{ctrl}_m}}\}`  where :math:`X_{{ctrl}_j}` is the value of :math:`X` for the exon :math:`j` of the interest sets of exons.
 
 
 For each project it will produce this kind of graphics :
@@ -47,4 +47,7 @@ Command Line executed to create the graphics
 
 .. code:: bash
 
+  # figure displayed for exons regulated in every projects
   python3 src/heatmap_creator.py
+  # figure displayed for every exons regulated by a splicing factor.
+  python3 src/heatmap_creator.py union

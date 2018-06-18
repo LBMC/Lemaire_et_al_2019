@@ -84,13 +84,15 @@ def get_exon_tuple(exon_list):
     list_tuple = []
     for exon in exon_list:
         cur_list = [exon.gene.name, exon.gene.id, exon.position, exon.type, exon.gene.length,
-                    exon.gene.nb_intron, exon.gene.median_intron_size, exon.gene.iupac,
+                    exon.gene.nb_intron, exon.gene.median_intron_size, exon.gene.iupac, exon.gene.dnt,
                     exon.upstream_exon.length, exon.length, exon.downstream_exon.length,
                     exon.upstream_intron.length, exon.downstream_intron.length,
                     exon.upstream_exon.acceptor, exon.acceptor, exon.downstream_exon.acceptor,
-                    exon.upstream_exon.donor, exon.donor, exon.downstream_exon.donor, exon.iupac,
-                    exon.upstream_intron.iupac_dist, exon.upstream_intron.iupac_proxi,
-                    exon.downstream_intron.iupac_proxi, exon.downstream_intron.iupac_dist]
+                    exon.upstream_exon.donor, exon.donor, exon.downstream_exon.donor, exon.iupac, exon.dnt,
+                    exon.upstream_intron.iupac_dist, exon.upstream_intron.dnt_dist,
+                    exon.upstream_intron.iupac_proxi, exon.upstream_intron.dnt_proxi,
+                    exon.downstream_intron.iupac_proxi, exon.downstream_intron.dnt_proxi,
+                    exon.downstream_intron.iupac_dist, exon.downstream_intron.dnt_dist]
         list_tuple.append(cur_list)
     return list_tuple
 
@@ -119,6 +121,7 @@ def create_sed_exon_table(sed_cnx):
                nb_intron_gene INT NOT NULL,
                median_intron_size INT,
                iupac_gene VARCHAR(50) NOT NULL,
+               dnt_gene VARCHAR(80) NOT NULL,
                upstream_exon_size INT,
                exon_size INT,
                downstream_exon_size INT,
@@ -131,10 +134,15 @@ def create_sed_exon_table(sed_cnx):
                force_donor FLOAT,
                force_donor_downstream_exon FLOAT,
                iupac_exon VARCHAR(50),
+               dnt_exon VARCHAR(80),
                iupac_upstream_intron_dist VARCHAR(50),
+               dnt_upstream_intron_dist VARCHAR(80),
                iupac_upstream_intron_proxi VARCHAR(50),
+               dnt_upstream_intron_proxi VARCHAR(80),
                iupac_downstream_intron_proxi VARCHAR(50),
+               dnt_downstream_intron_proxi VARCHAR(80),
                iupac_downstream_intron_dist VARCHAR(50),
+               dnt_downstream_intron_dist VARCHAR(80),
                PRIMARY KEY(gene_id, exon_pos));
                """
     cursor.execute(query)
@@ -234,7 +242,7 @@ def sed_filler(sed_cnx, list_tuple):
     """
     cursor = sed_cnx.cursor()
     cursor.executemany(
-        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         list_tuple)
     sed_cnx.commit()
     # creation of an index on gene_symbol and exon_pos

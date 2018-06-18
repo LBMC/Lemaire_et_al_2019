@@ -100,7 +100,7 @@ class ExonClass(ExonClassMain):
         start = result[0][0] - 1
         stop = result[0][1]
         if start >= stop:
-            return None
+            return None, None
         sequence = self.gene.sequence[start:stop]
         printd("Exon sequence:")
         printd(sequence)
@@ -239,22 +239,18 @@ class Intron:
         proxi_seq = sequence[0:25]
         distal_seq = sequence[26:101]
         if len(proxi_seq) > 0:
-            iupac_poxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
-            dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
+            self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
+            self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
         else:
-            iupac_poxi = None
-            dnt_proxi = None
+            self.iupac_proxi = None
+            self.dnt_proxi = None
         if len(distal_seq) > 0:
-            iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
-            dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
+            self.iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
+            self.dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
         else:
-            iupac_dist = None
-            dnt_dist = None
+            self.iupac_dist = None
+            self.dnt_dist = None
         self.length = len(sequence)
-        self.iupac_proxi = iupac_poxi
-        self.iupac_dist = iupac_dist
-        self.dnt_proxi = dnt_proxi
-        self.dnt_dist = dnt_dist
 
 
 # simple function for getting iupac frequencies
@@ -287,8 +283,10 @@ def dinucleotide_frequency(sequence, dnt):
     """
     seqlen = len(sequence) - (len(dnt) - 1)
     count = 0
+    dnt1 = dnt[0]
+    dnt2 = dnt[1]
     for i in range(seqlen):
-        if sequence[i:i+len(dnt)] == dnt:
+        if sequence[i] == dnt1 and sequence[i + 1] == dnt2:
             count += 1
     return round(float(count) / seqlen * 100, 1)
 
@@ -301,8 +299,7 @@ def dinucleotide_frequencies(sequence):
     :return:  (list of float) the frequency of di-nucleotides \
     AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively
     """
-    nt_list = ["A", "C", "G", "T"]
-    dnt_list = [a +b for a in nt_list  for b in nt_list]
+    dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
     results = []
     for dnt in dnt_list:
         results.append(dinucleotide_frequency(sequence, dnt))

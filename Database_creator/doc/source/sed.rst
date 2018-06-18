@@ -37,6 +37,8 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |          iupac_gene                 | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the gene that contains the exon of interest                                        |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|          dnt_gene                   | The frequency (%) of di-nucleotides  AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the gene that contains the exon of interest  |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |     upstream_exon_size              | The nucleotide size of the upstream exon from the one of interest                                                                                                    |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |         exon_size                   | The nucleotide size of the exon of interest                                                                                                                          |
@@ -57,13 +59,23 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |          iupac_exon                 | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the exon of interest                                                               |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|          dnt_exon                   | The frequency (%) of dinucleotides  AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the exon of interest                          |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_upstream_intron_dist         | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-100,-26] of the upstream intron                                       |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| dnt_upstream_intron_dist            | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-100,-26] of the upstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_upstream_intron_proxi        | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-25,-1] of the upstream intron (0 is the first nucleotide of the exon) |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_upstream_intron_proxi          | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-25,-1] of the upstream intron     |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_downstream_intron_proxi      | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [1,25] of the downstream intron (0 is the last nucleotide of the exon)  |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_downstream_intron_proxi        | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [1,25] of the downstream intron     |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_upstream_intron_dist         | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [26;100] of the downstream intron                                       |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_upstream_intron_dist           | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [26;100] of the downstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 

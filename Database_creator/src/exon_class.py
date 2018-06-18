@@ -75,13 +75,15 @@ class ExonClass(ExonClassMain):
         self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)
         self.upstream_intron = Intron(cnx, gene_id, self.position - 1, self.gene.sequence, "upstream")
         self.downstream_intron = Intron(cnx, gene_id, self.position, self.gene.sequence, "downstream")
-        self.iupac = self.get_iupac_exon(cnx)
+        iupac, dnt = self.get_iupac_dnt_exon(cnx)
+        self.iupac = iupac
+        self.dnt = dnt
         # once the exon is fully created we delete the gene sequence for memory efficiency
         self.gene.sequence = None
 
-    def get_iupac_exon(self, cnx):
+    def get_iupac_dnt_exon(self, cnx):
         """
-        Get the iupac content of the exon
+        Get the iupac and dnt content of the exon
         :return: (string) the iupac content of the exon
         """
         cursor = cnx.cursor()
@@ -103,7 +105,8 @@ class ExonClass(ExonClassMain):
         printd("Exon sequence:")
         printd(sequence)
         iupac = iupac_frequencies(sequence)
-        return ";".join(list(map(str, iupac)))
+        dnt = dinucleotide_frequencies(sequence)
+        return ";".join(list(map(str, iupac))), ";".join(list(map(str, dnt)))
 
 
 class Gene:
@@ -122,12 +125,13 @@ class Gene:
         self.nb_intron = None
         self.median_intron_size = None
         self.iupac = None
+        self.dnt = None
         self.length = None
         self.sequence = None
 
-    def get_iupac_and_gene_length(self, cnx):
+    def get_iupac_dnt_and_gene_length(self, cnx):
         """
-        Get iupac information and length of a gene
+        Get iupac-dnt information and length of a gene
 
         :param cnx: (sqlite3 object) connection to fasterDB
         """
@@ -147,6 +151,9 @@ class Gene:
         iupac = iupac_frequencies(sequence)
         res = ";".join(list(map(str, iupac)))
         self.iupac = res
+        dnt = dinucleotide_frequencies(sequence)
+        res = ";".join(list(map(str, dnt)))
+        self.dnt = res
 
     def get_nb_intron_and_median_intron_size(self, cnx):
         """
@@ -173,7 +180,7 @@ class Gene:
         :param cnx:(sqlite3 object) connection to fasterDB
         :return:
         """
-        self.get_iupac_and_gene_length(cnx)
+        self.get_iupac_dnt_and_gene_length(cnx)
         self.get_nb_intron_and_median_intron_size(cnx)
 
 
@@ -191,10 +198,12 @@ class Intron:
         self.gene_id = gene_id
         self.position = pos_on_gene
         self.location = location
-        length, iupac_proxi, iupac_dist = self.get_intron_information(cnx, gene_sequence)
-        self.length = length
-        self.iupac_proxi = iupac_proxi
-        self.iupac_dist = iupac_dist
+        self.length = None
+        self.iupac_proxi = None
+        self.iupac_dist = None
+        self.dnt_proxi = None
+        self.dnt_dist = None
+        self.get_intron_information(cnx, gene_sequence)
 
     def get_intron_information(self, cnx, gene_seq):
         """
@@ -231,13 +240,21 @@ class Intron:
         distal_seq = sequence[26:101]
         if len(proxi_seq) > 0:
             iupac_poxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
+            dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
         else:
             iupac_poxi = None
+            dnt_proxi = None
         if len(distal_seq) > 0:
             iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
+            dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
         else:
             iupac_dist = None
-        return len(sequence), iupac_poxi, iupac_dist
+            dnt_dist = None
+        self.length = len(sequence)
+        self.iupac_proxi = iupac_poxi
+        self.iupac_dist = iupac_dist
+        self.dnt_proxi = dnt_proxi
+        self.dnt_dist = dnt_dist
 
 
 # simple function for getting iupac frequencies
@@ -258,6 +275,38 @@ def iupac_frequencies(sequence):
             result.append(round((float(sequence.count(iupac[nt][0]) +
                                        sequence.count(iupac[nt][1])) / len(sequence)) * 100, 1))
     return result
+
+
+def dinucleotide_frequency(sequence, dnt):
+    """
+    Get the frequency (in %) of ``dnt`` in ``sequence``
+
+    :param sequence: (string) a nucleotide sequence
+    :param dnt: (string) a di-nucleotide
+    :return: (float) the frequency of the di-nucleotide ``dnt`` in ``sequence``
+    """
+    seqlen = len(sequence) - (len(dnt) - 1)
+    count = 0
+    for i in range(seqlen):
+        if sequence[i:i+len(dnt)] == dnt:
+            count += 1
+    return round(float(count) / seqlen * 100, 1)
+
+
+def dinucleotide_frequencies(sequence):
+    """
+    Get di-nucleotides frequencies for a sequence.
+
+    :param sequence: (string) a nucleotide sequence
+    :return:  (list of float) the frequency of di-nucleotides \
+    AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively
+    """
+    nt_list = ["A", "C", "G", "T"]
+    dnt_list = [a +b for a in nt_list  for b in nt_list]
+    results = []
+    for dnt in dnt_list:
+        results.append(dinucleotide_frequency(sequence, dnt))
+    return results
 
 
 def set_debug(debug=0):

@@ -105,8 +105,11 @@ class ExonClass(ExonClassMain):
         printd("Exon sequence:")
         printd(sequence)
         iupac = iupac_frequencies(sequence)
-        dnt = dinucleotide_frequencies(sequence)
-        return ";".join(list(map(str, iupac))), ";".join(list(map(str, dnt)))
+        if len(sequence) > 1:
+            dnt = ";".join(list(map(str, dinucleotide_frequencies(sequence))))
+        else:
+            dnt = None
+        return ";".join(list(map(str, iupac))), dnt
 
 
 class Gene:
@@ -240,15 +243,19 @@ class Intron:
         distal_seq = sequence[26:101]
         if len(proxi_seq) > 0:
             self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
-            self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
         else:
             self.iupac_proxi = None
+        if len(proxi_seq) > 1:
+            self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
+        else:
             self.dnt_proxi = None
         if len(distal_seq) > 0:
             self.iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
-            self.dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
         else:
             self.iupac_dist = None
+        if len(distal_seq) > 1:
+            self.dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
+        else:
             self.dnt_dist = None
         self.length = len(sequence)
 

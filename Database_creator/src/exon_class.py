@@ -240,7 +240,10 @@ class Intron:
         if self.location == "upstream":
             sequence = sequence[::-1]
         proxi_seq = sequence[0:25]
-        distal_seq = sequence[26:101]
+        distal_seq = sequence[25:100]
+        if self.location == "upstream":
+            proxi_seq = proxi_seq[::-1]
+            distal_seq = distal_seq[::-1]
         if len(proxi_seq) > 0:
             self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
         else:
@@ -280,24 +283,6 @@ def iupac_frequencies(sequence):
     return result
 
 
-def dinucleotide_frequency(sequence, dnt):
-    """
-    Get the frequency (in %) of ``dnt`` in ``sequence``
-
-    :param sequence: (string) a nucleotide sequence
-    :param dnt: (string) a di-nucleotide
-    :return: (float) the frequency of the di-nucleotide ``dnt`` in ``sequence``
-    """
-    seqlen = len(sequence) - (len(dnt) - 1)
-    count = 0
-    dnt1 = dnt[0]
-    dnt2 = dnt[1]
-    for i in range(seqlen):
-        if sequence[i] == dnt1 and sequence[i + 1] == dnt2:
-            count += 1
-    return round(float(count) / seqlen * 100, 1)
-
-
 def dinucleotide_frequencies(sequence):
     """
     Get di-nucleotides frequencies for a sequence.
@@ -306,10 +291,17 @@ def dinucleotide_frequencies(sequence):
     :return:  (list of float) the frequency of di-nucleotides \
     AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively
     """
+
     dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
+    dnt_dic = {"AA":0., "AC":0., "AG":0., "AT":0., "CA":0., "CC":0., "CG":0., "CT":0., "GA":0., "GC":0., "GG":0., "GT":0., "TA":0., "TC":0., "TG":0., "TT":0.}
     results = []
+    seqlen = len(sequence) - 1
+    for i in range(seqlen):
+        cdnt = sequence[i] + sequence[i+1]
+        if cdnt in dnt_dic:
+            dnt_dic[cdnt] += 1
     for dnt in dnt_list:
-        results.append(dinucleotide_frequency(sequence, dnt))
+        results.append(round(dnt_dic[dnt] / seqlen * 100, 1))
     return results
 
 

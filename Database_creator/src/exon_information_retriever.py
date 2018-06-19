@@ -83,6 +83,23 @@ def get_exon_tuple(exon_list):
     """
     list_tuple = []
     for exon in exon_list:
+        if exon.upstream_exon.donor is not None and exon.upstream_exon.donor != 0 and exon.donor is not None:
+            relative_donor_upstream = round(((exon.donor - exon.upstream_exon.donor) / exon.upstream_exon.donor) * 100, 1)
+        else:
+            relative_donor_upstream = None
+        if exon.downstream_exon.donor is not None and exon.downstream_exon.donor != 0 and exon.donor is not None:
+            relative_donor_downstream = round(((exon.donor - exon.downstream_exon.donor) / exon.downstream_exon.donor) * 100, 1)
+        else:
+            relative_donor_downstream = None
+
+        if exon.upstream_exon.acceptor is not None and exon.upstream_exon.acceptor != 0 and exon.acceptor is not None:
+            relative_acceptor_upstream = round(((exon.acceptor - exon.upstream_exon.acceptor) / exon.upstream_exon.acceptor) * 100, 1)
+        else:
+            relative_acceptor_upstream = None
+        if exon.downstream_exon.acceptor is not None and exon.downstream_exon.acceptor != 0 and exon.acceptor is not None:
+            relative_acceptor_downstream = round(((exon.acceptor - exon.downstream_exon.acceptor) / exon.downstream_exon.acceptor) * 100, 1)
+        else:
+            relative_acceptor_downstream = None
         cur_list = [exon.gene.name, exon.gene.id, exon.position, exon.type, exon.gene.length,
                     exon.gene.nb_intron, exon.gene.median_intron_size, exon.gene.iupac, exon.gene.dnt,
                     exon.upstream_exon.length, exon.length, exon.downstream_exon.length,
@@ -92,7 +109,9 @@ def get_exon_tuple(exon_list):
                     exon.upstream_intron.iupac_dist, exon.upstream_intron.dnt_dist,
                     exon.upstream_intron.iupac_proxi, exon.upstream_intron.dnt_proxi,
                     exon.downstream_intron.iupac_proxi, exon.downstream_intron.dnt_proxi,
-                    exon.downstream_intron.iupac_dist, exon.downstream_intron.dnt_dist]
+                    exon.downstream_intron.iupac_dist, exon.downstream_intron.dnt_dist,
+                    relative_donor_upstream, relative_donor_downstream, relative_acceptor_upstream,
+                    relative_acceptor_downstream]
         list_tuple.append(cur_list)
     return list_tuple
 
@@ -143,6 +162,10 @@ def create_sed_exon_table(sed_cnx):
                dnt_downstream_intron_proxi VARCHAR(80),
                iupac_downstream_intron_dist VARCHAR(50),
                dnt_downstream_intron_dist VARCHAR(80),
+               relative_donor_upstream FLOAT,
+               relative_donor_downstream FLOAT,
+               relative_acceptor_upstream FLOAT,
+               relative_acceptor_downstream FLOAT,
                PRIMARY KEY(gene_id, exon_pos));
                """
     cursor.execute(query)
@@ -242,7 +265,7 @@ def sed_filler(sed_cnx, list_tuple):
     """
     cursor = sed_cnx.cursor()
     cursor.executemany(
-        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         list_tuple)
     sed_cnx.commit()
     # creation of an index on gene_symbol and exon_pos

@@ -19,7 +19,7 @@ import os
 import sys
 import union_dataset_function
 nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7, "K": 8, "M": 9}
-
+dnt_dic = {"AA":0, "AC":1, "AG":2, "AT":3, "CA":4, "CC":5, "CG":6, "CT":7, "GA":8, "GC":9, "GG":10, "GT":11, "TA":12, "TC":13, "TG":14, "TT":15}
 
 # Functions
 def connexion(seddb):
@@ -91,7 +91,7 @@ def get_list_of_value(cnx, exon_list, target_column):
     """
     cursor = cnx.cursor()
     res = []
-    if target_column not in ["gene_size", "nb_intron_gene", "median_intron_size", "iupac_gene"]:
+    if target_column not in ["gene_size", "nb_intron_gene", "median_intron_size", "iupac_gene", "dnt_gene"]:
         for exon in exon_list:
             query = """SELECT %s
                        FROM sed
@@ -117,19 +117,19 @@ def get_list_of_value(cnx, exon_list, target_column):
     return res
 
 
-def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
+def get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
     """
     Get the individual values of nt ``nt`` in ``target_column`` of every exon in ``exon_list``.
 
     :param cnx: (sqlite3 connection object) connexion to sed database
     :param exon_list: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene)
     :param target_column: (string) the column for which we want to get information on exons.
-    :param nt: (string) a nucleotide
+    :param nt_dnt: (string) a nucleotide or di_nucleotide
     :return: (list of float) values of ``target_column`` for the exons in  ``exon_list``.
     """
     cursor = cnx.cursor()
     res = []
-    if target_column not in ["iupac_gene"]:
+    if target_column not in ["iupac_gene", "dnt_gene"]:
         for exon in exon_list:
             query = """SELECT %s
                        FROM sed
@@ -138,7 +138,10 @@ def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
             cursor.execute(query)
             r = cursor.fetchone()[0]
             if r is not None:
-                res.append(float(r.split(";")[nt_dic[nt]]))
+                if len(nt_dnt) == 1:
+                    res.append(float(r.split(";")[nt_dic[nt_dnt]]))
+                else:
+                    res.append(float(r.split(";")[dnt_dic[nt_dnt]]))
     else:
         redundancy_gene_dic = {}
         for exon in exon_list:
@@ -150,7 +153,10 @@ def get_list_of_value_iupac(cnx, exon_list, target_column, nt):
                 cursor.execute(query)
                 r = cursor.fetchone()[0]
                 if r is not None:
-                    res.append(float(r.split(";")[nt_dic[nt]]))
+                    if len(nt_dnt) == 1:
+                        res.append(float(r.split(";")[nt_dic[nt_dnt]]))
+                    else:
+                        res.append(float(r.split(";")[dnt_dic[nt_dnt]]))
                 redundancy_gene_dic[exon[0]] = 1
     return res
 
@@ -181,7 +187,7 @@ def get_values_for_many_projects(cnx, id_projects_sf_names, target_column, regul
     return results
 
 
-def get_values_for_many_projects_iupac(cnx, id_projects_sf_names, target_column, regulation, nt, union):
+def get_values_for_many_projects_iupac_dnt(cnx, id_projects_sf_names, target_column, regulation, nt_dnt, union):
     """
     Return the frequency of the nucleotide ``nt`` of ``target_column`` for each ``regulation`` \
     exons for projects in ``id_projects``.
@@ -191,7 +197,7 @@ def get_values_for_many_projects_iupac(cnx, id_projects_sf_names, target_column,
     else
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string) up or down
-    :param nt: (string) a nucleotide
+    :param nt_dnt: (string) a nucleotide or a di-nucleotide
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
     :return: (list of list of float) each sublist of float corresponds to the values of ``target_column`` \
@@ -202,11 +208,12 @@ def get_values_for_many_projects_iupac(cnx, id_projects_sf_names, target_column,
     if not union:
         for id_project in id_projects_sf_names:
             exon_list = get_ase_events(cnx, id_project, regulation)
-            results.append(get_list_of_value_iupac(cnx, exon_list, target_column, nt))
+            results.append(get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt))
+
     else:
         for sf_name in id_projects_sf_names:
             exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
-            results.append(get_list_of_value_iupac(cnx, exon_list, target_column, nt))
+            results.append(get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt))
     return results
 
 
@@ -237,11 +244,11 @@ def create_figure(cnx, id_projects, name_projects, target_column, regulation, ou
         if i in list(range(5)) + list(range(len(new_result)-5, len(new_result))):
             data.append({"y": new_result[i], "type": "violin",
                          "name": new_name[i], "visible": True, "marker": {"color": c[i]},
-                         "box": {"visible": True}})
+                         "box": {"visible": True}, "meanline": {"visible": True}})
         else:
             data.append({"y": new_result[i], "type": "violin",
                          "name": new_name[i], "visible": 'legendonly', "marker": {"color": c[i]},
-                         "box": {"visible": True}})
+                         "box": {"visible": True}, "meanline": {"visible": True}})
     layout = go.Layout(
         title='%s of %s exons for every projects' % (target_column, regulation),
         yaxis=dict(
@@ -270,7 +277,7 @@ def create_figure(cnx, id_projects, name_projects, target_column, regulation, ou
                         auto_open=False, validate=False)
 
 
-def create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt, union=None):
+def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, nt_dnt, union=None):
     """
     Create a figure for every column in sed database whose name contains "iupac".
 
@@ -281,15 +288,16 @@ def create_figure_iupac(cnx, id_projects, name_projects, target_column, regulati
     :param target_column: (string) the column for which we want to get information on exons.
     :param regulation: (string) up or down
     :param output: (string) path where the result will be created
-    :param nt: (string) the nt of interest
+    :param nt_dnt: (string) the nt of interest or the di-nucleotide of interest
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
     """
     if not union:
-        result = get_values_for_many_projects_iupac(cnx, id_projects, target_column, regulation, nt, union)
+        result = get_values_for_many_projects_iupac_dnt(cnx, id_projects, target_column, regulation, nt_dnt, union)
     else:
-        result = get_values_for_many_projects_iupac(cnx, name_projects, target_column, regulation, nt, union)
-    target_column = target_column.replace("iupac", "%s_nt" % nt)
+        result = get_values_for_many_projects_iupac_dnt(cnx, name_projects, target_column, regulation, nt_dnt, union)
+    target_column = target_column.replace("iupac", "%s_nt" % nt_dnt)
+    target_column = target_column.replace("dnt", "%s_dnt" % nt_dnt)
     d = {name_projects[i]: result[i] for i in range(len(result))}
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=False)
     new_name = [x[0] for x in e]
@@ -365,12 +373,15 @@ def main():
             print(regulation)
             for target_column in columns:
                 print("   %s" % target_column)
-                if "iupac" not in target_column:
-                    create_figure(cnx, id_projects, name_projects, target_column, regulation, output)
-                else:
+                if "iupac" in target_column:
                     for nt in nt_dic.keys():
-                        create_figure_iupac(cnx, id_projects, name_projects, target_column, regulation, output, nt)
-    if sys.argv[1] == "union":
+                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, nt)
+                elif "dnt" in target_column:
+                    for dnt in dnt_dic.keys():
+                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, dnt)
+                else:
+                    create_figure(cnx, id_projects, name_projects, target_column, regulation, output)
+    elif sys.argv[1] == "union":
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_union/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
@@ -380,12 +391,16 @@ def main():
             print(regulation)
             for target_column in columns:
                 print("   %s" % target_column)
-                if "iupac" not in target_column:
-                    create_figure(cnx, None, name_projects, target_column, regulation, output, "union")
-                else:
+                if "iupac" in target_column:
                     for nt in nt_dic.keys():
-                        create_figure_iupac(cnx, None, name_projects, target_column, regulation, output, nt,
+                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, nt,
                                             "union")
+                elif "dnt" in target_column:
+                    for dnt in dnt_dic.keys():
+                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, dnt,
+                                            "union")
+                else:
+                    create_figure(cnx, None, name_projects, target_column, regulation, output, "union")
     else:
         print("wrong arg !")
 

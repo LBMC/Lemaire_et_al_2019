@@ -75,6 +75,22 @@ def get_iupac_nt(iupac_string, nt):
             return float(iupac_string[i])
 
 
+def get_dnt(dnt_string, dnt):
+    """
+    Get the frequency of a ``dnt`` in a dnt string
+
+    :param dnt: (string) the dnt we want to find
+    :param dnt_string: (string) contains dnt frequency for an exon in that order :  \
+    ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"].
+    :return: (float) the ``nt`` frequency in a iupac string
+    """
+    dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
+    dnt_string = dnt_string.replace("\n", "").split(";")
+    for i in range(len(dnt_list)):
+        if dnt_list[i] == dnt:
+            return float(dnt_string[i])
+
+
 def create_a_temporary_dictionary(names, exon_info):
     """
     :param names: (list of string) the name of every column in sed table
@@ -83,25 +99,35 @@ def create_a_temporary_dictionary(names, exon_info):
     :return: (dictionary of list of values) contains every information about exon in exon_info
     """
     iupac_list = ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]
+    dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
     new_dic = {}
     # initialization of the new dictionary
     for key in names:
-        if "iupac" not in key:
-            new_dic[key] = []
-        else:
+        if "iupac" in key:
             new_dic[key] = {nt: [] for nt in iupac_list}
+        elif "dnt" in key:
+            new_dic[key] = {dnt: [] for dnt in dnt_list}
+        else:
+            new_dic[key] = []
 
     for i in range(len(exon_info)):
-        for j in range(len(exon_info[i])):
-            if "iupac" not in names[j]:
-                new_dic[names[j]].append(exon_info[i][j])
-            else:
+        for j in range(len(names)):
+            if "iupac" in names[j]:
                 if exon_info[i][j] is None:
                     for nt in iupac_list:
                         new_dic[names[j]][nt].append(None)
                 else:
                     for nt in iupac_list:
                         new_dic[names[j]][nt].append(get_iupac_nt(exon_info[i][j], nt))
+            elif "dnt" in names[j]:
+                if exon_info[i][j] is None:
+                    for dnt in dnt_list:
+                        new_dic[names[j]][dnt].append(None)
+                else:
+                    for dnt in dnt_list:
+                        new_dic[names[j]][dnt].append(get_dnt(exon_info[i][j], dnt))
+            else:
+                new_dic[names[j]].append(exon_info[i][j])
     return new_dic
 
 
@@ -115,20 +141,24 @@ def get_summary_dictionaries(names, exons_dictionary):
     median_dic = {}
     # initialization
     for key in names[4::]:
-        if "iupac" not in key:
-            if exons_dictionary[key]:
-                cur_list = np.array(exons_dictionary[key], dtype=float)
-                median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
-            else:
-                median_dic[key] = [float("nan")]
-        else:
+        if "iupac" in key or "dnt" in key:
             median_dic[key] = {}
-            for nt in ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]:
+            if "iupac" in key:
+                nt_dnt_list = ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]
+            else:
+                nt_dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
+            for nt in nt_dnt_list:
                 if exons_dictionary[key][nt]:
                     cur_list = np.array(exons_dictionary[key][nt], dtype=float)
                     median_dic[key][nt] = np.median(cur_list[~np.isnan(cur_list)])
                 else:
                     median_dic[key][nt] = [float("nan")]
+        else:
+            if exons_dictionary[key]:
+                cur_list = np.array(exons_dictionary[key], dtype=float)
+                median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
+            else:
+                median_dic[key] = [float("nan")]
     return median_dic
 
 
@@ -164,7 +194,7 @@ def remove_redundant_gene_information(exon_list):
     for gene in redundant_dic:
         for exon in exon_list:
             if exon[1] == gene:
-                exon[4:8] = [None] * 4
+                exon[4:9] = [None] * 5
                 redundant_dic[gene] -= 1
             if redundant_dic[gene] == 1:
                 break
@@ -180,6 +210,7 @@ def control_handler(cnx, exon_type):
         print("Control dictionary was not found !")
         print("Creating control information")
         names, exon_tuple = get_control_exon_information(cnx, exon_type)
+        # getting the new columns
         exon_tuple = remove_redundant_gene_information(exon_tuple)
         tmp = create_a_temporary_dictionary(names, exon_tuple)
         ctrl_list = get_summary_dictionaries(names, tmp)

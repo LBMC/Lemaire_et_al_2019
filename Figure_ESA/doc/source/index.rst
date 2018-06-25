@@ -13,6 +13,7 @@ Welcome to SL Projects Figure Creator's documentation!
    README.rst
    exon_project.rst
    heatmap.rst
+   heatmap_force_splicing_site.rst
    api.rst
 
 Indices and tables

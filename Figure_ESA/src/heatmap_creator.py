@@ -14,7 +14,7 @@ import os
 import random
 import sys
 sch = __import__('scipy.cluster.hierarchy')
-nt_list = ["A", "C", "G", "T"]
+nt_list = ["A", "C", "G", "T", "S", "W", "R", "Y"]
 dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
 
 # functions
@@ -258,6 +258,7 @@ def simple_heatmap(data_array, labelsy, labelsx, output, name=""):
             z=data_arrange,
             colorbar={"x": -0.05},
             colorscale="Picnic",
+            #colorscale = [[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'], [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
             zmin=-50,
             zmax=50
         )
@@ -349,6 +350,8 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
             z=data_arrange,
             colorbar={"x": -0.05},
             colorscale="Picnic",
+            #colorscale=[[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'],
+            #            [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
             zmin=-50,
             zmax=50
         )

@@ -14,6 +14,7 @@ Welcome to SL Projects Figure Creator's documentation!
    exon_project.rst
    heatmap.rst
    heatmap_force_splicing_site.rst
+   correlation_iupac_gene_size.rst
    api.rst
 
 Indices and tables

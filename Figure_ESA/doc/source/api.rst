@@ -34,3 +34,10 @@ Source code of the ``relative_heatmap_creator.py`` script
 
 .. automodule:: relative_heatmap_creator
   :members:
+
+
+Source code of the ``correlation_iupac_gene_and_intron_size.py`` script
+------------------------------------------------------------------------
+
+.. automodule:: correlation_iupac_gene_and_intron_size
+  :members:

@@ -25,7 +25,7 @@ def get_median_value(cnx, id_projects, target_column, control_dic, regulation, n
     Return the median value of target_column in ``regulation`` exons of every  ``id_projects``.
 
     :param cnx: (sqlite3 connexion object) allow connexion to sed database
-    :param id_project:  (list of int) the splicing lore id projects of every projects of interest
+    :param id_projects:  (list of int) the splicing lore id projects of every projects of interest
     :param target_column: (string) the value for which we want to get the median value for the ``regulation`` \
     exon.
     :param control_dic: (dictionnary of list of float) median value of each possible control exons of \
@@ -56,15 +56,21 @@ def get_median_value(cnx, id_projects, target_column, control_dic, regulation, n
 
 def color_maker(name_projects, value_size, value_iupac):
     """
-    Get the color for each specific group of splicing factor.
+    Split the data in 4 group according to the splicing factor they regulate.
 
     :param name_projects: (list of string) the name of the project of interest
-    :return: (list of color) the list of color associated to each splicing factor.
+    :param value_size: (list of float) the list of relative median value of ``size_scale`` for \
+    every projects named ``projects_names``.
+    :param value_iupac: (list of float) the list of relative median value of the frequency in ``nt`` for \
+    every projects named ``projects_names``.
+    :return: (dictionary of 4 list of float or string) for each group (key of the dictionary) we have, \
+     the x coordinates of the exons group, the y corrdinates, the color code of the group, and the \
+     name of every project in the group.
     """
     spliceosome = ["PRPF6", "PRPF8", "SF1", "SF3A3", "SF3B1", "SF3B4", "SNRNP200", "SNRNP40",
                    "SRNRP70", "SNRPC", "U2AF1", "U2AF2"]
     result = {'HNRNP': [[], [], ['rgba(45, 165, 43, 0.8)'], []],
-              'Misc': [[], [], ['rgba(185, 73, 184, 0.8)'],[]],
+              'Misc': [[], [], ['rgba(185, 73, 184, 0.8)'], []],
               'SRSF': [[], [], ['rgba(215, 126, 0, 0.8)'], []],
               'RBM': [[], [], ['rgba(247, 80, 70, 0.8)'], []],
               'Spliceosome': [[], [], ['rgba(55, 126, 219, 0.8)'], []]}
@@ -73,7 +79,7 @@ def color_maker(name_projects, value_size, value_iupac):
             result["SRSF"][0].append(value_size[i])
             result["SRSF"][1].append(value_iupac[i])
             result["SRSF"][3].append(name_projects[i])
-        elif "hnrn" in  name_projects[i].lower():
+        elif "hnrn" in name_projects[i].lower():
             result["HNRNP"][0].append(value_size[i])
             result["HNRNP"][1].append(value_iupac[i])
             result["HNRNP"][3].append(name_projects[i])
@@ -89,7 +95,7 @@ def color_maker(name_projects, value_size, value_iupac):
                     result["Spliceosome"][1].append(value_iupac[i])
                     result["Spliceosome"][3].append(name_projects[i])
                     test = "ok"
-            if test == "ko": # no spliceosome componant
+            if test == "ko":  # no spliceosome componant
                 result["Misc"][0].append(value_size[i])
                 result["Misc"][1].append(value_iupac[i])
                 result["Misc"][3].append(name_projects[i])
@@ -108,6 +114,7 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
     :param regulation: (list of string) the regulation chosen up down or up and down
     :param size_scale: (string) either gene_size or median_intron_size.
     :param nt_name: (string) the name of the nucleotide of interest
+    :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
     """
     trace_pattern = color_maker(projects_names, values_size, values_iupac)
@@ -128,31 +135,34 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
             name=key,
             mode='markers',
             text=trace_pattern[key][3],
-            marker = dict(
+            marker=dict(
                 size=10,
                 color=trace_pattern[key][2][0],
-                line= dict(width=1))
+                line=dict(width=1))
         ))
     cor, pval = stats.pearsonr(values_size, values_iupac)
     layout = go.Layout(
-        title='Correlation between %s and %s frequency for %s exons in every splicing lore project<br>(relative value against %s control) - cor : %s - pval : %.2E '
-              % (size_scale, nt_name, regulation, ctrl, round(cor,2), pval),
+        title='Correlation between %s and %s frequency for %s exons in every splicing lore project<br>'
+              '(relative value against %s control) - cor : %s - pval : %.2E'
+              % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval),
         hovermode='closest',
         xaxis=dict(
-            title='relative %s' % size_scale
-        ),
+            title='relative %s' % size_scale),
         yaxis=dict(
-            title='relative %s frequency' % nt_name
-        ),
+            title='relative %s frequency' % nt_name),
         showlegend=True
     )
 
     fig = go.Figure(data=data, layout=layout)
-    plotly.offline.plot(fig, filename='%s%s_%s_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation[0]),
+    plotly.offline.plot(fig, filename='%s%s_%s_correlation_graphs_%s.html'
+                                      % (output, nt_name, size_scale, regulation[0]),
                         auto_open=False)
 
 
 def main():
+    """
+    Create the correlation matrix.
+    """
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
@@ -174,11 +184,9 @@ def main():
             value_target1 = get_median_value(cnx, id_projects, target1, ctrl_dic, my_regulation, nt=None)
             for nt in nt_list:
                 value_target2 = get_median_value(cnx, id_projects, target2, ctrl_dic, my_regulation, nt=nt)
-                figure_creator(value_target1, value_target2, name_projects, my_regulation[0], target1, nt, exon_type, output_niv1)
+                figure_creator(value_target1, value_target2, name_projects, my_regulation[0],
+                               target1, nt, exon_type, output_niv1)
+
 
 if __name__ == "__main__":
     main()
-
-
-
-

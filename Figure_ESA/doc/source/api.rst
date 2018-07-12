@@ -41,3 +41,17 @@ Source code of the ``correlation_iupac_gene_and_intron_size.py`` script
 
 .. automodule:: correlation_iupac_gene_and_intron_size
   :members:
+
+
+Source code of the ``control_exon_adapter.py`` script
+------------------------------------------------------------------------
+
+.. automodule:: control_exon_adapter
+  :members:
+
+
+Source code of the ``relative_exon_size.py`` script
+------------------------------------------------------------------------
+
+.. automodule:: relative_exon_size
+  :members:

@@ -17,7 +17,7 @@ import exon_control_handler
 import plotly
 import plotly.graph_objs as go
 from scipy import stats
-import math
+import argparse
 
 
 def get_median_value(cnx, id_projects, target_column, control_dic, regulation, nt=None):
@@ -141,27 +141,35 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
                 line=dict(width=1))
         ))
     cor, pval = stats.pearsonr(values_size, values_iupac)
+
+    if regulation:
+        main_title = 'Correlation between %s and %s frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
+        x_title = 'relative %s' % size_scale
+        y_title = 'relative %s frequency' % nt_name
+        figname = '%s%s_%s_correlation_graphs_%s.html'% (output, nt_name, size_scale, regulation[0])
+    else:
+        main_title = 'Correlation between down %s frequency and up %s frequency for exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, ctrl, round(cor, 2), pval)
+        x_title = 'relative %s frequency - down exons' % size_scale
+        y_title = 'relative %s frequency - up exons' % nt_name
+        figname = '%s%s_correlation_graphs.html'% (output, nt_name)
     layout = go.Layout(
-        title='Correlation between %s and %s frequency for %s exons in every splicing lore project<br>'
-              '(relative value against %s control) - cor : %s - pval : %.2E'
-              % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval),
+        title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title='relative %s' % size_scale),
+            title=x_title),
         yaxis=dict(
-            title='relative %s frequency' % nt_name),
+            title=y_title),
         showlegend=True
     )
 
     fig = go.Figure(data=data, layout=layout)
-    plotly.offline.plot(fig, filename='%s%s_%s_correlation_graphs_%s.html'
-                                      % (output, nt_name, size_scale, regulation[0]),
+    plotly.offline.plot(fig, filename=figname,
                         auto_open=False)
 
 
 def main():
     """
-    Create the correlation matrix.
+    Create the correlation matrix (gene_size vs iupac)
     """
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
@@ -187,6 +195,59 @@ def main():
                 figure_creator(value_target1, value_target2, name_projects, my_regulation[0],
                                target1, nt, exon_type, output_niv1)
 
+def main_up_vs_down():
+    """
+    Create the correlation matrix (iupac up vs iupac down).
+    """
+    exon_type = "CCE"
+    seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
+    cnx = figure_producer.connexion(seddb)
+    ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
+    id_projects, name_projects = figure_producer.get_interest_project(cnx)
+    nt_list = ["A", "C", "G", "T", "S", "W", "Y", "R"]
+    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_up_vs_down/"
+    # If the output directory does not exist, then we create it !
+    target1 = "iupac_gene"
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    for nt in nt_list:
+        value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["up"], nt=nt)
+        value_target1 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["down"], nt=nt)
+        figure_creator(value_target1, value_target2, name_projects, None,
+                       nt , nt, exon_type, output)
+
+def launcher():
+    """
+    function that contains a parser to launch the program
+    """
+    # description on how to use the program
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description="""
+   The goal of this script is to create correlation figure.
+   The figures can show the correlation between:
+        1 - The median_intron_size (and gene_size) and the iupac frequencies for every splicing lore project \
+        (ech dot corresponds to the median iupac frequency and the median intron size of every up or down exons in \
+        a splicing lore project)
+        2 - The iupac frequency between up and down regulated exon for every splicing lore project. (A dot corresponds \
+        to  the median iupac frequency for up and down exons
+
+    """)
+    # Arguments for the parser
+
+    req_arg = parser.add_argument_group("required arguments")
+
+    req_arg.add_argument('--type', '-t', dest='type', help="the type of graphic you want to create (gene_level' or"
+                                                           "up_vs_down",
+                         required=True)
+
+    args = parser.parse_args()
+
+    if args.type not in ["gene_level", "up_vs_down"]:
+        parser.error("Wrong parameter type\n It can only be 'gene_level' or 'up_vs_down'")
+    if args.type == "gene_level":
+        main()
+    else:
+        main_up_vs_down()
 
 if __name__ == "__main__":
-    main()
+    launcher()

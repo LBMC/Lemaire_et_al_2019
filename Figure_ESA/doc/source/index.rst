@@ -6,6 +6,12 @@
 Welcome to SL Projects Figure Creator's documentation!
 ======================================================
 
+.. warning::
+
+	All the scripts presented here are based on the sed database. You must add this database on your ``data/`` folder of your project directory.
+	To see how to create sed database, please visit this `gitlab page <https://gitlab.biologie.ens-lyon.fr/Auboeuf/uniform_exons_features/database_creator>`_ 
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

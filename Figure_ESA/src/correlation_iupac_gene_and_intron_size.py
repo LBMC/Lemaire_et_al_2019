@@ -102,7 +102,7 @@ def color_maker(name_projects, value_size, value_iupac):
     return result
 
 
-def figure_creator(values_size, values_iupac, projects_names, regulation, size_scale, nt_name, ctrl, output):
+def figure_creator(values_size, values_iupac, projects_names, regulation, size_scale, nt_name, ctrl, output, type=None):
     """
     Create a scatter plot showing the potential correlation between projects.
 
@@ -116,6 +116,7 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
     :param nt_name: (string) the name of the nucleotide of interest
     :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
+    :param type: (string or NoneType object) the type of legend to put in the graphics
     """
     trace_pattern = color_maker(projects_names, values_size, values_iupac)
     data = []
@@ -142,16 +143,33 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
         ))
     cor, pval = stats.pearsonr(values_size, values_iupac)
 
-    if regulation:
+    if not type:
         main_title = 'Correlation between %s and %s frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
         x_title = 'relative %s' % size_scale
         y_title = 'relative %s frequency' % nt_name
         figname = '%s%s_%s_correlation_graphs_%s.html'% (output, nt_name, size_scale, regulation[0])
-    else:
+    elif type == 1:
         main_title = 'Correlation between down %s frequency and up %s frequency for exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, ctrl, round(cor, 2), pval)
         x_title = 'relative %s frequency - down exons' % size_scale
         y_title = 'relative %s frequency - up exons' % nt_name
         figname = '%s%s_correlation_graphs.html'% (output, nt_name)
+    elif type == 2:
+        main_title = 'Correlation between gene %s nt frequency and exon %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        x_title = 'relative %s frequency - %s gene' %(size_scale, regulation[0])
+        y_title = 'relative %s frequency - %s exons' % (nt_name, regulation[0])
+        figname = '%s%s_gene_vs_exon_correlation_graphs_%s.html'% (output, nt_name, regulation[0])
+    elif type == 3:
+        main_title = 'Correlation between exon %s nt frequency and %s %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
+        nt_name, size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        x_title = 'relative %s frequency in exon - %s exons' % (nt_name, regulation[0])
+        y_title = 'relative %s frequency in %s - %s exons' % (nt_name, size_scale, regulation[0])
+        figname = '%s%s_intron_vs_exon_correlation_graphs_%s.html' % (output, nt_name, regulation[0])
+    else:
+        main_title = 'Correlation between the relative %s and the %s nt frequency in %s exons for every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
+        size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        x_title = 'relative %s - %s exons' % (size_scale, regulation[0])
+        y_title = 'relative %s frequency in exons - %s exons' % (nt_name, regulation[0])
+        figname = '%s%s_%s_vs_exon_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation[0])
     layout = go.Layout(
         title=main_title,
         hovermode='closest',
@@ -207,14 +225,99 @@ def main_up_vs_down():
     nt_list = ["A", "C", "G", "T", "S", "W", "Y", "R"]
     output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_up_vs_down/"
     # If the output directory does not exist, then we create it !
-    target1 = "iupac_gene"
     if not os.path.isdir(output):
         os.mkdir(output)
     for nt in nt_list:
         value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["up"], nt=nt)
         value_target1 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["down"], nt=nt)
         figure_creator(value_target1, value_target2, name_projects, None,
-                       nt , nt, exon_type, output)
+                       nt , nt, exon_type, output, 1)
+
+
+def iupac_gene_vs_iupac_exon():
+    """
+    Correlation graphics between the relative median iupac gene frequency and the relative median iupac exon frequency \
+    for up or down-regulated exon in every splicing lore project.s
+    """
+    exon_type = "CCE"
+    seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
+    cnx = figure_producer.connexion(seddb)
+    ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
+    id_projects, name_projects = figure_producer.get_interest_project(cnx)
+    nt_list = ["A", "C", "G", "T", "S", "W", "Y", "R"]
+    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_iupac_gene_exon/"
+    regulations = [["up"], ["down"]]
+    # If the output directory does not exist, then we create it !
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    for my_regulation in regulations:
+        for nt in nt_list:
+            value_target1 = get_median_value(cnx, id_projects, "iupac_gene", ctrl_dic, my_regulation, nt=nt)
+            value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, my_regulation, nt=nt)
+            figure_creator(value_target1, value_target2, name_projects, my_regulation,
+                           nt, nt, exon_type, output, 2)
+
+
+
+def iupac_exon_vs_iupac_intron_proxi():
+    """
+    Correlation graphics between the relative median iupac exon frequency and the relative median iupac intron \
+    upstream and downstream frequency \
+    for up or down-regulated exon in every splicing lore project.s
+    """
+    exon_type = "CCE"
+    seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
+    cnx = figure_producer.connexion(seddb)
+    ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
+    id_projects, name_projects = figure_producer.get_interest_project(cnx)
+    nt_list = ["A", "C", "G", "T", "S", "W", "Y", "R"]
+    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_iupac_exon_intron_proxi/"
+    regulations = [["up"], ["down"]]
+    # If the output directory does not exist, then we create it !
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    intron_targets =  ["iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi"]
+    for my_intron_target in intron_targets:
+        output_final = output +  my_intron_target + "/"
+        if not os.path.isdir(output_final):
+            os.mkdir(output_final)
+        for my_regulation in regulations:
+            for nt in nt_list:
+                value_target1 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, my_regulation, nt=nt)
+                value_target2 = get_median_value(cnx, id_projects, my_intron_target, ctrl_dic, my_regulation, nt=nt)
+                figure_creator(value_target1, value_target2, name_projects, my_regulation,
+                               my_intron_target , nt, exon_type, output_final, 3)
+
+
+def  force_vs_iupac_intron_proxi():
+    """
+    Correlation graphics between the 5' and 3' force and the relative median iupac intron \
+    upstream and downstream frequency \
+    for up or down-regulated exon in every splicing lore project.s
+    """
+    exon_type = "CCE"
+    seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
+    cnx = figure_producer.connexion(seddb)
+    ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
+    id_projects, name_projects = figure_producer.get_interest_project(cnx)
+    nt_list = ["A", "C", "G", "T", "S", "W", "Y", "R"]
+    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_force_vs_iupac_exon/"
+    regulations = [["up"], ["down"]]
+    # If the output directory does not exist, then we create it !
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    forces = ["force_acceptor", "force_donor"]
+    for i in range(len(forces)):
+        my_force = forces[i]
+        output_final = output +  forces[i] + "/"
+        if not os.path.isdir(output_final):
+            os.mkdir(output_final)
+        for my_regulation in regulations:
+            for nt in nt_list:
+                value_target1 = get_median_value(cnx, id_projects, my_force, ctrl_dic, my_regulation, nt=None)
+                value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, my_regulation, nt=nt)
+                figure_creator(value_target1, value_target2, name_projects, my_regulation,
+                               my_force , nt, exon_type, output_final, 4)
 
 def launcher():
     """
@@ -242,12 +345,18 @@ def launcher():
 
     args = parser.parse_args()
 
-    if args.type not in ["gene_level", "up_vs_down"]:
+    if args.type not in ["gene_size_gene_iupac", "iupac_up_vs_iupac_down", "iupac_gene_vs_iupac_exon", "iupac_exon_vs_iupac_intron_proxi", "force_vs_iupac_exon"]:
         parser.error("Wrong parameter type\n It can only be 'gene_level' or 'up_vs_down'")
-    if args.type == "gene_level":
+    if args.type == "gene_size_vs_gene_iupac":
         main()
-    else:
+    elif args.type == "iupac_up_vs_iupac_down":
         main_up_vs_down()
+    elif args.type == "iupac_gene_vs_iupac_exon":
+        iupac_gene_vs_iupac_exon()
+    elif args.type == "iupac_exon_vs_iupac_intron_proxi":
+        iupac_exon_vs_iupac_intron_proxi()
+    elif args.type == "force_vs_iupac_exon":
+        force_vs_iupac_intron_proxi()
 
 if __name__ == "__main__":
     launcher()

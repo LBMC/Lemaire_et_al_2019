@@ -289,7 +289,7 @@ def iupac_exon_vs_iupac_intron_proxi():
                                my_intron_target , nt, exon_type, output_final, 3)
 
 
-def  force_vs_iupac_intron_proxi():
+def  force_vs_iupac_exon():
     """
     Correlation graphics between the 5' and 3' force and the relative median iupac intron \
     upstream and downstream frequency \
@@ -356,7 +356,7 @@ def launcher():
     elif args.type == "iupac_exon_vs_iupac_intron_proxi":
         iupac_exon_vs_iupac_intron_proxi()
     elif args.type == "force_vs_iupac_exon":
-        force_vs_iupac_intron_proxi()
+        force_vs_iupac_exon()
 
 if __name__ == "__main__":
     launcher()

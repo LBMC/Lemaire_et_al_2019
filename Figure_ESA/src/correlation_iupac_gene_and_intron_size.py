@@ -144,7 +144,7 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
     cor, pval = stats.pearsonr(values_size, values_iupac)
 
     if not type:
-        main_title = 'Correlation between %s and %s frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
+        main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
         x_title = 'relative %s' % size_scale
         y_title = 'relative %s frequency' % nt_name
         figname = '%s%s_%s_correlation_graphs_%s.html'% (output, nt_name, size_scale, regulation[0])
@@ -199,19 +199,27 @@ def main():
     # If the output directory does not exist, then we create it !
     if not os.path.isdir(output_niv0):
         os.mkdir(output_niv0)
-    regulations = [["up"], ["down"], ["up-down"]]
+    regulations = [["up"], ["down"], ["up", "down"]]
     targets1 = ["gene_size", "median_intron_size"]
     target2 = "iupac_gene"
     for my_regulation in regulations:
         output_niv1 = output_niv0 + my_regulation[0] + "/"
+        if len(my_regulation) > 1:
+            name_reg = ["-".join(my_regulation)]
+            output_niv1 = output_niv0 + name_reg[0] + "/"
         if not os.path.isdir(output_niv1):
             os.mkdir(output_niv1)
         for target1 in targets1:
             value_target1 = get_median_value(cnx, id_projects, target1, ctrl_dic, my_regulation, nt=None)
             for nt in nt_list:
                 value_target2 = get_median_value(cnx, id_projects, target2, ctrl_dic, my_regulation, nt=nt)
-                figure_creator(value_target1, value_target2, name_projects, my_regulation[0],
-                               target1, nt, exon_type, output_niv1)
+                if len(my_regulation) > 1:
+                    figure_creator(value_target1, value_target2, name_projects, name_reg[0],
+                                   target1, nt, exon_type, output_niv1)
+                else:
+                    figure_creator(value_target1, value_target2, name_projects, my_regulation[0],
+                                   target1, nt, exon_type, output_niv1)
+
 
 def main_up_vs_down():
     """
@@ -344,9 +352,9 @@ def launcher():
                          required=True)
 
     args = parser.parse_args()
-
-    if args.type not in ["gene_size_gene_iupac", "iupac_up_vs_iupac_down", "iupac_gene_vs_iupac_exon", "iupac_exon_vs_iupac_intron_proxi", "force_vs_iupac_exon"]:
-        parser.error("Wrong parameter type\n It can only be 'gene_level' or 'up_vs_down'")
+    my_types = ["gene_size_vs_gene_iupac", "iupac_up_vs_iupac_down", "iupac_gene_vs_iupac_exon", "iupac_exon_vs_iupac_intron_proxi", "force_vs_iupac_exon"]
+    if args.type not in my_types:
+        parser.error("Wrong parameter type\n It can only be %s" % " or ".join(my_types))
     if args.type == "gene_size_vs_gene_iupac":
         main()
     elif args.type == "iupac_up_vs_iupac_down":

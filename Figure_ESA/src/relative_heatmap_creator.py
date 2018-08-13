@@ -67,10 +67,10 @@ def main():
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
     ctrl_dic = exon_control_handler.control_handler(cnx, exon_type)
-    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_heatmap/"
     target_columns = ["force_donor", "force_acceptor", "relative_donor_upstream", "relative_donor_downstream",
                       "relative_acceptor_upstream", "relative_acceptor_downstream"]
     if len(sys.argv) < 2:
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_force_heatmap/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
@@ -83,6 +83,7 @@ def main():
                                             "forces_" + "_".join(regulations))
 
     elif sys.argv[1] == "union":
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_force_heatmap_union/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)

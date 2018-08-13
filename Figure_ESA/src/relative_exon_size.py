@@ -107,9 +107,9 @@ def main():
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
     ctrl_dic = control_exon_adapter.control_handler(cnx, exon_type)
-    output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_size_heatmap/"
     target_columns = ["rel_exon_intron_up", "rel_exon_intron_down", "rel_exon_introns"]
     if len(sys.argv) < 2:
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_size_heatmap/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
@@ -121,6 +121,7 @@ def main():
             heatmap_creator.heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,
                                             "relative_size_" + "_".join(regulations))
     elif sys.argv[1] == "union":
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/relative_size_heatmap_union/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
@@ -130,7 +131,7 @@ def main():
             projects_tab, project_names = create_matrix(cnx, None, name_projects, target_columns, ctrl_dic,
                                                         regulations, "union")
             heatmap_creator.heatmap_creator(np.array(projects_tab[0]), target_columns, project_names, output,
-                                            "union_forces_" + "_".join(regulations))
+                                            "relative_size_" + "_".join(regulations))
 
 
 if __name__ == "__main__":

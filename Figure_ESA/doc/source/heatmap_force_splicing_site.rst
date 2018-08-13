@@ -72,6 +72,6 @@ Command Line executed to create the graphics
 .. code:: bash
 
   # figure displayed for exons regulated in every projects
-  python3 src/heatmap_creator.py
+  python3 src/relative_heatmap_creator.py
   # figure displayed for every exons regulated by a splicing factor.
-  python3 src/heatmap_creator.py union
+  python3 src/relative_heatmap_creator.py union

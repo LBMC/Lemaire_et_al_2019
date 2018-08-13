@@ -58,3 +58,5 @@ Command Line executed to create the graphics
 .. code:: bash
 
   python3 src/relative_exon_size.py
+  # whith union exon datasets
+  python3 src/relative_exon_size.py union 

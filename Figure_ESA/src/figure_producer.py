@@ -19,7 +19,10 @@ import os
 import sys
 import union_dataset_function
 nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7, "K": 8, "M": 9}
-dnt_dic = {"AA":0, "AC":1, "AG":2, "AT":3, "CA":4, "CC":5, "CG":6, "CT":7, "GA":8, "GC":9, "GG":10, "GT":11, "TA":12, "TC":13, "TG":14, "TT":15}
+dnt_dic = {"AA": 0, "AC": 1, "AG": 2, "AT": 3, "CA": 4, "CC": 5,
+           "CG": 6, "CT": 7, "GA": 8, "GC": 9, "GG": 10, "GT": 11,
+           "TA": 12, "TC": 13, "TG": 14, "TT": 15}
+
 
 # Functions
 def connexion(seddb):
@@ -117,6 +120,31 @@ def get_list_of_value(cnx, exon_list, target_column):
     return res
 
 
+def get_redundant_list_of_value(cnx, exon_list, target_column):
+    """
+    Get the individual values for ``target_column`` of every exon in ``exon_list``.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param exon_list: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene)
+    :param target_column: (string) the column for which we want to get information on exons.
+    :return: (list of float) values of ``target_column`` for the exons in  ``exon_list``.
+    """
+    cursor = cnx.cursor()
+    res = []
+    for exon in exon_list:
+        query = """SELECT %s
+                   FROM sed
+                   where gene_id = %s
+                   AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+        cursor.execute(query)
+        r = cursor.fetchone()[0]
+        if r is not None:
+            res.append(r)
+        else:
+            res.append(None)
+    return res
+
+
 def get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
     """
     Get the individual values of nt ``nt`` in ``target_column`` of every exon in ``exon_list``.
@@ -158,6 +186,35 @@ def get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
                     else:
                         res.append(float(r.split(";")[dnt_dic[nt_dnt]]))
                 redundancy_gene_dic[exon[0]] = 1
+    return res
+
+
+def get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
+    """
+    Get the individual values of nt ``nt`` in ``target_column`` of every exon in ``exon_list``.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param exon_list: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene)
+    :param target_column: (string) the column for which we want to get information on exons.
+    :param nt_dnt: (string) a nucleotide or di_nucleotide
+    :return: (list of float) values of ``target_column`` for the exons in  ``exon_list``.
+    """
+    cursor = cnx.cursor()
+    res = []
+    for exon in exon_list:
+        query = """SELECT %s
+                   FROM sed
+                   where gene_id = %s
+                   AND exon_pos = %s """ % (target_column, exon[0], exon[1])
+        cursor.execute(query)
+        r = cursor.fetchone()[0]
+        if r is not None:
+            if len(nt_dnt) == 1:
+                res.append(float(r.split(";")[nt_dic[nt_dnt]]))
+            else:
+                res.append(float(r.split(";")[dnt_dic[nt_dnt]]))
+        else:
+            res.append(None)
     return res
 
 
@@ -394,11 +451,11 @@ def main():
                 if "iupac" in target_column:
                     for nt in nt_dic.keys():
                         create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, nt,
-                                            "union")
+                                                "union")
                 elif "dnt" in target_column:
                     for dnt in dnt_dic.keys():
                         create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, dnt,
-                                            "union")
+                                                "union")
                 else:
                     create_figure(cnx, None, name_projects, target_column, regulation, output, "union")
     else:

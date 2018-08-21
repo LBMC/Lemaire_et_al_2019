@@ -21,6 +21,7 @@ import argparse
 import union_dataset_function
 import math
 
+
 def get_median_value(cnx, id_projects, target_column, control_dic, regulation, nt=None):
     """
     Return the median value of target_column in ``regulation`` exons of every  ``id_projects``.
@@ -49,7 +50,6 @@ def get_median_value(cnx, id_projects, target_column, control_dic, regulation, n
         if nt:
             final_value = float(median_obs - control_dic[target_column][nt]) / control_dic[target_column][nt] * 100
         else:
-            #final_value = float(math.log(median_obs) - math.log(control_dic[target_column])) / math.log(control_dic[target_column]) * 100
             final_value = float(median_obs - control_dic[target_column]) / control_dic[target_column] * 100
         values_list.append(final_value)
     return values_list
@@ -57,8 +57,8 @@ def get_median_value(cnx, id_projects, target_column, control_dic, regulation, n
 
 def get_exons_values(cnx, sf_list, target_column, control_dic, regulation, nt):
     """
-    Return the relative value (when compared to the median value of CCE exon) of target_column in `\
-    `regulation`` exons regulated by a splicing factor in different cell lines.
+    Return the values of target_column in every`\
+    `regulation`` exons regulated by a splicing factor in (one or multiple) cell lines.
 
     :param cnx: (sqlite3 connexion object) allow connexion to sed database
     :param sf_list:  (list of string) the list of splicing factor studied
@@ -87,7 +87,8 @@ def get_exons_values(cnx, sf_list, target_column, control_dic, regulation, nt):
         exon_name.append(["%s_%s" % (union_dataset_function.get_gene_name(cnx, a[0]), a[1]) for a in exon_list])
         all_sf.append(sf_name)
         if nt:
-            values.append(np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt)))
+            values.append(np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list,
+                                                                                         target_column, nt)))
         else:
             values.append(np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column)))
     return values, exon_name, all_sf
@@ -141,7 +142,8 @@ def color_maker(name_projects, value_size, value_iupac):
     return result
 
 
-def figure_creator(values_size, values_iupac, projects_names, regulation, size_scale, nt_name, ctrl, output, type=None):
+def figure_creator(values_size, values_iupac, projects_names, regulation, size_scale, nt_name, ctrl, output,
+                   graph_type=None):
     """
     Create a scatter plot showing the potential correlation between projects.
 
@@ -155,7 +157,7 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
     :param nt_name: (string) the name of the nucleotide of interest
     :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
-    :param type: (string or NoneType object) the type of legend to put in the graphics
+    :param graph_type: (string or NoneType object) the type of legend to put in the graphics
     """
     trace_pattern = color_maker(projects_names, values_size, values_iupac)
     data = []
@@ -182,30 +184,38 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
         ))
     cor, pval = stats.pearsonr(values_size, values_iupac)
 
-    if not type:
-        main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
+    if not graph_type:
+        main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons ' \
+                     'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' \
+                     % (size_scale, nt_name, regulation, ctrl, round(cor, 2), pval)
         x_title = 'relative %s' % size_scale
         y_title = 'relative %s frequency' % nt_name
-        figname = '%s%s_%s_correlation_graphs_%s.html'% (output, nt_name, size_scale, regulation[0])
-    elif type == 1:
-        main_title = 'Correlation between down %s frequency and up %s frequency for exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, ctrl, round(cor, 2), pval)
+        figname = '%s%s_%s_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation[0])
+    elif graph_type == 1:
+        main_title = 'Correlation between down %s frequency and up %s frequency for exons in every ' \
+                     'splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E'\
+                     % (size_scale, nt_name, ctrl, round(cor, 2), pval)
         x_title = 'relative %s frequency - down exons' % size_scale
         y_title = 'relative %s frequency - up exons' % nt_name
-        figname = '%s%s_correlation_graphs.html'% (output, nt_name)
-    elif type == 2:
-        main_title = 'Correlation between gene %s nt frequency and exon %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
-        x_title = 'relative %s frequency - %s gene' %(size_scale, regulation[0])
+        figname = '%s%s_correlation_graphs.html' % (output, nt_name)
+    elif graph_type == 2:
+        main_title = 'Correlation between gene %s nt frequency and exon %s nt frequency for %s exons ' \
+                     'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E'\
+                     % (size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        x_title = 'relative %s frequency - %s gene' % (size_scale, regulation[0])
         y_title = 'relative %s frequency - %s exons' % (nt_name, regulation[0])
-        figname = '%s%s_gene_vs_exon_correlation_graphs_%s.html'% (output, nt_name, regulation[0])
-    elif type == 3:
-        main_title = 'Correlation between exon %s nt frequency and %s %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
-        nt_name, size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        figname = '%s%s_gene_vs_exon_correlation_graphs_%s.html' % (output, nt_name, regulation[0])
+    elif graph_type == 3:
+        main_title = 'Correlation between exon %s nt frequency and %s %s nt frequency for %s exons in every ' \
+                     'splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
+                      nt_name, size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
         x_title = 'relative %s frequency in exon - %s exons' % (nt_name, regulation[0])
         y_title = 'relative %s frequency in %s - %s exons' % (nt_name, size_scale, regulation[0])
         figname = '%s%s_intron_vs_exon_correlation_graphs_%s.html' % (output, nt_name, regulation[0])
     else:
-        main_title = 'Correlation between the relative %s and the %s nt frequency in %s exons for every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
-        size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
+        main_title = 'Correlation between the relative %s and the %s nt frequency in %s exons for every splicing ' \
+                     'lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' % (
+                      size_scale, nt_name, regulation[0], ctrl, round(cor, 2), pval)
         x_title = 'relative %s - %s exons' % (size_scale, regulation[0])
         y_title = 'relative %s frequency in exons - %s exons' % (nt_name, regulation[0])
         figname = '%s%s_%s_vs_exon_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation[0])
@@ -224,7 +234,8 @@ def figure_creator(values_size, values_iupac, projects_names, regulation, size_s
                         auto_open=False)
 
 
-def figure_creator_exon(values_feature1, values_iupac, all_sf, regulation, size_scale, nt_name, ctrl, exon_name, output, type=None):
+def figure_creator_exon(values_feature1, values_iupac, all_sf, regulation, size_scale, nt_name, ctrl,
+                        exon_name, output, graph_type=None):
     """
     Create a scatter plot showing the potential correlation for every exons regulated each splicing factor in \
     multiple cell lines.
@@ -233,16 +244,16 @@ def figure_creator_exon(values_feature1, values_iupac, all_sf, regulation, size_
     exons ``regulation`` regulated by ``sf_name``
     :param values_iupac: (list of float) the list of relative value of the frequency in ``nt`` for \
     exons ``regulation`` regulated by ``sf_name``
-    :param sf_name: (list of string) list of every splicing factor studied.
+    :param all_sf: (list of string) list of every splicing factor studied.
     :param regulation: (list of string) the regulation chosen up down or up and down
     :param size_scale: (string) either gene_size or median_intron_size.
     :param nt_name: (string) the name of the nucleotide of interest
     :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
     :param exon_name: (list of string) the name of the interest exons
-    :param type: (string or NoneType object) the type of legend to put in the graphics
+    :param graph_type: (string or NoneType object) the graph_type of legend to put in the graphics
     """
-    log=""
+    log = ""
     if max(values_feature1[0]) >= 1000:
         values_feature1 = [list(map(math.log10, listval)) for listval in values_feature1]
         log = "log10"
@@ -253,12 +264,12 @@ def figure_creator_exon(values_feature1, values_iupac, all_sf, regulation, size_
         line = slope * np.array(values_feature1[i]) + intercept
         cor, pval = stats.pearsonr(values_feature1[i], values_iupac[i])
         data.append(go.Scatter(x=values_feature1[i],
-                        y=line,
-                        visible="legendonly",
-                        mode='lines',
-                        line=dict(color=c[i], width=3),
-                        name="Fit %s p=%.2E, c=%.2f" % (all_sf[i], pval, cor)
-                        ))
+                               y=line,
+                               visible="legendonly",
+                               mode='lines',
+                               line=dict(color=c[i], width=3),
+                               name="Fit %s p=%.2E, c=%.2f" % (all_sf[i], pval, cor)
+                               ))
         data.append(go.Scatter(
             x=values_feature1[i],
             y=values_iupac[i],
@@ -272,26 +283,30 @@ def figure_creator_exon(values_feature1, values_iupac, all_sf, regulation, size_
                 line=dict(width=1))
         ))
 
-
-    if not type:
-        main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated (relative value against %s control - EXON LEVEL)' % (size_scale, nt_name, regulation, ctrl)
+    if not graph_type:
+        main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated ' \
+                     '(relative value against %s control - EXON LEVEL)' % (size_scale, nt_name, regulation, ctrl)
         x_title = '%s %s' % (log, size_scale)
         y_title = '%s frequency' % nt_name
-        figname = '%s%s_%s_correlation_graphs_%s.html'% (output, nt_name, size_scale, regulation)
-    elif type == 2:
-        main_title = 'Correlation between gene %s nt frequency and exon %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control - EXON LEVEL)' % (size_scale, nt_name, regulation[0], ctrl)
+        figname = '%s%s_%s_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation)
+    elif graph_type == 2:
+        main_title = 'Correlation between gene %s nt frequency and exon %s nt ' \
+                     'frequency for %s exons in every splicing lore project<br> ' \
+                     '(relative value against %s control - EXON LEVEL)' % (size_scale, nt_name, regulation[0], ctrl)
         x_title = '%s %s frequency - %s gene' % (log, size_scale, regulation[0])
         y_title = '%s frequency - %s exons' % (nt_name, regulation[0])
-        figname = '%s%s_gene_vs_exon_correlation_graphs_%s.html'% (output, nt_name, regulation[0])
-    elif type == 3:
-        main_title = 'Correlation between exon %s nt frequency and %s %s nt frequency for %s exons in every splicing lore project<br> (relative value against %s control - EXON LEVEL)' % (
-        nt_name, size_scale, nt_name, regulation[0], ctrl)
+        figname = '%s%s_gene_vs_exon_correlation_graphs_%s.html' % (output, nt_name, regulation[0])
+    elif graph_type == 3:
+        main_title = 'Correlation between exon %s nt frequency and %s %s nt frequency for %s ' \
+                     'exons in every splicing lore project<br> (relative value against %s control - EXON LEVEL)' % (
+                      nt_name, size_scale, nt_name, regulation[0], ctrl)
         x_title = '%s %s frequency in exon - %s exons' % (log, nt_name, regulation[0])
         y_title = '%s frequency in %s - %s exons' % (nt_name, size_scale, regulation[0])
         figname = '%s%s_intron_vs_exon_correlation_graphs_%s.html' % (output, nt_name, regulation[0])
     else:
-        main_title = 'Correlation between the relative %s and the %s nt frequency in %s exons for every splicing lore project<br> (relative value against %s control - EXON LEVEL)' % (
-        size_scale, nt_name, regulation[0], ctrl)
+        main_title = 'Correlation between the relative %s and the %s nt frequency in %s exons for every ' \
+                     'splicing lore project<br> (relative value against %s control - EXON LEVEL)' % (
+                      size_scale, nt_name, regulation[0], ctrl)
         x_title = '%s %s - %s exons' % (log, size_scale, regulation[0])
         y_title = '%s frequency in exons - %s exons' % (nt_name, regulation[0])
         figname = '%s%s_%s_vs_exon_correlation_graphs_%s.html' % (output, nt_name, size_scale, regulation[0])
@@ -376,7 +391,8 @@ def main(exon_level):
                         figure_creator(value_target1, value_target2, name_projects, my_regulation[0],
                                        target1, nt, exon_type, output_niv1)
     else:
-        output_niv0 = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_size_frequency_exon_level/"
+        output_niv0 = "/".join(os.path.realpath(__file__).split("/")[:-2]) + \
+                      "/result/correlation_size_frequency_exon_level/"
         list_sf = sorted(union_dataset_function.get_splicing_factor_name(cnx))
         if not os.path.isdir(output_niv0):
             os.mkdir(output_niv0)
@@ -388,15 +404,17 @@ def main(exon_level):
             if not os.path.isdir(output_niv1):
                 os.mkdir(output_niv1)
             for target1 in targets1:
-                value_target1, exon_name, all_sf = get_exons_values(cnx, list_sf, target1, ctrl_dic, my_regulation, nt=None)
+                value_target1, exon_name, all_sf = get_exons_values(cnx, list_sf, target1,
+                                                                    ctrl_dic, my_regulation, nt=None)
                 for nt in nt_list:
-                    value_target2, exon_name, all_sf = get_exons_values(cnx, list_sf, target2, ctrl_dic, my_regulation, nt=nt)
+                    value_target2, exon_name, all_sf = get_exons_values(cnx, list_sf, target2,
+                                                                        ctrl_dic, my_regulation, nt=nt)
                     if len(my_regulation) > 1:
                         figure_creator_exon(value_target1, value_target2, all_sf, name_reg[0],
-                                       target1, nt, exon_type, exon_name, output_niv1)
+                                            target1, nt, exon_type, exon_name, output_niv1)
                     else:
                         figure_creator_exon(value_target1, value_target2, all_sf, my_regulation[0],
-                                       target1, nt, exon_type, exon_name, output_niv1)
+                                            target1, nt, exon_type, exon_name, output_niv1)
 
 
 def main_up_vs_down():
@@ -417,7 +435,7 @@ def main_up_vs_down():
         value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["up"], nt=nt)
         value_target1 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, ["down"], nt=nt)
         figure_creator(value_target1, value_target2, name_projects, None,
-                       nt , nt, exon_type, output, 1)
+                       nt, nt, exon_type, output, 1)
 
 
 def iupac_gene_vs_iupac_exon(exon_level):
@@ -446,7 +464,8 @@ def iupac_gene_vs_iupac_exon(exon_level):
                 figure_creator(value_target1, value_target2, name_projects, my_regulation,
                                nt, nt, exon_type, output, 2)
     else:
-        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_iupac_gene_exon_EXON_LEVEL/"
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + \
+                 "/result/correlation_iupac_gene_exon_EXON_LEVEL/"
         list_sf = sorted(union_dataset_function.get_splicing_factor_name(cnx))
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
@@ -459,6 +478,7 @@ def iupac_gene_vs_iupac_exon(exon_level):
                                                                     ctrl_dic, my_regulation, nt=nt)
                 figure_creator_exon(value_target1, value_target2, all_sf, my_regulation,
                                     nt, nt, exon_type, exon_name, output, 2)
+
 
 def iupac_exon_vs_iupac_intron_proxi(exon_level):
     """
@@ -482,7 +502,7 @@ def iupac_exon_vs_iupac_intron_proxi(exon_level):
         if not os.path.isdir(output):
             os.mkdir(output)
         for my_intron_target in intron_targets:
-            output_final = output +  my_intron_target + "/"
+            output_final = output + my_intron_target + "/"
             if not os.path.isdir(output_final):
                 os.mkdir(output_final)
             for my_regulation in regulations:
@@ -490,9 +510,10 @@ def iupac_exon_vs_iupac_intron_proxi(exon_level):
                     value_target1 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, my_regulation, nt=nt)
                     value_target2 = get_median_value(cnx, id_projects, my_intron_target, ctrl_dic, my_regulation, nt=nt)
                     figure_creator(value_target1, value_target2, name_projects, my_regulation,
-                                   my_intron_target , nt, exon_type, output_final, 3)
+                                   my_intron_target, nt, exon_type, output_final, 3)
     else:
-        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_iupac_exon_intron_proxi_EXON_LEVEL/"
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + \
+                 "/result/correlation_iupac_exon_intron_proxi_EXON_LEVEL/"
         list_sf = sorted(union_dataset_function.get_splicing_factor_name(cnx))
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
@@ -507,11 +528,13 @@ def iupac_exon_vs_iupac_intron_proxi(exon_level):
                                                                         ctrl_dic, my_regulation, nt=nt)
                     value_target2, exon_name, all_sf = get_exons_values(cnx, list_sf, my_intron_target,
                                                                         ctrl_dic, my_regulation, nt=nt)
-                    value_target1, value_target2, exon_name = remove_none_values(value_target1, value_target2, exon_name)
+                    value_target1, value_target2, exon_name = remove_none_values(value_target1,
+                                                                                 value_target2, exon_name)
                     figure_creator_exon(value_target1, value_target2, all_sf, my_regulation,
                                         my_intron_target, nt, exon_type, exon_name, output_final, 3)
 
-def  force_vs_iupac_exon(exon_level):
+
+def force_vs_iupac_exon(exon_level):
     """
     Correlation graphics between the 5' and 3' force and the relative median iupac exon frequency \
     for up or down-regulated exon in every splicing lore project.
@@ -533,7 +556,7 @@ def  force_vs_iupac_exon(exon_level):
             os.mkdir(output)
         for i in range(len(forces)):
             my_force = forces[i]
-            output_final = output +  forces[i] + "/"
+            output_final = output + forces[i] + "/"
             if not os.path.isdir(output_final):
                 os.mkdir(output_final)
             for my_regulation in regulations:
@@ -541,15 +564,16 @@ def  force_vs_iupac_exon(exon_level):
                     value_target1 = get_median_value(cnx, id_projects, my_force, ctrl_dic, my_regulation, nt=None)
                     value_target2 = get_median_value(cnx, id_projects, "iupac_exon", ctrl_dic, my_regulation, nt=nt)
                     figure_creator(value_target1, value_target2, name_projects, my_regulation,
-                                   my_force , nt, exon_type, output_final, 4)
+                                   my_force, nt, exon_type, output_final, 4)
     else:
-        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/correlation_force_vs_iupac_exon_EXON_LEVEL/"
+        output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + \
+                 "/result/correlation_force_vs_iupac_exon_EXON_LEVEL/"
         list_sf = sorted(union_dataset_function.get_splicing_factor_name(cnx))
         if not os.path.isdir(output):
             os.mkdir(output)
         for i in range(len(forces)):
             my_force = forces[i]
-            output_final = output +  forces[i] + "/"
+            output_final = output + forces[i] + "/"
             if not os.path.isdir(output_final):
                 os.mkdir(output_final)
             for my_regulation in regulations:
@@ -558,9 +582,10 @@ def  force_vs_iupac_exon(exon_level):
                                                                         ctrl_dic, my_regulation, nt=None)
                     value_target2, exon_name, all_sf = get_exons_values(cnx, list_sf, "iupac_exon",
                                                                         ctrl_dic, my_regulation, nt=nt)
-                    value_target1, value_target2, exon_name = remove_none_values(value_target1, value_target2, exon_name)
+                    value_target1, value_target2, exon_name = remove_none_values(value_target1,
+                                                                                 value_target2, exon_name)
                     figure_creator_exon(value_target1, value_target2, all_sf, my_regulation,
-                                        my_force , nt, exon_type, exon_name, output_final, 4)
+                                        my_force, nt, exon_type, exon_name, output_final, 4)
 
 
 def launcher():
@@ -595,8 +620,9 @@ def launcher():
     if args.exon_level == "True":
         args.exon_level = True
 
-
-    my_types = ["gene_size_vs_gene_iupac", "iupac_up_vs_iupac_down", "iupac_gene_vs_iupac_exon", "iupac_exon_vs_iupac_intron_proxi", "force_vs_iupac_exon"]
+    my_types = ["gene_size_vs_gene_iupac", "iupac_up_vs_iupac_down",
+                "iupac_gene_vs_iupac_exon", "iupac_exon_vs_iupac_intron_proxi",
+                "force_vs_iupac_exon"]
     if args.type not in my_types:
         parser.error("Wrong parameter type\n It can only be %s" % " or ".join(my_types))
     if args.type == "gene_size_vs_gene_iupac":

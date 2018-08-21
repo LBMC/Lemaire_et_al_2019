@@ -55,3 +55,10 @@ Source code of the ``relative_exon_size.py`` script
 
 .. automodule:: relative_exon_size
   :members:
+
+
+Source code of the ``correlation_iupac_exon_intron.py`` script
+---------------------------------------------------------------
+
+.. automodule:: correlation_iupac_exon_intron
+  :members:

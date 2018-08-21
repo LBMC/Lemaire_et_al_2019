@@ -9,7 +9,7 @@ Welcome to SL Projects Figure Creator's documentation!
 .. warning::
 
 	All the scripts presented here are based on the sed database. You must add this database on your ``data/`` folder of your project directory.
-	To see how to create sed database, please visit this `gitlab page <https://gitlab.biologie.ens-lyon.fr/Auboeuf/uniform_exons_features/database_creator>`_ 
+	To see how to create sed database, please visit this `gitlab page <https://gitlab.biologie.ens-lyon.fr/Auboeuf/uniform_exons_features/database_creator>`_
 
 
 .. toctree::
@@ -22,6 +22,7 @@ Welcome to SL Projects Figure Creator's documentation!
    heatmap_force_splicing_site.rst
    correlation_iupac_gene_size.rst
    relative_exon_size.rst
+   correlation_iupac_exon_intron.rst
    api.rst
 
 Indices and tables

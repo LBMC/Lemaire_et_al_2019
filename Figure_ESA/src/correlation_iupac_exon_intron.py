@@ -251,7 +251,7 @@ def get_list_of_values(exon_list_dic, target_column, control_dic, nt):
      Each one of these keys are linked to another dictionary containing the frequency \
     of every iupac nucleotide in thta region.
     :param target_column: (string) the region we want to work on (exon, upstream_intron, downstream_intron)
-    :param control_dic: (dictionaries containing 3 dictionaries of float) the dictionary has 3 keys (exon_iupac,
+    :param control_dic: (dictionaries containing 3 dictionaries of float) the dictionary has 3 keys (exon_iupac, \
     upstream_intron_iupac, downstream_intron_iupac). Each key is linked to a dictionary that links each iupac \
     nucleotide to it's frequency in the region corresponding to that key for very control exons.
     :param nt: (string) a nucleotide (A, C, G, T, S, W, R, Y, K, M)

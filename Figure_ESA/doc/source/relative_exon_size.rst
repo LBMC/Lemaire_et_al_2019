@@ -52,11 +52,11 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
 
 
 Command Line executed to create the graphics
-============================================
+----------------------------------------------
 
 
 .. code:: bash
 
   python3 src/relative_exon_size.py
   # whith union exon datasets
-  python3 src/relative_exon_size.py union 
+  python3 src/relative_exon_size.py union

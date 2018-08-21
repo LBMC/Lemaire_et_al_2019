@@ -2,7 +2,21 @@
 
 # coding: utf-8
 
-import sqlite3
+
+def get_gene_name(cnx, gene_id):
+    """
+    Give the gene name thanks to a sedDB gene id.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param gene_id: (int) a sedDB gene id (same as a fasterDB gene id)
+    :return: (string) the name of the exon
+    """
+    cursor = cnx.cursor()
+    query = "SELECT DISTINCT gene_symbol FROM sed WHERE gene_id = ?"
+    cursor.execute(query, (gene_id, ))
+    res = cursor.fetchall()
+    gene_name = [val[0] for val in res]
+    return gene_name[0]
 
 
 def get_splicing_factor_name(cnx):
@@ -25,6 +39,7 @@ def get_projects_links_to_a_splicing_factor(cnx, sf_name):
     Get the id of every projects corresponding to a particular splicing factor.
 
     :param cnx: (sqlite3 connection object) connexion to sed database
+    :param sf_name: (string) splicing factor name
     :return: (list of int) list of id_project
     """
     cursor = cnx.cursor()
@@ -75,12 +90,13 @@ def washing_events(exon_list):
     """
     Remove redundant exons or remove exons showing different regulation.
 
-    :param exon_list: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id + exon_position on gene + \
-    exon_regulation). Every exon regulated by a splicing factor in different projects.
+    :param exon_list: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id +
+    exon_position on gene + exon_regulation). \
+    Every exon regulated by a splicing factor in different projects.
     :return: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id + exon_position on gene + \
     exon_regulation). Every exon regulated by a splicing factor in different projects without redundancy.
     """
-    replace_dic = {"up":"down", "down": "up"}
+    replace_dic = {"up": "down", "down": "up"}
     dic = {}
     prefix_list = []
     for exon in exon_list:
@@ -127,4 +143,3 @@ def get_every_events_4_a_sl(cnx, sf_name, regulation):
         if exon[0] == regulation:
             reg_exon_list.append(exon[1:])
     return reg_exon_list
-

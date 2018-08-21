@@ -12,6 +12,8 @@ import figure_producer
 import plotly
 import plotly.graph_objs as go
 from scipy import stats
+import union_dataset_function
+import math
 
 
 # function
@@ -70,7 +72,7 @@ def get_exon_info(cnx, info_list, debug, display=True):
     count = 0
     ll = str(len(info_list))
     for exon_info in info_list:
-        exon_list.append(get_intron_information.ExonClass(cnx, exon_info[0], exon_info[1], exon_info[2]))
+        exon_list.append(get_intron_information.ExonClass(cnx, exon_info[0], int(exon_info[1]), int(exon_info[2])))
         count += 1
         percent = round(float(count) / len(info_list) * 100, 1)
         if display:
@@ -155,6 +157,37 @@ def get_data_dictionary(exon_list):
     return res_dic
 
 
+def get_data_dictionary_exon_level(exon_list):
+    """
+    Get the frequency of each nucleotides (iupac) for every exons in ``exon_list`` \
+    for exons, downstream and upstream intron sequences.
+
+    :param exon_list: (list of ExonClass object) iupac dictionaries for exon, upstream and downstream introns.
+    :return: (dictionary of 3 dictionaries of float) each dictionaries corresponds to the frequencies of \
+    every iupac nucleotides (key) in :
+     * exon sequences
+     * upstream intron sequence
+     * downstream intron sequences
+    """
+    nt_list = ["A", "C", "G", "T", "R", "Y", "S", "W", "K", "M"]
+    up_intron_iupac = {a: [] for a in nt_list}
+    down_intron_iupac = {a: [] for a in nt_list}
+    exon_iupac = {a: [] for a in nt_list}
+    res_dic = {"exon_iupac": exon_iupac, "upstream_intron_iupac": up_intron_iupac,
+               "downstream_intron_iupac": down_intron_iupac, "exon_name": []}
+    for exon in exon_list:
+        for nt in nt_list:
+            if exon.iupac_exon is not None and exon.iupac_up_intron is not None and exon.iupac_down_intron is not None:
+                res_dic["exon_iupac"][nt].append(exon.iupac_exon[nt])
+                res_dic["upstream_intron_iupac"][nt].append(exon.iupac_up_intron[nt])
+                res_dic["downstream_intron_iupac"][nt].append(exon.iupac_down_intron[nt])
+        res_dic["exon_name"].append("%s_%s" % (exon.gene.name, exon.position))
+    get_intron_information.printd("res")
+    get_intron_information.printd(res_dic)
+
+    return res_dic
+
+
 def get_project_data_list(cnx_sed, cnx, id_projects, regulation, debug):
     """
     Get the dictionary that contains the median frequency of every iupac nucleotides in every splicing lore \
@@ -176,6 +209,35 @@ def get_project_data_list(cnx_sed, cnx, id_projects, regulation, debug):
         exon_list = get_ase_events(cnx_sed, id_project, regulation)
         exon_data = get_exon_info(cnx, exon_list, debug, False)
         exon_dic = get_data_dictionary(exon_data)
+        res.append(exon_dic)
+    return res
+
+
+def get_project_data_list_exon_level(cnx_sed, cnx, sf_list, regulation, debug):
+    """
+    Get the dictionary that contains the frequency of every iupac nucleotides for every exons in every splicing lore \
+    project for up or down regulated exons.
+
+    :param cnx_sed: (sqlite3 connect object) allow connexion to sed database
+    :param cnx: (sqlite3 connect object) allow connexion to fasterDB database
+    :param sf_list: (lits of string) list of splicing factor name
+    :param regulation: (string) up if we want to work on  up-regulated exon, down if we want  to work on \
+    down-regulated exons.
+    :param debug: (int) 1 debug mode enabled 0 debug mode disabled
+    :return: (list of dictionaries of 3 dicionnaries  of float) each dictionaries contains 3 keys (exon_iupac, \
+    upstream_intron_iupac and downstream_intron_iupac) that corresponds to the region they corresponds to. \
+    Each one of these keys are linked to another dictionary containing the frequency \
+    of every iupac nucleotide in that region.
+    """
+    res = []
+    for sf_name in sf_list:
+        exon_list = union_dataset_function.get_every_events_4_a_sl(cnx_sed, sf_name, regulation)
+        # adding the gene symbol ant the begining of each sublist
+        new_exon_list = []
+        for exon in exon_list:
+            new_exon_list.append([union_dataset_function.get_gene_name(cnx_sed, exon[0])] + exon)
+        exon_data = get_exon_info(cnx, new_exon_list, debug, False)
+        exon_dic = get_data_dictionary_exon_level(exon_data)
         res.append(exon_dic)
     return res
 
@@ -202,6 +264,27 @@ def get_list_of_values(exon_list_dic, target_column, control_dic, nt):
                            control_dic[target_column][nt]) /
                           control_dic[target_column][nt] * 100)
     return list_value
+
+
+def get_list_of_values_exon_level(exon_list_dic, target_column, nt):
+    """
+    Return a list of interest float values.
+
+    :param exon_list_dic: (list of dictionaries of 3 dicionnaries  of float) each dictionaries contains 3 keys \
+    (exon_iupac, upstream_intron_iupac and downstream_intron_iupac) that corresponds to the region they corresponds to.\
+     Each one of these keys are linked to another dictionary containing the frequency \
+    of every iupac nucleotide in thta region.
+    :param target_column: (string) the region we want to work on (exon, upstream_intron, downstream_intron)
+    :param nt: (string) a nucleotide (A, C, G, T, S, W, R, Y, K, M)
+    :return: (list of float) the list of  iupac frequencies (toward control) in the ``target_column`` \
+    regions of every regulated exon in every splicing lore project.
+    """
+    list_value = []
+    exons_names = []
+    for dic_iupac in exon_list_dic:
+        list_value.append(dic_iupac[target_column][nt])
+        exons_names.append(dic_iupac["exon_name"])
+    return list_value, exons_names
 
 
 def color_maker(name_projects, value_size, value_iupac):
@@ -315,39 +398,132 @@ def figure_creator(values_abscissa, values_ordinate, projects_names, regulation,
                         auto_open=False)
 
 
-def main():
+
+def figure_creator_exon_level(values_abscissa, values_ordinate, all_sf, regulation, name_abscissa, name_ordinate, nt_name,
+                              exon_name, output):
+    """
+    Create a scatter plot showing the potential correlation for every exons regulated each splicing factor in \
+    multiple cell lines.
+
+    :param values_abscissa: (list of float) the list of relative value of a particular feature for \
+    exons ``regulation`` regulated by ``sf_name``
+    :param values_ordinate: (list of float) the list of relative value of the frequency in ``nt`` for \
+    exons ``regulation`` regulated by ``sf_name``
+    :param all_sf: (list of string) list of every splicing factor studied.
+    :param regulation: (list of string) the regulation chosen up down or up and down
+    :param name_abscissa: (string) exon_iupac
+    :param name_ordinate: (string) upstream_intron_iupac or downstream_intron_iupac
+    :param nt_name: (string) the name of the nt studied
+    :param output: (string) path where the results will be created
+    :param exon_name: (list of string) the name of the interest exons
+    """
+    data = []
+    c = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(all_sf))]
+    for i in range(len(all_sf)):
+        slope, intercept, r_value, p_value, std_err = stats.linregress(values_abscissa[i], values_ordinate[i])
+        line = slope * np.array(values_abscissa[i]) + intercept
+        cor, pval = stats.pearsonr(values_abscissa[i], values_ordinate[i])
+        data.append(go.Scatter(x=values_abscissa[i],
+                               y=line,
+                               visible="legendonly",
+                               mode='lines',
+                               line=dict(color=c[i], width=3),
+                               name="Fit %s p=%.2E, c=%.2f" % (all_sf[i], pval, cor)
+                               ))
+        data.append(go.Scatter(
+            x=values_abscissa[i],
+            y=values_ordinate[i],
+            name="%s (%s exons)" % (all_sf[i], len(values_abscissa[i])),
+            mode='markers',
+            visible="legendonly",
+            text=exon_name[i],
+            marker=dict(
+                size=10,
+                color=c[i],
+                line=dict(width=1))
+        ))
+    name_abscissa = name_abscissa.replace("_iupac", "")
+    name_ordinate = name_ordinate.replace("_iupac", "")
+    main_title = 'Correlation between %s and %s for %s frequency in %s exons in every splicing lore project)' % (
+    name_abscissa, name_ordinate, nt_name, regulation)
+    x_title = 'relative %s frequency in %s' % (nt_name, name_abscissa)
+    y_title = 'relative %s frequency in %s' % (nt_name, name_ordinate)
+    figname = '%s%s_%s_%s_correlation_graphs_exonlvl_%s.html' % (output, nt_name, name_abscissa, name_ordinate, regulation)
+
+    layout = go.Layout(
+        title=main_title,
+        hovermode='closest',
+        xaxis=dict(
+            title=x_title),
+        yaxis=dict(
+            title=y_title),
+        showlegend=True
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    plotly.offline.plot(fig, filename=figname,
+                        auto_open=False)
+
+
+def main(exon_level):
     """
     Create correlation figure for iupac downstream and upstream intron vs iupac exon
+
+    :param exon_level: (boolean) True if you want to work at the exon level, False else.
     """
     ctrl = "CCE"
     nt_list = ["A", "C", "G", "T", "R", "Y", "S", "W", "K", "M"]
     debug = 0  # 1 enabled, 0 disabled
     fasterdb = os.path.realpath(os.path.dirname("__file__")) + "/data/fasterDB_lite.db"
     seddb = os.path.realpath(os.path.dirname("__file__")) + "/data/sed.db"
-    output = os.path.realpath(os.path.dirname("__file__")) + "/result/correlation_iupac_introns_exons/"
-    if not os.path.isdir(output):
-        os.mkdir(output)
-    print(fasterdb)
     cnx = database_connection(fasterdb)
     cnx_sed = database_connection(seddb)
-    exon_list = exon_finder(cnx, ctrl)
-    exon_control = get_exon_info(cnx, exon_list, debug)
-    control_dic = get_data_dictionary(exon_control)
-    id_projects, name_projects = figure_producer.get_interest_project(cnx_sed)
-    target1 = "exon_iupac"
-    targets2 = ["upstream_intron_iupac", "downstream_intron_iupac"]
-    for regulation in ["up", "down"]:
-        exon_dic_list = get_project_data_list(cnx_sed, cnx, id_projects, regulation, debug)
-        for target2 in targets2:
-            final_output = output + target2 + "/"
-            if not os.path.isdir(final_output):
-                os.mkdir(final_output)
-            for nt in nt_list:
-                values_target1 = get_list_of_values(exon_dic_list, target1, control_dic, nt)
-                values_target2 = get_list_of_values(exon_dic_list, target2, control_dic, nt)
-                figure_creator(values_target1, values_target2, name_projects, regulation, target1,
-                               target2, nt, ctrl, final_output)
-
+    if not exon_level:
+        exon_list = exon_finder(cnx, ctrl)
+        exon_control = get_exon_info(cnx, exon_list, debug)
+        control_dic = get_data_dictionary(exon_control)
+        output = os.path.realpath(os.path.dirname("__file__")) + "/result/correlation_iupac_introns_exons/"
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        print(fasterdb)
+        id_projects, name_projects = figure_producer.get_interest_project(cnx_sed)
+        target1 = "exon_iupac"
+        targets2 = ["upstream_intron_iupac", "downstream_intron_iupac"]
+        for regulation in ["up", "down"]:
+            exon_dic_list = get_project_data_list(cnx_sed, cnx, id_projects, regulation, debug)
+            for target2 in targets2:
+                final_output = output + target2 + "/"
+                if not os.path.isdir(final_output):
+                    os.mkdir(final_output)
+                for nt in nt_list:
+                    values_target1 = get_list_of_values(exon_dic_list, target1, control_dic, nt)
+                    values_target2 = get_list_of_values(exon_dic_list, target2, control_dic, nt)
+                    figure_creator(values_target1, values_target2, name_projects, regulation, target1,
+                                   target2, nt, ctrl, final_output)
+    else:
+        output = os.path.realpath(os.path.dirname("__file__")) + "/result/correlation_iupac_introns_exons_EXON_LEVEL/"
+        if not os.path.isdir(output):
+            os.mkdir(output)
+        print(fasterdb)
+        sf_list = sorted(union_dataset_function.get_splicing_factor_name(cnx_sed))
+        target1 = "exon_iupac"
+        targets2 = ["upstream_intron_iupac", "downstream_intron_iupac"]
+        for regulation in ["up", "down"]:
+            exon_dic_list = get_project_data_list_exon_level(cnx_sed, cnx, sf_list, regulation, debug)
+            for target2 in targets2:
+                final_output = output + target2 + "/"
+                if not os.path.isdir(final_output):
+                    os.mkdir(final_output)
+                for nt in nt_list:
+                    values_target1, exon_names = get_list_of_values_exon_level(exon_dic_list, target1, nt)
+                    values_target2, exon_names = get_list_of_values_exon_level(exon_dic_list, target2, nt)
+                    figure_creator_exon_level(values_target1, values_target2, sf_list, regulation, target1,
+                                              target2, nt, exon_names, final_output)
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        main(False)
+    elif sys.argv[1] == "exon_level":
+        main(True)
+    else:
+        main(False)

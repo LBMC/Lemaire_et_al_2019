@@ -78,7 +78,7 @@ Example:
 
 
 Prerequisites
-=============
+-------------
 This program uses `python <https://www.python.org>`_ version ``3.5`` and this following dependencies:
 
   * ``figure_producer`` : This script should be present in ``src`` folder of the project directory
@@ -90,7 +90,7 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
 
 
 Command Line executed to create the graphics
-============================================
+--------------------------------------------
 
 .. code:: bash
 

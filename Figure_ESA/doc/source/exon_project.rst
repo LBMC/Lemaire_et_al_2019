@@ -2,7 +2,7 @@ Exon projectr's Documentation
 ==========================================
 
 Description
-------------
+-----------
 
 This script aims, for each project to show the number of regulated exons contained in the same gene.
 
@@ -16,8 +16,8 @@ Each bar represent the percentage of exons sharing the same gene.
 The X labels says that there is 1, 2, 3, 4 or 5 and more (5+) regulated exons belonging to the same gene.
 
 
-Prerequisites:
---------------
+Prerequisites
+-------------
 
 This program uses `python <https://www.python.org>`_ version ``3.5`` and this following dependencies:
   * ``figure_producer`` : This script should be present in ``src`` folder of the project directory
@@ -26,7 +26,7 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
 
 
 Command Line executed to create the graphics
-============================================
+--------------------------------------------
 
 
 .. code:: bash

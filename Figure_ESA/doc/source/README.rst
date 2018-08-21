@@ -2,7 +2,7 @@ SL Projects Figure Creator's Documentation
 ==========================================
 
 Description
-------------
+-----------
 
 This script aims to create a lots of figures that shows, for each exons differentially spliced in a **rnaseq project** or by a **splicing factor**, their distribution for many caracteristics described in **SED database.**
 
@@ -96,7 +96,7 @@ Finally, each graphics look like this:
 
 
 Prerequisites
----------------
+-------------
 
 This program uses `python <https://www.python.org>`_ version ``3.5`` and this following dependencies:
   * `sqlite3 v2.6.0 <https://docs.python.org/3.5/library/sqlite3.html>`_ : To create *Sed* database
@@ -105,7 +105,7 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
 
 
 Command Line executed to create the graphics
-============================================
+--------------------------------------------
 
 
 .. code:: bash

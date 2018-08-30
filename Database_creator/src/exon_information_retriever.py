@@ -357,9 +357,17 @@ def fill_ase_event_content(sed_cnx, seddb, fasterdblite):
     result = cursor.fetchall()
     my_tuple = str(tuple((["?"] * len(result[0])))).replace("'", "")
     cursor.executemany("INSERT INTO ase_event VALUES %s" % my_tuple, result)
+    sed_cnx.commit()
     query = """ CREATE INDEX sed_project on ase_event(id_project);"""
     cursor.execute(query)
+    sed_cnx.commit()
     query = """ CREATE INDEX sed_regulation on ase_event(id_project, delta_psi, pvalue);"""
+    cursor.execute(query)
+    sed_cnx.commit()
+    query = """ CREATE INDEX sed_regulation_glm on ase_event(id_project, delta_psi, pvalue_glm_cor);"""
+    cursor.execute(query)
+    sed_cnx.commit()
+    query = """ CREATE INDEX project on rnaseq_projects(sf_name, cl_name);"""
     cursor.execute(query)
     sed_cnx.commit()
 

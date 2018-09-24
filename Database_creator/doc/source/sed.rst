@@ -149,6 +149,13 @@ This table describe the exons that are differentially skipped in each project de
   The choice of keeping redundancy was made to improve the speed of programs that will use *Sed database*; Indeed, for one exon we have all the data we need. Despite this redundancy, the size of the database is reasonable (a little more than 100 Mo).
 
 
+.. note::
+
+  The frequencies of nucleotides and dinucleotides for a feature is only reported if 95% of the feature sequence is well defined (not unidentified N nucleotides). The frequency givene for a feature doesn't take into account the undefined nucleoitdes.
+
+.. note::
+  If a feature show a lenght below 1 nucleotide, this lenght is reported as a *NULL* value in the sed database
+
 Issue
 -----
 

@@ -52,7 +52,12 @@ class ExonClassMain:
         result = cursor.fetchone()
         if result is None:
             return None, None, None, None
-        return result
+        else:
+            if result[0] > 0:
+                length_exon = result[0]
+            else:
+                length_exon = None
+        return length_exon, result[0], result[1], result[2]
 
 
 class ExonClass(ExonClassMain):
@@ -102,6 +107,8 @@ class ExonClass(ExonClassMain):
         if start >= stop:
             return None, None
         sequence = self.gene.sequence[start:stop]
+        if not full_defined(sequence):
+            return None, None
         printd("Exon sequence:")
         printd(sequence)
         iupac = iupac_frequencies(sequence)
@@ -150,13 +157,20 @@ class Gene:
             exit(1)
         sequence = result[0][0]
         self.sequence = sequence
-        self.length = len(sequence)
-        iupac = iupac_frequencies(sequence)
-        res = ";".join(list(map(str, iupac)))
-        self.iupac = res
-        dnt = dinucleotide_frequencies(sequence)
-        res = ";".join(list(map(str, dnt)))
-        self.dnt = res
+        if len(sequence) > 0:
+            self.length = len(sequence)
+        else:
+            self.length = None
+        if full_defined(sequence):
+            iupac = iupac_frequencies(sequence)
+            res = ";".join(list(map(str, iupac)))
+            self.iupac = res
+            dnt = dinucleotide_frequencies(sequence)
+            res = ";".join(list(map(str, dnt)))
+            self.dnt = res
+        else:
+            self.iupac = None
+            self.dnt = None
 
     def get_nb_intron_and_median_intron_size(self, cnx):
         """
@@ -174,7 +188,7 @@ class Gene:
         if not result:
             self.median_intron_size = None
         else:
-            self.median_intron_size = int(np.median([size[0] for size in result]))
+            self.median_intron_size = int(np.median([size[0] for size in result if size[0] > 0]))
 
     def gene_filler(self, cnx):
         """
@@ -244,23 +258,26 @@ class Intron:
         if self.location == "upstream":
             proxi_seq = proxi_seq[::-1]
             distal_seq = distal_seq[::-1]
-        if len(proxi_seq) > 0:
+        if len(proxi_seq) > 0 and full_defined(proxi_seq):
             self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
         else:
             self.iupac_proxi = None
-        if len(proxi_seq) > 1:
+        if len(proxi_seq) > 1 and full_defined(proxi_seq):
             self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
         else:
             self.dnt_proxi = None
-        if len(distal_seq) > 0:
+        if len(distal_seq) > 0 and full_defined(distal_seq):
             self.iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
         else:
             self.iupac_dist = None
-        if len(distal_seq) > 1:
+        if len(distal_seq) > 1 and full_defined(distal_seq):
             self.dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
         else:
             self.dnt_dist = None
-        self.length = len(sequence)
+        if len(sequence) > 0:
+            self.length = len(sequence)
+        else:
+            self.length = None
 
 
 # simple function for getting iupac frequencies
@@ -274,12 +291,13 @@ def iupac_frequencies(sequence):
     iupac = {"S": ["C", "G"], "W": ["A", "T"], "R": ["A", "G"],
              "Y": ["C", "T"], "K": ["T", "G"], "M": ["A", "C"]}
     result = []
+    seq_len = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
     for nt in ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]:
         if nt not in iupac:
-            result.append(round((float(sequence.count(nt)) / len(sequence)) * 100, 1))
+            result.append(round((float(sequence.count(nt)) / seq_len) * 100, 1))
         else:
             result.append(round((float(sequence.count(iupac[nt][0]) +
-                                       sequence.count(iupac[nt][1])) / len(sequence)) * 100, 1))
+                                       sequence.count(iupac[nt][1])) / seq_len) * 100, 1))
     return result
 
 
@@ -296,14 +314,28 @@ def dinucleotide_frequencies(sequence):
     dnt_dic = {"AA":0., "AC":0., "AG":0., "AT":0., "CA":0., "CC":0., "CG":0., "CT":0., "GA":0., "GC":0., "GG":0., "GT":0., "TA":0., "TC":0., "TG":0., "TT":0.}
     results = []
     seqlen = len(sequence) - 1
+    count = 0
     for i in range(seqlen):
         cdnt = sequence[i] + sequence[i+1]
         if cdnt in dnt_dic:
             dnt_dic[cdnt] += 1
+            count += 1
     for dnt in dnt_list:
-        results.append(round(dnt_dic[dnt] / seqlen * 100, 1))
+        results.append(round(dnt_dic[dnt] / count * 100, 1))
     return results
 
+
+def full_defined(sequence):
+    """
+    Says if all the nucleotide are well defined within the sequence
+
+    :param sequence: (string) nucleotide sequence
+    :return: (boolean) True if all nucleotide are well defined, False else
+    """
+    seq_defined = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
+    if seq_defined / len(sequence) >= 0.95:
+        return True
+    return False
 
 def set_debug(debug=0):
     """
@@ -313,7 +345,6 @@ def set_debug(debug=0):
     """
     global d
     d = debug
-
 
 def printd(message):
     """

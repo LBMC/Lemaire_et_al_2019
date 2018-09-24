@@ -5,3 +5,4 @@ src/conf.py
 src/__pycache__/
 src/*.pyc
 doc/build/
+src/gene_n.py

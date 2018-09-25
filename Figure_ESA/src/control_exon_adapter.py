@@ -42,10 +42,13 @@ def tmp_dic_creator(exon_info):
     (or a row in sed table)
     :return: (dictionary of list of values) contains relative_size info information about exon in exon_info
     """
-    new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": []}
+    new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": [], 'median_flanquant_intron_size': [],
+               "min_flaquant_intron_size": []}
     count = 0
     exon_info_len = len(exon_info)
     for exon in exon_info:
+        new_dic['median_flanquant_intron_size'].append(np.mean([exon[0], exon[2]]))
+        new_dic["min_flaquant_intron_size"].append(min(exon[0], exon[2]))
         if exon[0] != 0:
             new_dic["rel_exon_intron_up"].append(float(exon[1]) / float(exon[0]))
         else:

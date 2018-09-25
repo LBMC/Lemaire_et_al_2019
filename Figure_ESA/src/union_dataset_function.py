@@ -143,3 +143,56 @@ def get_every_events_4_a_sl(cnx, sf_name, regulation):
         if exon[0] == regulation:
             reg_exon_list.append(exon[1:])
     return reg_exon_list
+
+
+
+def get_events_4_a_sl(cnx, sf_name, regulation):
+    """
+    Get every splicing events for a give splicing factor. Every exon down or up saw at least once will be reported \
+    even if for a splicing factor some exons are up-and down regulated in differents project.
+
+    :param cnx: (sqlite3 connection object) connexion to sed database
+    :param sf_name: (string) the name of a splicing factor
+    :param regulation: (string) up or down
+    :return: (list of tuple of 2 int) each sublist corresponds to an exon (gene_id + exon_position on gene + \
+    exon_regulation). Every exon regulated by a splicing factor in different projects.
+    """
+    exons_list = []
+    id_projects = get_projects_links_to_a_splicing_factor(cnx, sf_name)
+    for id_project in id_projects:
+        ase_event = get_ase_events(cnx, id_project)
+        exons_list += ase_event
+
+    reg_exon_list = []
+    for exon in exons_list:
+        if exon[0] == regulation:
+            reg_exon_list.append(exon[1:])
+    # removing redundant exons
+    washed_exon_list = washing_events_all(reg_exon_list)
+
+    return washed_exon_list
+
+
+def washing_events_all(exon_list):
+    """
+    Remove redundant exons
+
+    :param exon_list: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon \
+    (gene_id + exon_position on gene + exon_regulation). \
+    Every exon regulated by a splicing factor in different projects.
+    :return: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id + exon_position on gene + \
+    exon_regulation). Every exon regulated by a splicing factor in different projects without redundancy.
+    """
+    dic = {}
+    for exon in exon_list:
+        exon_name = "%s_%s" % (exon[0], exon[1])
+        if exon_name not in dic:
+            dic[exon_name] = 1
+        else:
+            dic[exon_name] += 1
+    # creation of the new list of exons
+    new_exon_list = []
+    for key in dic:
+        my_exon = key.split("_")
+        new_exon_list.append(my_exon)
+    return new_exon_list

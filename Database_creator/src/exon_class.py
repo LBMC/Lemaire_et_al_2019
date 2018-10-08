@@ -76,13 +76,13 @@ class ExonClass(ExonClassMain):
         printd("Exon " + str(gene_name) + "_" + str(exon_position))
         ExonClassMain.__init__(self, cnx, gene_name, gene_id, exon_position)
         self.gene.gene_filler(cnx)
-        self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
-        self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)
-        self.upstream_intron = Intron(cnx, gene_id, self.position - 1, self.gene.sequence, "upstream")
-        self.downstream_intron = Intron(cnx, gene_id, self.position, self.gene.sequence, "downstream")
-        iupac, dnt = self.get_iupac_dnt_exon(cnx)
+        iupac, dnt, exon_sequence = self.get_iupac_dnt_exon(cnx)
         self.iupac = iupac
         self.dnt = dnt
+        self.upstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position - 1)
+        self.downstream_exon = ExonClassMain(cnx, gene_name, gene_id, exon_position + 1)
+        self.upstream_intron = Intron(cnx, gene_id, self.position - 1, self.gene.sequence, "upstream", exon_sequence)
+        self.downstream_intron = Intron(cnx, gene_id, self.position, self.gene.sequence, "downstream", exon_sequence)
         # once the exon is fully created we delete the gene sequence for memory efficiency
         self.gene.sequence = None
 
@@ -116,7 +116,7 @@ class ExonClass(ExonClassMain):
             dnt = ";".join(list(map(str, dinucleotide_frequencies(sequence))))
         else:
             dnt = None
-        return ";".join(list(map(str, iupac))), dnt
+        return ";".join(list(map(str, iupac))), dnt, sequence
 
 
 class Gene:
@@ -203,7 +203,7 @@ class Gene:
 
 class Intron:
     """Create an intron"""
-    def __init__(self, cnx, gene_id, pos_on_gene, gene_sequence, location):
+    def __init__(self, cnx, gene_id, pos_on_gene, gene_sequence, location, exon_sequence):
         """
 
         :param cnx: (sqlite3 object) allow connection to **FasterDB Lite** database
@@ -211,23 +211,27 @@ class Intron:
         :param pos_on_gene: (int) an intron position on a gene
         :param gene_sequence: (string) the sequence of the gene, gene_id
         :param location: (string) upstream or downstream
+        :param exon_sequence: (string) the sequence of the exon of interest
         """
         self.gene_id = gene_id
         self.position = pos_on_gene
         self.location = location
         self.length = None
         self.iupac_proxi = None
-        self.iupac_dist = None
+        self.iupac = None
+        self.iupac_ei = None  # Iupac 100 nt intron 50 nt exons
         self.dnt_proxi = None
-        self.dnt_dist = None
-        self.get_intron_information(cnx, gene_sequence)
+        self.dnt = None
+        self.dnt_ei = None
+        self.get_intron_information(cnx, gene_sequence, exon_sequence)
 
-    def get_intron_information(self, cnx, gene_seq):
+    def get_intron_information(self, cnx, gene_seq, exon_sequence):
         """
         Get the intron size and the iupac composition of distal and proximal sequence
 
         :param cnx: (sqlite3 object) allows connection to **FasterDB Lite** database
         :param gene_seq: (string) the sequence of the gene, gene_id
+        :param exon_sequence: (string) the sequence of the interest exons
         :return: The following information is returned
             - length: (int) intron length
             - proximal: (string) the proximal (0:25) frequency in the intron
@@ -251,29 +255,30 @@ class Intron:
         sequence = gene_seq[start:end]
         printd("Intron " + self.location + " sequence : ")
         printd(sequence)
+        if len(sequence) > 0 and full_defined(sequence):
+            self.iupac = ";".join(list(map(str, iupac_frequencies(sequence))))
+        if len(sequence) > 1 and full_defined(sequence):
+            self.dnt = ";".join(list(map(str, dinucleotide_frequencies(sequence))))
         if self.location == "upstream":
             sequence = sequence[::-1]
-        proxi_seq = sequence[0:25]
-        distal_seq = sequence[25:100]
+        proxi_seq = sequence[0:100]
         if self.location == "upstream":
             proxi_seq = proxi_seq[::-1]
-            distal_seq = distal_seq[::-1]
         if len(proxi_seq) > 0 and full_defined(proxi_seq):
-            self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq))))
-        else:
-            self.iupac_proxi = None
+            self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq)))) + ";%s" % (len(proxi_seq))
         if len(proxi_seq) > 1 and full_defined(proxi_seq):
-            self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq))))
-        else:
-            self.dnt_proxi = None
-        if len(distal_seq) > 0 and full_defined(distal_seq):
-            self.iupac_dist = ";".join(list(map(str, iupac_frequencies(distal_seq))))
-        else:
-            self.iupac_dist = None
-        if len(distal_seq) > 1 and full_defined(distal_seq):
-            self.dnt_dist = ";".join(list(map(str, dinucleotide_frequencies(distal_seq))))
-        else:
-            self.dnt_dist = None
+            self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq)))) + ";%s" % (len(proxi_seq))
+        if len(proxi_seq) > 0 and len(exon_sequence) > 0:
+            if self.location == "upstream":
+                exon_intron = proxi_seq + exon_sequence[0:50]
+            else:
+                exon_intron = exon_sequence[-50:] + proxi_seq
+            if full_defined(exon_intron):
+                self.iupac_ei = ";".join(list(map(str, iupac_frequencies(exon_intron)))) + ";%s" % (len(exon_intron))
+                self.dnt_ei = ";".join(list(map(str, dinucleotide_frequencies(exon_intron)))) + \
+                              ";%s" % (len(exon_intron))
+            printd("Exon intron %s jonction sequence" % self.location)
+            printd(exon_intron)
         if len(sequence) > 0:
             self.length = len(sequence)
         else:
@@ -311,7 +316,8 @@ def dinucleotide_frequencies(sequence):
     """
 
     dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
-    dnt_dic = {"AA":0., "AC":0., "AG":0., "AT":0., "CA":0., "CC":0., "CG":0., "CT":0., "GA":0., "GC":0., "GG":0., "GT":0., "TA":0., "TC":0., "TG":0., "TT":0.}
+    dnt_dic = {"AA": 0., "AC": 0., "AG": 0., "AT": 0., "CA": 0., "CC": 0., "CG": 0., "CT": 0., "GA": 0.,
+               "GC": 0., "GG": 0., "GT": 0., "TA": 0., "TC": 0., "TG": 0., "TT": 0.}
     results = []
     seqlen = len(sequence) - 1
     count = 0
@@ -337,6 +343,7 @@ def full_defined(sequence):
         return True
     return False
 
+
 def set_debug(debug=0):
     """
     Set debug mod if ``debug`` == 1
@@ -345,6 +352,7 @@ def set_debug(debug=0):
     """
     global d
     d = debug
+
 
 def printd(message):
     """

@@ -268,17 +268,18 @@ class Intron:
             self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq)))) + ";%s" % (len(proxi_seq))
         if len(proxi_seq) > 1 and full_defined(proxi_seq):
             self.dnt_proxi = ";".join(list(map(str, dinucleotide_frequencies(proxi_seq)))) + ";%s" % (len(proxi_seq))
-        if len(proxi_seq) > 0 and len(exon_sequence) > 0:
-            if self.location == "upstream":
-                exon_intron = proxi_seq + exon_sequence[0:50]
-            else:
-                exon_intron = exon_sequence[-50:] + proxi_seq
-            if full_defined(exon_intron):
-                self.iupac_ei = ";".join(list(map(str, iupac_frequencies(exon_intron)))) + ";%s" % (len(exon_intron))
-                self.dnt_ei = ";".join(list(map(str, dinucleotide_frequencies(exon_intron)))) + \
-                              ";%s" % (len(exon_intron))
-            printd("Exon intron %s jonction sequence" % self.location)
-            printd(exon_intron)
+        if proxi_seq is not None and exon_sequence is not None:
+            if len(proxi_seq) > 0 and len(exon_sequence) > 0:
+                if self.location == "upstream":
+                    exon_intron = proxi_seq + exon_sequence[0:50]
+                else:
+                    exon_intron = exon_sequence[-50:] + proxi_seq
+                if full_defined(exon_intron):
+                    self.iupac_ei = ";".join(list(map(str, iupac_frequencies(exon_intron)))) + ";%s" % (len(exon_intron))
+                    self.dnt_ei = ";".join(list(map(str, dinucleotide_frequencies(exon_intron)))) + \
+                                  ";%s" % (len(exon_intron))
+                printd("Exon intron %s jonction sequence" % self.location)
+                printd(exon_intron)
         if len(sequence) > 0:
             self.length = len(sequence)
         else:

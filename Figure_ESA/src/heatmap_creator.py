@@ -234,7 +234,7 @@ def simple_heatmap(data_array, labelsy, labelsx, output, name=""):
     d = {labelsy[i]: {labelsx[j]: [i, j] for j in range(len(labelsx))} for i in range(len(labelsy))}
     # Initialize figure by creating upper dendrogram
     # Create Side Dendrogram
-    figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'complete'))
+    figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'weighted'))
     for i in range(len(figure['data'])):
         figure['data'][i]['xaxis'] = 'x2'
 
@@ -259,8 +259,8 @@ def simple_heatmap(data_array, labelsy, labelsx, output, name=""):
             colorbar={"x": -0.05},
             colorscale="Picnic",
             #colorscale = [[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'], [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
-            zmin=-50,
-            zmax=50
+            zmin=-20,
+            zmax=20
         )
     ]
     heatmap[0]['x'] = figure['layout']['xaxis']['tickvals']
@@ -320,12 +320,13 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
     d = {labelsy[i]: {labelsx[j]: [i, j] for j in range(len(labelsx))} for i in range(len(labelsy))}
     # Initialize figure by creating upper dendrogram
     data_side = data_array.transpose()
-    figure = ff.create_dendrogram(data_side, orientation='bottom', labels=labelsx, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'complete'))
+    figure = ff.create_dendrogram(data_side, orientation='bottom', labels=labelsx, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'weighted'))
+
     for i in range(len(figure['data'])):
         figure['data'][i]['yaxis'] = 'y2'
 
     # Create Side Dendrogram
-    dendro_side = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'complete'))
+    dendro_side = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'weighted'))
     for i in range(len(dendro_side['data'])):
         dendro_side['data'][i]['xaxis'] = 'x2'
 
@@ -352,8 +353,8 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
             colorscale="Picnic",
             #colorscale=[[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'],
             #            [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
-            zmin=-50,
-            zmax=50
+            zmin=-20,
+            zmax=20
         )
     ]
 

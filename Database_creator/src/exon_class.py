@@ -105,10 +105,10 @@ class ExonClass(ExonClassMain):
         start = result[0][0] - 1
         stop = result[0][1]
         if start >= stop:
-            return None, None
+            return None, None, None
         sequence = self.gene.sequence[start:stop]
         if not full_defined(sequence):
-            return None, None
+            return None, None, None
         printd("Exon sequence:")
         printd(sequence)
         iupac = iupac_frequencies(sequence)

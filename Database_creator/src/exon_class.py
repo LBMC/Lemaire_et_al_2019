@@ -57,7 +57,7 @@ class ExonClassMain:
                 length_exon = result[0]
             else:
                 length_exon = None
-        return length_exon, result[0], result[1], result[2]
+        return length_exon, result[1], result[2], result[3]
 
 
 class ExonClass(ExonClassMain):

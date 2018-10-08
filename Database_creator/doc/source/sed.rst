@@ -61,21 +61,29 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |          dnt_exon                   | The frequency (%) of dinucleotides  AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the exon of interest                          |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_upstream_intron_dist         | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-100,-26] of the upstream intron                                       |
+|  iupac_upstream_intron              | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-100,-26] of the upstream intron                                       |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| dnt_upstream_intron_dist            | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-100,-26] of the upstream intron   |
+| dnt_upstream_intron                 | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-100,-26] of the upstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_upstream_intron_proxi        | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-25,-1] of the upstream intron (0 is the first nucleotide of the exon) |
+|  iupac_upstream_intron_proxi        | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M + seq size respectively within the region [-100,-0] of the upstream intron (0 first nucleotide of exon)|
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  dnt_upstream_intron_proxi          | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-25,-1] of the upstream intron     |
+|  dnt_upstream_intron_proxi          | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT + seq size respectively within region[-100,-0] of upstream intron  |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_downstream_intron_proxi      | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [1,25] of the downstream intron (0 is the last nucleotide of the exon)  |
+|  iupac_downstream_intron_proxi      | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M + seq size respectively within the region [1,100] of the downstream intron (0 last nucleotide of exon) |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  dnt_downstream_intron_proxi        | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [1,25] of the downstream intron     |
+|  dnt_downstream_intron_proxi        | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT + seq size respectively within region [1,100] of downstream intron |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_upstream_intron_dist         | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [26;100] of the downstream intron                                       |
+|  iupac_upstream_intron              | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [26;100] of the downstream intron                                       |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  dnt_upstream_intron_dist           | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [26;100] of the downstream intron   |
+|  dnt_upstream_intron                | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [26;100] of the downstream intron   |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  iupac_intron_exon                  | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M and sequence size, respectively within the region [-100;+50] of the upstream intron                    |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_intron_exon                    | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT seq size respectively within region [-100;50] of upstream intron   |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  iupac_exon_intron                  | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M and sequence size, respectively within the region [-100;+50] of the downstream intron                  |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_exon_intron                    | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT seq size respectively within region [-100;50] of downstream intron |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | relative_donor_upstream             | ((force_donor - force_donor_upstream_exon) / force_donor_upstream_exon) * 100                                                                                        |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -85,6 +93,10 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | relative_acceptor_downstream        | ((force_acceptor - force_acceptor_downstream_exon) / force_acceptor_downstream_exon) * 100                                                                           |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. note::
+
+  The columns labeled *_proxi* and *_exon_intron* or *_intron_exon* have a suplementary information corresponding to the size of the sequence used to compute the iupac or dnt frequencies
 
 Description of the **rnaseq_projects** table:
 

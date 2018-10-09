@@ -112,6 +112,7 @@ def get_exon_tuple(exon_list):
                     exon.downstream_intron.iupac, exon.downstream_intron.dnt,
                     exon.upstream_intron.iupac_ei, exon.upstream_intron.dnt_ei,
                     exon.downstream_intron.iupac_ei, exon.downstream_intron.dnt_ei,
+                    exon.iupac_exon_env, exon.dnt_exon_env,
                     relative_donor_upstream, relative_donor_downstream, relative_acceptor_upstream,
                     relative_acceptor_downstream]
         list_tuple.append(cur_list)
@@ -168,6 +169,8 @@ def create_sed_exon_table(sed_cnx):
                dnt_intron_exon VARCHAR(80),
                iupac_exon_intron VARCHAR(50),
                dnt_exon_intron VARCHAR(80),
+               iupac_exon_env VARCHAR(50),
+               dnt_exon_env VARCHAR(80),
                relative_donor_upstream FLOAT,
                relative_donor_downstream FLOAT,
                relative_acceptor_upstream FLOAT,
@@ -271,7 +274,7 @@ def sed_filler(sed_cnx, list_tuple):
     """
     cursor = sed_cnx.cursor()
     cursor.executemany(
-        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         list_tuple)
     sed_cnx.commit()
     # creation of an index on gene_symbol and exon_pos

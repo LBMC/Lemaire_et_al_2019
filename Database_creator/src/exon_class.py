@@ -85,6 +85,9 @@ class ExonClass(ExonClassMain):
         self.downstream_intron = Intron(cnx, gene_id, self.position, self.gene.sequence, "downstream", exon_sequence)
         # once the exon is fully created we delete the gene sequence for memory efficiency
         self.gene.sequence = None
+        self.iupac_exon_env = None
+        self.dnt_exon_env = None
+        self.get_environment()
 
     def get_iupac_dnt_exon(self, cnx):
         """
@@ -117,6 +120,17 @@ class ExonClass(ExonClassMain):
         else:
             dnt = None
         return ";".join(list(map(str, iupac))), dnt, sequence
+
+    def get_environment(self):
+        """
+        Get the iupac and dnt of the exon environment
+        """
+        self.iupac_exon_env = get_exon_evironment(self.upstream_intron.iupac_proxi, self.iupac,
+                                                      self.downstream_intron.iupac_proxi, self.length)
+        printd("Exon evironment")
+        printd(self.iupac_exon_env)
+        self.dnt_exon_env = get_exon_evironment(self.upstream_intron.dnt_proxi, self.dnt,
+                                                  self.downstream_intron.dnt_proxi, self.length)
 
 
 class Gene:
@@ -343,6 +357,33 @@ def full_defined(sequence):
     if seq_defined / len(sequence) >= 0.95:
         return True
     return False
+
+
+def get_exon_evironment(upstream, exon, downstream, exon_size):
+    """
+    Get the frequencies of the dinucleotides/nucleotide of the exons environment
+    :param upstream: (string) frequency of each nucleotides/dnt in upstream exon separated by a ';', the last value \
+    corresponds to the size of the upstream sequence
+    :param exon:  (string) frequency of each nucleotides/dnt in exon separated by a ';'
+    :param downstream: (string) frequency of each nucleotides/dnt in downstream exon separated by a ';', the last value \
+    corresponds to the size of the downstream sequence
+    :param exon_size: (int) exon size
+    :return: (string) the frequencies of nt and dnt in the exon environment, the last value is the size of the \
+    environment
+    """
+    if None not in [upstream, exon, downstream]:
+        upstream = list(map(float, upstream.split(";")))
+        exon = list(map(float, exon.split(";")))
+        downstream = list(map(float, downstream.split(";")))
+        result = []
+        denom = upstream[-1] + exon_size + downstream[-1]
+        for i in range(len(exon)):
+            val = (upstream[i] * upstream[-1] + exon[i] * exon_size + downstream[i] * downstream[-1]) / denom
+            result.append(round(val, 1))
+        result.append(denom)
+        return ";".join(list(map(str, result)))
+    else:
+        return None
 
 
 def set_debug(debug=0):

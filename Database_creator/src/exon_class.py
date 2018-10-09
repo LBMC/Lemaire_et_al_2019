@@ -371,19 +371,35 @@ def get_exon_evironment(upstream, exon, downstream, exon_size):
     :return: (string) the frequencies of nt and dnt in the exon environment, the last value is the size of the \
     environment
     """
-    if None not in [upstream, exon, downstream]:
-        upstream = list(map(float, upstream.split(";")))
-        exon = list(map(float, exon.split(";")))
-        downstream = list(map(float, downstream.split(";")))
-        result = []
-        denom = upstream[-1] + exon_size + downstream[-1]
-        for i in range(len(exon)):
-            val = (upstream[i] * upstream[-1] + exon[i] * exon_size + downstream[i] * downstream[-1]) / denom
-            result.append(round(val, 1))
-        result.append(denom)
-        return ";".join(list(map(str, result)))
-    else:
-        return None
+    if exon is not None:
+        if None not in [upstream, downstream]:
+            upstream = list(map(float, upstream.split(";")))
+            exon = list(map(float, exon.split(";")))
+            downstream = list(map(float, downstream.split(";")))
+            result = []
+            denom = upstream[-1] + exon_size + downstream[-1]
+            for i in range(len(exon)):
+                val = (upstream[i] * upstream[-1] + exon[i] * exon_size + downstream[i] * downstream[-1]) / denom
+                result.append(round(val, 1))
+            result.append(denom)
+            return ";".join(list(map(str, result)))
+        elif upstream is None and downstream is None:
+            return None
+        else: # first and last exons
+            if upstream is not None and downstream is None:
+                intron = upstream
+            else:
+                intron = downstream
+            exon = list(map(float, exon.split(";")))
+            intron = list(map(float, intron.split(";")))
+            denom = intron[-1] + exon_size
+            result = []
+            for i in range(len(exon)):
+                val = (intron[i] * intron[-1] + exon[i] * exon_size) / denom
+                result.append(round(val, 1))
+            result.append(denom)
+            return ";".join(list(map(str, result)))
+    return None
 
 
 def set_debug(debug=0):

@@ -85,6 +85,10 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  dnt_exon_intron                    | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT seq size respectively within region [-100;50] of downstream intron |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  iupac_exon_env                     | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M and sequence size, respectively within the region [-100;exon;+100] of the downstream intron            |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  dnt_exon_env                       | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT seq size respectively within region [-100;exon;100] of down-intron |
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | relative_donor_upstream             | ((force_donor - force_donor_upstream_exon) / force_donor_upstream_exon) * 100                                                                                        |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | relative_donor_downstream           | ((force_donor - force_donor_downstream_exon) / force_donor_downstream_exon) * 100                                                                                    |

@@ -107,7 +107,9 @@ def get_exon_tuple(exon_list):
                     exon.upstream_exon.acceptor, exon.acceptor, exon.downstream_exon.acceptor,
                     exon.upstream_exon.donor, exon.donor, exon.downstream_exon.donor, exon.iupac, exon.dnt,
                     exon.upstream_intron.iupac, exon.upstream_intron.dnt,
+                    exon.upstream_intron.iupac_adjacent1, exon.upstream_intron.iupac_adjacent2,
                     exon.upstream_intron.iupac_proxi, exon.upstream_intron.dnt_proxi,
+                    exon.downstream_intron.iupac_adjacent1, exon.downstream_intron.iupac_adjacent2,
                     exon.downstream_intron.iupac_proxi, exon.downstream_intron.dnt_proxi,
                     exon.downstream_intron.iupac, exon.downstream_intron.dnt,
                     exon.upstream_intron.iupac_ei, exon.upstream_intron.dnt_ei,
@@ -159,8 +161,12 @@ def create_sed_exon_table(sed_cnx):
                dnt_exon VARCHAR(80),
                iupac_upstream_intron VARCHAR(50),
                dnt_upstream_intron VARCHAR(80),
+               iupac_upstream_intron_adjacent1 VARCHAR(50),
+               iupac_upstream_intron_adjacent2 VARCHAR(50),
                iupac_upstream_intron_proxi VARCHAR(50),
                dnt_upstream_intron_proxi VARCHAR(80),
+               iupac_downstream_intron_adjacent1 VARCHAR(50),
+               iupac_downstream_intron_adjacent2 VARCHAR(50),
                iupac_downstream_intron_proxi VARCHAR(50),
                dnt_downstream_intron_proxi VARCHAR(80),
                iupac_downstream_intron VARCHAR(50),
@@ -274,7 +280,7 @@ def sed_filler(sed_cnx, list_tuple):
     """
     cursor = sed_cnx.cursor()
     cursor.executemany(
-        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO sed VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         list_tuple)
     sed_cnx.commit()
     # creation of an index on gene_symbol and exon_pos

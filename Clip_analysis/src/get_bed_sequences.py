@@ -11,6 +11,7 @@ Description:
 import gzip
 from Bio import SeqIO
 import math
+import numpy as np
 
 
 # Functions
@@ -77,8 +78,10 @@ def clip_sequence_size(list_coordinates):
     max_val = min_val
     for coord in list_coordinates:
         len_seq = coord[2] - coord[1] + 1
-        if len_seq < min_val: min_val = len_seq
-        if len_seq > max_val: max_val = len_seq
+        if len_seq < min_val:
+            min_val = len_seq
+        if len_seq > max_val:
+            max_val = len_seq
     return min_val, max_val
 
 
@@ -102,6 +105,40 @@ def get_middle_sequences(list_coordinates, fasta_dic, size):
         if new_seq is not None:
             list_seq.append(new_seq)
     return list_seq
+
+
+def full_defined(sequence):
+    """
+    Says if all the nucleotide are well defined within the sequence
+
+    :param sequence: (string) nucleotide sequence
+    :return: (boolean) True if all nucleotide are well defined, False else
+    """
+    seq_defined = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
+    if seq_defined / len(sequence) >= 0.95:
+        return True
+    return False
+
+
+def get_nt_frequencies(list_seq):
+    """
+    Get the frequencies of every nucleotide within the list of sequence ``list_seq``
+    :param list_seq: (list of string) list of nucleotide sequence
+    :return: (dictionary of float) dictionary that containing the mean value for each nucleotide in ``list_seq``
+    """
+    iupac = list("ATCG")
+    dic_nt = {nt: [] for nt in iupac}
+    for sequence in list_seq:
+        if full_defined(sequence):
+            seq_len = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
+            for nt in dic_nt.keys():
+                dic_nt[nt].append((sequence.count(nt) / seq_len) * 100)
+    final_dic = {}
+    for nt in dic_nt.keys():
+        final_dic[nt] = np.mean(dic_nt[nt])
+    final_dic["S"] = list(np.array(dic_nt["G"]) + np.array(dic_nt["C"]))
+    final_dic["W"] = list(np.array(dic_nt["A"]) + np.array(dic_nt["T"]))
+    return final_dic
 
 
 def write_fasta_file(list_coordinates, fasta_dic, output):
@@ -137,7 +174,7 @@ def get_middle_coordinates(sequence, size):
     """
     if len(sequence) < size:
         return None
-    middle = math.floor( len(sequence) / 2)
+    middle = math.floor(len(sequence) / 2)
     return sequence[middle - math.floor(size / 2): middle + math.ceil(size / 2)]
 
 
@@ -152,8 +189,3 @@ def create_sequence_dic(hg19_fasta):
     for record in SeqIO.parse(hg19_fasta, "fasta"):
         dic_records[record.id] = record.seq
     return dic_records
-
-
-
-
-

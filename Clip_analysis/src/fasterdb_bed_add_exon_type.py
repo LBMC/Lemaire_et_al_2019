@@ -33,7 +33,7 @@ def get_exon(cnx):
         exon = list(exon)
         if int(exon[-1]) > 0:
             if not exon[5]:
-                exon[5] =  "NA"
+                exon[5] = "NA"
             if "-" in str(exon[6]):
                 exon[6] = "-"
             else:
@@ -68,14 +68,14 @@ def get_intragenic_sequence(cnx):
     return list_res
 
 
-def write_new_bed(cnx, bed_file_exon_type, type="exon"):
+def write_new_bed(cnx, bed_file_exon_type, type_file="exon"):
     """
     Create the new bed file
     :param cnx: (sqlite3 connect object) connection to fasterDB lite database
     :param bed_file_exon_type:  (string) the resulting bed file with exon type
-    :param type: (string) the type of feature to write in the result file.
+    :param type_file: (string) the type of feature to write in the result file.
     """
-    if type == "exon":
+    if type_file == "exon":
         list_ft = get_exon(cnx)
     else:
         list_ft = get_intragenic_sequence(cnx)
@@ -120,5 +120,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

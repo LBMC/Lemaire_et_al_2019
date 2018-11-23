@@ -13,42 +13,6 @@ import subprocess
 import os
 
 
-# def get_exon_type(cnx, coordinates):
-#     """
-#     From chromosomal coordinates give the type of the exons with the coordinates ``coordinates
-#     :param cnx: (sqlite3 connect object) connection to fasterDB lite database
-#     :param coordinates: (list of onj string and 2 int) chromosome number + chromosomal coordinates
-#     :return: (string) the exon type of the exons with the ``cordinates``
-#     """
-#     cursor = cnx.cursor()
-#     query = "SELECT exon_type FROM exons WHERE chromosome = '?' AND start_on_chromosome = ? AND end_on_chromosome = ?"
-#     cursor.execute(query, (coordinates[0], coordinates[1], coordinates[2]))
-#     res = cursor.fetchone()
-#     if res[0]:
-#         return res[0]
-#     else:
-#         return "NA"
-#
-#
-# def write_new_bed(cnx, bed_file, bed_file_exon_type):
-#     """
-#     Create the new bed file
-#     :param cnx: (sqlite3 connect object) connection to fasterDB lite database
-#     :param bed_file: (string) a bed file containing fasterDB exons
-#     :param bed_file_exon_type:  (string) the resultting bed file with exon type
-#     """
-#     with open(bed_file, "r") as bedin, open(bed_file_exon_type, "w") as bedout:
-#         for line in bedin:
-#             if "#" not in line:
-#                 line = line.split("\t")
-#                 coordinates = [line[0], int(line[1]), int(line[2])]
-#                 exon_type = get_exon_type(cnx, coordinates)
-#                 line[3] = line[3] + "_" + exon_type
-#                 bedout.write("\t".join(line))
-#             else:
-#                 bedout.write(line)
-
-
 def get_exon(cnx):
     """
     Get every exons info to create a bed file
@@ -79,15 +43,46 @@ def get_exon(cnx):
     return list_res
 
 
-def write_new_bed(cnx, bed_file_exon_type):
+def get_intragenic_sequence(cnx):
+    """
+    Return every intragenic sequence in fasterDB
+    :param cnx:  (sqlite3 connect object) connection to fasterDB database
+    :return: (list of string) list of every intergenic sequence
+    """
+    cursor = cnx.cursor()
+    query = """SELECT chromosome, start_on_chromosome, end_on_chromosome, official_symbol, strand, 
+                      end_on_chromosome - start_on_chromosome + 1
+               FROM genes
+               ORDER BY chromosome ASC, start_on_chromosome ASC"""
+    cursor.execute(query)
+    res = cursor.fetchall()
+    list_res = []
+    for gene in res:
+        gene = list(gene)
+        if int(gene[-1]) > 0:
+            if "-" in str(gene[4]):
+                gene[4] = "-"
+            else:
+                gene[4] = "+"
+            list_res.append("\t".join(list(map(str, gene))))
+    return list_res
+
+
+def write_new_bed(cnx, bed_file_exon_type, type="exon"):
     """
     Create the new bed file
     :param cnx: (sqlite3 connect object) connection to fasterDB lite database
     :param bed_file_exon_type:  (string) the resulting bed file with exon type
+    :param type: (string) the type of feature to write in the result file.
     """
-    list_exon = get_exon(cnx)
+    if type == "exon":
+        list_ft = get_exon(cnx)
+    else:
+        list_ft = get_intragenic_sequence(cnx)
+        print(len(list_ft))
     with open(bed_file_exon_type, "w") as bedout:
-        bedout.write("\n".join(list_exon))
+        for i in range(len(list_ft)):
+            bedout.write("%s\n" % list_ft[i])
 
 
 def add_intron_sequence(bed_file_exon_type, final_bed_file, chrom_size_file):
@@ -105,15 +100,22 @@ def add_intron_sequence(bed_file_exon_type, final_bed_file, chrom_size_file):
 
 def main():
     """
-    Create a bed file with exon type and 200bp of surrouding intron sequence
+    Create a bed file with exon type and 200bp of surrouding intron sequence and a bed files of intragenic sequence
     """
+    output = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/bed_template/")
+    if not os.path.isdir(output):
+        os.mkdir(output)
     fasterdb_file = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/fasterDB_lite.db")
     chrom_size_file = fasterdb_file.replace("fasterDB_lite.db", "hg19.ren.chrom.sizes")
-    final_bed_file = fasterdb_file.replace("fasterDB_lite.db", "fasterDB_exons_add200nt.bed")
+    final_exon_bed_file = "%s/fasterDB_exons_add200nt.bed" % output
+    final_gene_bed_file = "%s/fasterDB_gene.bed" % output
     cnx = sqlite3.connect(fasterdb_file)
-    bed_file_exon_type = fasterdb_file.replace("fasterDB_lite.db", "tmp.bed")
+    bed_file_exon_type = "%s/tmp.bed" % output
+    print("Writing intron bed file")
     write_new_bed(cnx, bed_file_exon_type)
-    add_intron_sequence(bed_file_exon_type, final_bed_file, chrom_size_file)
+    add_intron_sequence(bed_file_exon_type, final_exon_bed_file, chrom_size_file)
+    print("Writing intragenic_bed file")
+    write_new_bed(cnx, final_gene_bed_file, "gene")
 
 
 if __name__ == "__main__":

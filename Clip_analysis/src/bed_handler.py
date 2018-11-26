@@ -46,16 +46,17 @@ def bed_0based_2_1based(bed_file, output):
     return new_name
 
 
-def intersect_bed(faster_db_bed, clib_1b_bed, output):
+def intersect_bed(faster_db_bed, clib_1b_bed, output, name):
     """
     Keep only the feature of ``clib_1b_bed``` if they overlap a feature in ``faster_db_bed``
     :param faster_db_bed: (string) a bed containing every fasterDB exons with 200bp of interval
     :param clib_1b_bed:(string) a bed obtain from a clip experiment 1 based
     :param output: (string) path where the intersect bed will be written
+    :param name: (string) the name of the file
     :return: (string) the name of the intersect bed
     """
     basename = clib_1b_bed.split("/")[-1].replace(".1b.bed.gz", "")
-    new_name = "%s%s_Intersect_with_fasterDB.1b.bed.gz" % (output, basename)
+    new_name = "%s%s_Intersect_%s.1b.bed.gz" % (output, basename, name)
     cmd = "intersectBed -a %s -b %s -u -f 1 | gzip -c > %s " % (clib_1b_bed, faster_db_bed, new_name)
     subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
     return new_name

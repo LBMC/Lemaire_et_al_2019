@@ -14,14 +14,21 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
 
     :param clip_bed: (string) a bed containing motifs bing by a particular splicing factor
     :param bed_folder: (string)a folder containing interest bed files
-    :param hg19_reference: (string) a fasta file containing the sequences of every chromosome in hg19
+    :param hg19_reference: (string) a fasta file containing the sequences of every chromosome in hg19 or \
+    a dictionary containing the sequences of hg19
     :param output: (string) path where the weblogo will be created
     :param size: (int) the size of the weblogo
     :param prg_path: (string) path to motif finder programs
     :param enrichment: (string) y/n : y to perform en enrichment motif analysis and N to \
     produce only a weblogo centered in the clip sequence
     """
-    outputs = [output + "1based_bed/", output + "intesect_bed/", output + "figures/"]
+    if isinstance(hg19_reference, str):
+        print("Loading hg19 genome !")
+        dic_records = get_bed_sequences.create_sequence_dic(hg19_reference)
+    else:
+        print(" --- ANALYSING %s ---" % clip_bed)
+        dic_records = hg19_reference
+    outputs = [output + "1based_bed/", output + "intesect_bed/", output + "frequencies/"]
     for cur_output in outputs:
         if not os.path.isdir(cur_output):
             os.mkdir(cur_output)
@@ -30,17 +37,17 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
     print("Creation of intersect bed")
     list_template = bed_handler.get_files(bed_folder)
     for bed in list_template:
-        bed_list.append(bed_handler.intersect_bed(bed, bed_list[0], outputs[1]))
-    print("Loading hg19 genome !")
-    dic_records = get_bed_sequences.create_sequence_dic(hg19_reference)
+        base_name = os.path.basename(bed).split(".")[0]
+        bed_list.append(bed_handler.intersect_bed(bed, bed_list[0], outputs[1], base_name))
     for i in range(len(bed_list)):
         print("Working on %s bed file" % bed_list[i])
         list_coordinates = get_bed_sequences.get_bed_coordinates(bed_list[i], dic_records.keys())
+        list_coordinates = list_coordinates
         print("   --> nb list_coordinates: %s" % len(list_coordinates))
         list_sequence = get_bed_sequences.get_middle_sequences(list_coordinates, dic_records, size)
         dic_freq = get_bed_sequences.get_nt_frequencies(list_sequence)
-        name_result = os.path.basename(bed_list[i]).split(".")[0]
-        with open("%sfrequencies_%s.py" % (output, name_result), "w") as outfile:
+        name_result = os.path.basename(bed_list[i]).split(".")[1]
+        with open("%sfrequencies_%s.py" % (outputs[2], name_result), "w") as outfile:
             outfile.write("dic_freq = %s\n" % str(dic_freq))
         if enrichment == "Y":
             motif_search_dir = output + "motif_search_%s/" % name_result
@@ -68,15 +75,15 @@ def launcher():
 
     req_arg = parser.add_argument_group("Required arguments")
 
-    req_arg.add_argument('--clip_bed', dest='clip_bed', help="bed coming from a clip experiment",
+    req_arg.add_argument('--clip_bed', dest='clip_bed', help="bed coming from a clip experiment or a folder containing "
+                                                             "a lot of bed",
                          required=True)
     parser.add_argument('--enrichment', dest='enrichment',
                         help="(Y/N)Y perform a motif search in clipped sequence (time consuming), "
                              "N if you want only a belogo centered in the clip sequence", default="N")
-    parser.add_argument('--fasterdb_bed', dest='fasterdb_bed', help="bed file containing the fasterdb exons with "
-                                                                    "200 additional bp at each side of the exon.",
+    parser.add_argument('--fasterdb_bed', dest='fasterdb_bed', help="folder where are located the bed'",
                         default=os.path.realpath(os.path.dirname(__file__)).
-                        replace("src", "data/fasterDB_exons_add200nt.bed"))
+                        replace("src", "data/bed_template/"))
     parser.add_argument('--hg19_reference', dest='hg19_reference',
                         help="fasta file containing the sequences of every chromosome in hg19",
                         default=os.path.realpath(
@@ -102,7 +109,7 @@ def launcher():
     if args.meme_path[-1] != "/":
         args.meme_path += "/"
 
-    if not os.path.isfile(args.clip_bed):
+    if not os.path.isfile(args.clip_bed) and not os.path.isdir(args.clip_bed):
         parser.error("The clip bed doesn't exist !")
 
     try:
@@ -125,7 +132,19 @@ def launcher():
     except ValueError:
         parser.error("Wrong parameter for nb_iteration, it must be a number")
 
-    main(args.clip_bed, args.fasterdb_bed, args.hg19_reference, args.output, args.size, args.meme_path, args.enrichment)
+    if os.path.isfile(args.clip_bed):
+        main(args.clip_bed, args.fasterdb_bed, args.hg19_reference, args.output, args.size, args.meme_path,
+             args.enrichment)
+    else:
+        print("Loading hg19 genome !")
+        dic_records = get_bed_sequences.create_sequence_dic(args.hg19_reference)
+        list_bed = bed_handler.get_files(args.clip_bed)
+        for mybed in list_bed:
+            output = args.output + os.path.basename(mybed).split(".")[0] + "/"
+            if not os.path.isdir(output):
+                os.mkdir(output)
+            main(mybed, args.fasterdb_bed, dic_records, output, args.size, args.meme_path,
+                 args.enrichment)
 
 
 if __name__ == "__main__":

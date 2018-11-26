@@ -136,8 +136,8 @@ def get_nt_frequencies(list_seq):
     final_dic = {}
     for nt in dic_nt.keys():
         final_dic[nt] = np.mean(dic_nt[nt])
-    final_dic["S"] = list(np.array(dic_nt["G"]) + np.array(dic_nt["C"]))
-    final_dic["W"] = list(np.array(dic_nt["A"]) + np.array(dic_nt["T"]))
+    final_dic["S"] = np.mean(list(np.array(dic_nt["G"]) + np.array(dic_nt["C"])))
+    final_dic["W"] = np.mean(list(np.array(dic_nt["A"]) + np.array(dic_nt["T"])))
     return final_dic
 
 
@@ -172,7 +172,9 @@ def get_middle_coordinates(sequence, size):
     :param size: (int) the wanted size for the weblogo
     :return: (string) the new sequence for the weblogo
     """
-    if len(sequence) < size:
+    if 9 < len(sequence) < size:
+        return sequence
+    if len(sequence) < 10:
         return None
     middle = math.floor(len(sequence) / 2)
     return sequence[middle - math.floor(size / 2): middle + math.ceil(size / 2)]

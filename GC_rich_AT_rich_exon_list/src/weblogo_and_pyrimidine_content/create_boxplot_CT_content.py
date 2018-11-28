@@ -10,7 +10,9 @@ import plotly
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 import sys
-sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/create_boxplot_CT_content", ""))
+import numpy as np
+sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/weblogo_and_pyrimidine_content", ""))
+import group_factor
 
 # sed_name 2 real_name
 sed2real = {"iupac_upstream_intron_adjacent1": "25 nt", "iupac_upstream_intron_adjacent2": "50 nt", "iupac_upstream_intron_proxi": "100 nt"}
@@ -121,25 +123,18 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
     :param output: (string) path where the output_file will be created
     :param regulation: (string) up or down
     """
-    color_list=['#1f77b4', '#1fa7b4', '#2ca02c',  '#2ca05c', 'red',
-                '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    color_dic = group_factor.color_dic
     data = []
-
-    values = []
-    for i in range(len(list_values) - 1):
-        values.append(list_name[i])
-        values.append(list_name[-1])
-        values.append(mann_withney_test_r_lesser(list_values[i], list_values[-1]))
+    list_values[-1] = list(map(float, list_values[-1]))
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
-    tmp = ""
-    for i in range(0, len(values), 3):
-        tmp += "<br> %s vs %s, p=%.2E" % (values[i], values[i + 1], values[i + 2])
-    title += tmp
+    for i in range(len(list_values) - 1):
+        pval = mann_withney_test_r(list_values[i], list_values[-1])
+        title += "<br> %s vs %s, p=%.2E" % (list_name[i], list_name[-1], pval)
 
     for i in range(len(list_values)):
         data.append({"y": list_values[i], "type": "violin",
                      "name": list_name[i], "visible": True, # "fillcolor": color_list[i], "opacity": 0.6,
-                     "line": {"color": color_list[i]},
+                     "line": {"color": color_dic[list_name[i]]},
                      "box": {"visible": True}, "meanline": {"visible": True}})
 
     layout = go.Layout(
@@ -150,9 +145,9 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
             zeroline=True,
             autotick=True,
             title=name_fig,
-            gridcolor='rgb(255, 255, 255)',
+            gridcolor='white',
             gridwidth=1,
-            zerolinecolor='rgb(255, 255, 255)',
+            zerolinecolor='white',
             zerolinewidth=2,
         ),
         margin=dict(
@@ -161,9 +156,11 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
             b=150,
             t=100,
         ),
-        paper_bgcolor='rgb(243, 243, 243)',
-        plot_bgcolor='rgb(243, 243, 243)',
-        showlegend=True
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        showlegend=True,
+        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) -0.5, y1=np.median(list_values[-1]),
+                     line=dict(color=color_dic[list_name[-1]]))]
     )
 
     fig = {"data": data, "layout": layout}
@@ -176,19 +173,7 @@ def mann_withney_test_r(list_values1, list_values2):
     wicox = robj.r("""
 
     function(x, y){
-        test = wilcox.test(x,y, alternative='greater', correct=F)
-        return(test$p.value)
-    }
-
-                   """)
-    pval = float(wicox(v.FloatVector(list_values1), v.FloatVector(list_values2))[0])
-    return pval
-
-def mann_withney_test_r_lesser(list_values1, list_values2):
-    wicox = robj.r("""
-
-    function(x, y){
-        test = wilcox.test(x,y, alternative='less', correct=F)
+        test = wilcox.test(x,y, alternative='two.sided', correct=F)
         return(test$p.value)
     }
 
@@ -208,31 +193,16 @@ def main():
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src/weblogo_and_pyrimidine_content", "data/sed.db")
     cnx = sqlite3.connect(seddb)
 
-    # if len(sys.argv) < 2 or sys.argv[1] == "pure":
-    #     u1_file = "%sU1_exons" % output
-    #     u2_file = "%sU2_exons" % output
-    #     at_file = "%sAT_rich_exons" % path
-    #     gc_file = "%sGC_rich_exons" % path
-    # else:
-    #     u1_file = "%sU1_with_intersection_exons" % output
-    #     u2_file = "%sU2_with_intersection_exons" % output
-    #     at_file = "%sAT_rich_with_intersection_exons" % path
-    #     gc_file = "%sGC_rich_with_intersection_exons" % path
-    # name_file = ["GC_rich_exons", "AT_rich_exons", exon_type]
-
     at_file_pure = "%sAT_rich_exons" % path
     gc_file_pure = "%sGC_rich_exons" % path
-    at_file_all = "%sAT_rich_with_intersection_exons" % path
-    gc_file_all = "%sGC_rich_with_intersection_exons" % path
-    list_file = [gc_file_pure, gc_file_all, at_file_pure, at_file_all, None]
-    name_file = ["GC_pure", "GC_all", "AT_pure", "AT_all", exon_type]
+    list_file = [gc_file_pure, at_file_pure, None]
+    name_file = ["GC_pure", "AT_pure", exon_type]
     list_ct_content = []
     for i in range(len(name_file)):
         if name_file[i] != exon_type:
             list_ct_content.append(extract_ct_content_from_file(cnx, list_file[i], list_targets))
         else:
             list_ct_content.append(get_control_ct_content(cnx, exon_type, list_targets))
-    print(list_ct_content)
     for target in list_targets:
         new_targets_ct_content = []
         for i in range(len(list_ct_content)):

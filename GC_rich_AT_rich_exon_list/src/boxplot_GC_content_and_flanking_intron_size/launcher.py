@@ -15,6 +15,7 @@ import math
 import sys
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
+import numpy as np
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("boxplot_GC_content_and_flanking_intron_size", ""))
 import group_factor
 
@@ -51,7 +52,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     :param name_fig: (string) the name of the graphic
     :param type_fig: (string) the type of graphic build
     """
-
+    list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
     data = []
     title = """%s of %s %s containing those exons regulated by different factors""" % (name_fig, regulation, type_fig)
@@ -91,7 +92,10 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
         ),
         paper_bgcolor='white',
         plot_bgcolor='white',
-        showlegend=True
+        showlegend=True,
+        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+                     y1=np.median(list_values[-1]),
+                     line=dict(color=color_dic["_".join(list_name[-1].split("_")[:-1])]))]
     )
 
     fig = {"data": data, "layout": layout}

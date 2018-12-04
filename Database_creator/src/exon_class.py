@@ -234,6 +234,7 @@ class Intron:
         self.iupac_proxi = None
         self.iupac_adjacent1 = None # 25 nt next to the exon
         self.iupac_adjacent2 = None # 50 nt next to the exon
+        self.iupac_ppt_area = None # 75-25 nucleotide before the exon
         self.iupac = None
         self.iupac_ei = None  # Iupac 100 nt intron 50 nt exons
         self.dnt_proxi = None
@@ -280,20 +281,26 @@ class Intron:
         proxi_seq = sequence[0:100]
         proxi_seq1 = sequence[0:25]
         proxi_seq2 = sequence[0:50]
+        ppt_seq = sequence[25:75]
         if self.location == "upstream":
             proxi_seq = proxi_seq[::-1]
             proxi_seq1 = proxi_seq1[::-1]
             proxi_seq2 = proxi_seq2[::-1]
+            ppt_seq = ppt_seq[::-1]
         printd("Intron " + self.location + " sequence proxi: ")
         printd(proxi_seq)
         printd("Intron " + self.location + " sequence adjacent1: ")
         printd(proxi_seq1)
         printd("Intron " + self.location + " sequence adjacent2: ")
         printd(proxi_seq2)
+        printd("Intron " + self.location + " sequence ppt_seq: ")
+        printd(ppt_seq)
         if len(proxi_seq) > 0 and full_defined(proxi_seq):
             self.iupac_proxi = ";".join(list(map(str, iupac_frequencies(proxi_seq)))) + ";%s" % (len(proxi_seq))
         if len(proxi_seq1) > 0 and full_defined(proxi_seq1):
             self.iupac_adjacent1 = ";".join(list(map(str, iupac_frequencies(proxi_seq1)))) + ";%s" % (len(proxi_seq1))
+        if len(ppt_seq) > 0 and full_defined(ppt_seq):
+            self.iupac_ppt_area = ";".join(list(map(str, iupac_frequencies(ppt_seq)))) + ";%s" % (len(ppt_seq))
         if len(proxi_seq2) > 0 and full_defined(proxi_seq2):
             self.iupac_adjacent2 = ";".join(list(map(str, iupac_frequencies(proxi_seq2)))) + ";%s" % (len(proxi_seq2))
         if len(proxi_seq) > 1 and full_defined(proxi_seq):

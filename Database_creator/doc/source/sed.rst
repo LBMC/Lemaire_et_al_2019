@@ -65,6 +65,8 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | dnt_upstream_intron                 | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-100,-26] of the upstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|  iupac_upstream_intron_ppt_area     | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M + seq size respectively within the region [-75,-25] of the upstream intron (0 first nucleotide of exon)|
++-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_upstream_intron_adjacent1    | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M + seq size respectively within the region [-25,-0] of the upstream intron (0 first nucleotide of exon) |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  iupac_upstream_intron_adjacent2    | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M + seq size respectively within the region [-50,-0] of the upstream intron (0 first nucleotide of exon) |

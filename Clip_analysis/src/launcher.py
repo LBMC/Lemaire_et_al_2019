@@ -91,7 +91,7 @@ def launcher():
                                                                "data/Homo_sapiens.GRCh37.dna.primary_assembly.fa"))
     req_arg.add_argument('--output', dest='output', help="path where the weblogo will be created",
                          required=True)
-    parser.add_argument('--size', dest='size', help='weblogo size', default=20)
+    parser.add_argument('--size', dest='size', help='size', default=10)
     parser.add_argument('--nb_iteration', dest='nb_iteration', help='nb control iteration', default=1000)
     parser.add_argument('--exon_type', dest='exon_type', help='exon type (ACE, CCE, or ALL)', default="CCE")
     parser.add_argument('--meme_path', dest="meme_path", help="path to meme program",

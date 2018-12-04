@@ -13,8 +13,8 @@ import subprocess
 import numpy as np
 import os
 import sys
-
-
+import plotly
+import plotly.graph_objs as go
 
 # FUNCTIONS
 def get_template_name(folder):
@@ -62,7 +62,7 @@ def load_gc_content_values(file_name):
                 if "S" in line[i]:
                     freq = line[i+1].split(",")[0]
                     freq = round(float(freq), 2)
-                    return [project, str(freq).replace(".", ",")]
+                    return [project, freq]
 
 
 def load_gc_content_values_from_list(res_dic, list_files):
@@ -97,7 +97,6 @@ def get_result_dic(folder, list_template):
     res_dic = {}
     index = []
     for template in list_template:
-        print("########## TEMPLATE ###################")
         index.append(template.replace("frequencies_", ""))
         list_files = get_interest_list_files(folder, template)
         res_dic = load_gc_content_values_from_list(res_dic, list_files)
@@ -116,6 +115,92 @@ def create_result_table(res_dic, index):
     return df.transpose()
 
 
+def project_2_sf_dic(res_dic):
+    """
+    Convert a project dic to an sf dic.
+
+    :param res_dic: (dictionary of list of float) (dictionary of list of float) link each project (key) to the frequencies of gc \
+        in each one of the template (value)
+    :return: (dictionary of list of float) (dictionary of list of float) link each sf (key) to the frequencies of gc \
+        in each one of the template (value)
+    """
+    new_dic = {}
+    for key in res_dic.keys():
+        sf_name = key.split("_")[0].upper()
+        if sf_name not in new_dic:
+            new_dic[sf_name] = [[] for v in res_dic[key]]
+        for i in range(len(res_dic[key])):
+            new_dic[sf_name][i].append(res_dic[key][i])
+    mean_dic = {}
+    for key in new_dic.keys():
+        if key == "RBFOX2":
+            print(new_dic[key])
+        mean_dic[key] = [round(np.nanmean(l), 2) for l in new_dic[key]]
+    return mean_dic
+
+
+def figure_maker(value_list, name_list, template, output):
+    """
+    Create a barplot.
+
+    :param value_list: (list of float) list of value to display in the barplot
+    :param name_list: (list of string) name of list associated to each value in ``value_list``
+    :param template: (string) gc content obtaind with the template ``template`` bed file
+    :param output: (string) path where te result will be created
+    """
+    color = []
+    at_rich_down = ("PCBP2", "HNRNPA1", "HNRNPU", "QKI", "PTBP1",
+                "TRA2A", "KHSRP", "MBNL1",
+                "HNRNPL", "HNRNPK", "SRSF7", "HNRNPA2B1", "SFPQ",
+                "RBM15", "HNRNPM", "FUS",
+                "DAZAP1", "RBM39")
+    gc_rich_down = ("SRSF9", "RBM25", "RBM22", "HNRNPF", "SRSF5",
+                "PCBP1", "RBFOX2", "HNRNPH1", "RBMX", "SRSF6", "MBNL2", "SRSF1")
+    other = ("SRSF2", "DDX5_DDX17", "HNRNPC", "SRSF3")
+    for sf_name in name_list:
+        if sf_name in at_rich_down:
+            color.append("green")
+        elif sf_name in gc_rich_down:
+            color.append("blue")
+        elif sf_name in other:
+            color.append("red")
+        else:
+            color.append('black')
+
+    data = [go.Bar(
+        x=name_list,
+        y=value_list,
+        marker=dict(color=color)
+    )]
+    title = """GC content of clip-seq data on different splicing factors in region %s""" % (template)
+
+    layout = go.Layout(
+        title=title,
+        yaxis=dict(
+            autorange=True,
+            showgrid=True,
+            zeroline=True,
+            autotick=True,
+            title="mean GC content by splicing factor",
+            gridcolor='rgb(255, 255, 255)',
+            gridwidth=1,
+            zerolinecolor='rgb(255, 255, 255)',
+            zerolinewidth=2,
+        ),
+        margin=dict(
+            l=40,
+            r=30,
+            b=150,
+            t=100,
+        ),
+        showlegend=False
+    )
+
+    fig = {"data": data, "layout": layout}
+    plotly.offline.plot(fig, filename="%sbarplot_%s.html" % (output, template),
+                    auto_open=False, validate=False)
+
+
 def main(folder):
     """
     Create the GC frequencies table of every clip project, for every template used for the clip analysis
@@ -128,8 +213,16 @@ def main(folder):
     list_template = get_template_name(folder)
     res_dic, index = get_result_dic(folder, list_template)
     df = create_result_table(res_dic, index)
-    table_name = "%sgc_content_analysis.txt" % output
+    table_name = "%sgc_content_analysis_by_project.txt" % output
     df.to_csv(table_name, sep="\t")
+    table_name = "%sgc_content_analysis_by_sf.txt" % output
+    res_dic = project_2_sf_dic(res_dic)
+    df = create_result_table(res_dic, index)
+    df.to_csv(table_name, sep="\t")
+    for col in list(df.columns):
+        df = df.sort_values(by=col, ascending=False)
+        figure_maker(list(df[col]), list(df.index), col, output)
+
 
 
 if __name__ == "__main__":

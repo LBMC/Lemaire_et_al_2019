@@ -138,6 +138,7 @@ def get_nt_frequencies(list_seq):
         final_dic[nt] = np.mean(dic_nt[nt])
     final_dic["S"] = np.mean(list(np.array(dic_nt["G"]) + np.array(dic_nt["C"])))
     final_dic["W"] = np.mean(list(np.array(dic_nt["A"]) + np.array(dic_nt["T"])))
+    final_dic["nb_sequences"] = len(list_seq)
     return final_dic
 
 

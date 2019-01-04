@@ -85,17 +85,20 @@ def write_new_bed(cnx, bed_file_exon_type, type_file="exon"):
             bedout.write("%s\n" % list_ft[i])
 
 
-def add_intron_sequence(bed_file_exon_type, final_bed_file, chrom_size_file):
+def add_intron_sequence(bed_file_exon_type, final_bed_file, chrom_size_file, left_intron=200, right_intron=200):
     """
     Add 200nt of intron sequence before and after each exons
     :param bed_file_exon_type: (string) bed file with exon type
     :param final_bed_file: (string) bed file with exon type + 200 nt of sourroungin intron sequence for each exon
     :param chrom_size_file: (string) a file containing chromosome size
+    :param left_intron: (int) nt add to the left border of the intron
+    :param right_intron: (int) nt add to the right location
     """
-    cmd = "bedtools slop -i %s -g %s -l 200 -r 200 > %s" % (bed_file_exon_type, chrom_size_file, final_bed_file)
+    cmd = "bedtools slop -i %s -g %s -l %s -r %s > %s" % (bed_file_exon_type, chrom_size_file, left_intron,
+                                                          right_intron, final_bed_file)
     subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
     cmd = "rm %s" % bed_file_exon_type
-    subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
+    #subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
 
 
 def main():

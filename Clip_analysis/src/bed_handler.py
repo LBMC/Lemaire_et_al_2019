@@ -6,6 +6,8 @@
 import subprocess
 import gzip
 import os
+import union_dataset_function
+import fasterdb_bed_add_exon_type
 
 
 def get_files(folder):
@@ -60,6 +62,57 @@ def intersect_bed(faster_db_bed, clib_1b_bed, output, name):
     cmd = "intersectBed -a %s -b %s -u -f 1 | gzip -c > %s " % (clib_1b_bed, faster_db_bed, new_name)
     subprocess.call(cmd, shell=True, stderr=subprocess.STDOUT)
     return new_name
+
+
+def bed_creator(cnx, cnx_sed, dest_folder, sf_name, regulation, chrom_size_file):
+    """
+    Create a bed file containing all the exons regulated by ``sf_name`` with ``regulation``.
+
+    :param cnx: (sqlite3 connector object) connection to fasterDB lite database
+    :param cnx: (sqlite3 connector object) connection to sed database
+    :param dest_folder: (string) path where the bed will be created
+    :param sf_name: (string) the name of a splicing factor
+    :param regulation: (string) up or down
+    :param: (string) a file containing chromosome size
+    :return: (string) the name of the bed file created
+    """
+    sf_name = sf_name.upper()
+    sf_name = sf_name.replace("SFRS", "SRSF")
+    dic_fact = {"TRA2A": "TRA2A_B"}
+    strand_dic = {-1:"-", 1:"+"}
+    if sf_name in dic_fact:
+        exon_list = union_dataset_function.get_every_events_4_a_sl(cnx_sed, dic_fact[sf_name], regulation)
+    else:
+        exon_list = union_dataset_function.get_every_events_4_a_sl(cnx_sed, sf_name, regulation)
+    if len(exon_list) == 0:
+        print("%s exon %s : %s %s" % ("\033[0;31m", sf_name, len(exon_list), "\033[0m"))
+    else:
+        print("%s exon %s : %s %s" % ("\033[0;32m", sf_name, len(exon_list), "\033[0m"))
+    cursor = cnx.cursor()
+    exon_info = []
+    for exon in exon_list:
+        query = """SELECT t1.chromosome, t1.start_on_chromosome, t1.end_on_chromosome, t2.official_symbol, t1.pos_on_gene,
+                   t2.strand, t1.end_on_chromosome - t1.start_on_chromosome + 1
+                   FROM exons t1, genes t2
+                   WHERE t1.id_gene = t2.id
+                   AND t1.id_gene = %s
+                   AND t1.pos_on_gene = %s
+                   ORDER BY t1.chromosome ASC, t1.start_on_chromosome ASC
+                """ % (exon[0], exon[1])
+        cursor.execute(query)
+        res = cursor.fetchall()
+        if len(res) > 1:
+            print("Error, only one exon should be found for %s_%s exon" %  (exon[0], exon[1]))
+            exit(1)
+        my_exon = list(res[0][0:3]) + ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [strand_dic[res[0][5]], res[0][6]]
+        exon_info.append("\t".join(list(map(str, my_exon))))
+    bed_content = "\n".join(exon_info)
+    filename = "%sSF_%s_exons-union.bed" % (dest_folder, regulation)
+    final_name = filename.replace(".bed", "_add200nt.bed")
+    with open(filename, "w") as bedfile:
+        bedfile.write(bed_content + "\n")
+    fasterdb_bed_add_exon_type.add_intron_sequence(filename, final_name, chrom_size_file)
+    return final_name
 
 
 def meme_launcher(meme_path, fasta_file, output):

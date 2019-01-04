@@ -15,6 +15,7 @@ import os
 import sys
 import plotly
 import plotly.graph_objs as go
+import group_factor
 
 # FUNCTIONS
 def get_template_name(folder):
@@ -55,14 +56,22 @@ def load_gc_content_values(file_name):
     :return: (list of one string + one float) the name of the clip project and it's associated gc frequencies
     """
     project = file_name.split("/")[-3]
+    freq = None
+    nbseq = None
     with open(file_name) as outfile:
         for line in outfile:
             line = line.split(":")
             for i in range(len(line)):
                 if "S" in line[i]:
                     freq = line[i+1].split(",")[0]
+                    freq = freq.split("}")[0]
                     freq = round(float(freq), 2)
-                    return [project, freq]
+                if "nb_sequences" in line[i]:
+                    nbseq = int(line[i+1].split(",")[0].split("}")[0].strip())
+    print("nb_seq = %s : filename : %s" % (nbseq, project))
+    if nbseq > 50:
+        return [project, freq]
+    return project, float("NaN")
 
 
 def load_gc_content_values_from_list(res_dic, list_files):
@@ -76,10 +85,11 @@ def load_gc_content_values_from_list(res_dic, list_files):
     """
     for my_file in list_files:
         gc_info = load_gc_content_values(my_file)
-        if gc_info[0] in res_dic.keys():
-            res_dic[gc_info[0]].append(gc_info[1])
-        else:
-            res_dic[gc_info[0]] = [gc_info[1]]
+        if gc_info:
+            if gc_info[0] in res_dic.keys():
+                res_dic[gc_info[0]].append(gc_info[1])
+            else:
+                res_dic[gc_info[0]] = [gc_info[1]]
     return res_dic
 
 
@@ -97,7 +107,7 @@ def get_result_dic(folder, list_template):
     res_dic = {}
     index = []
     for template in list_template:
-        index.append(template.replace("frequencies_", ""))
+        index.append(template.replace("frequencies_", "").replace(".py", ""))
         list_files = get_interest_list_files(folder, template)
         res_dic = load_gc_content_values_from_list(res_dic, list_files)
     return res_dic, index
@@ -127,6 +137,7 @@ def project_2_sf_dic(res_dic):
     new_dic = {}
     for key in res_dic.keys():
         sf_name = key.split("_")[0].upper()
+        sf_name = sf_name.replace("SFRS", "SRSF")
         if sf_name not in new_dic:
             new_dic[sf_name] = [[] for v in res_dic[key]]
         for i in range(len(res_dic[key])):
@@ -149,27 +160,24 @@ def figure_maker(value_list, name_list, template, output):
     :param output: (string) path where te result will be created
     """
     color = []
-    at_rich_down = ("PCBP2", "HNRNPA1", "HNRNPU", "QKI", "PTBP1",
-                "TRA2A", "KHSRP", "MBNL1",
-                "HNRNPL", "HNRNPK", "SRSF7", "HNRNPA2B1", "SFPQ",
-                "RBM15", "HNRNPM", "FUS",
-                "DAZAP1", "RBM39")
-    gc_rich_down = ("SRSF9", "RBM25", "RBM22", "HNRNPF", "SRSF5",
-                "PCBP1", "RBFOX2", "HNRNPH1", "RBMX", "SRSF6", "MBNL2", "SRSF1")
-    other = ("SRSF2", "DDX5_DDX17", "HNRNPC", "SRSF3")
-    for sf_name in name_list:
-        if sf_name in at_rich_down:
+    at_rich_down = group_factor.at_rich_down
+    gc_rich_down = group_factor.gc_rich_down
+    new_value_list = []
+    new_name_list = []
+    for i in range(len(name_list)):
+        name_list[i] = name_list[i].replace("SFRS", "SRSF").replace("TRA2A", "TRA2A_B")
+        if name_list[i] in at_rich_down and not np.isnan(value_list[i]):
             color.append("green")
-        elif sf_name in gc_rich_down:
+            new_value_list.append(value_list[i])
+            new_name_list.append(name_list[i])
+        elif name_list[i] in gc_rich_down and not np.isnan(value_list[i]):
             color.append("blue")
-        elif sf_name in other:
-            color.append("red")
-        else:
-            color.append('black')
+            new_value_list.append(value_list[i])
+            new_name_list.append(name_list[i])
 
     data = [go.Bar(
-        x=name_list,
-        y=value_list,
+        x=new_name_list,
+        y=new_value_list,
         marker=dict(color=color)
     )]
     title = """GC content of clip-seq data on different splicing factors in region %s""" % (template)
@@ -201,13 +209,12 @@ def figure_maker(value_list, name_list, template, output):
                     auto_open=False, validate=False)
 
 
-def main(folder):
+def main(folder, output):
     """
     Create the GC frequencies table of every clip project, for every template used for the clip analysis
 
     :param folder: (string) folder where the gc content of every clip seq project are located
     """
-    output = os.path.realpath(os.path.dirname(__file__)).replace("src", "result/gc_frequencies_report/")
     if not os.path.isdir(output):
         os.mkdir(output)
     list_template = get_template_name(folder)
@@ -227,6 +234,6 @@ def main(folder):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        main(sys.argv[1])
+        main(sys.argv[1], sys.argv[2])
     else:
-        main("/media/nicolas/DD_1/Splicing_Lore_project/Clip_analysis/result/GC_content_analysis/")
+        main("/media/nicolas/DD_1/Splicing_Lore_project/Clip_analysis/result/GC_content_analysis_bis/", "result/gc_frequencies_report/")

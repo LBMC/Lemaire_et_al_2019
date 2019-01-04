@@ -6,9 +6,10 @@ import get_bed_sequences
 import bed_handler
 import argparse
 import os
+import sqlite3
 
 
-def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichment):
+def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichment, fasterdb, regulation, chrom_size_file, seddb):
     """
     Create a weblogo of the sequences in ``clip_bed`` overlapping those in ``fasterdb_bed``.
 
@@ -21,6 +22,10 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
     :param prg_path: (string) path to motif finder programs
     :param enrichment: (string) y/n : y to perform en enrichment motif analysis and N to \
     produce only a weblogo centered in the clip sequence
+    :param fasterdb: (string) path to fasterdb lite database
+    :param regulation: (string) up or down
+    :param chrom_size_file: (string) a tab file indicating the size of each chromosome in hg19
+    :param seddb: (string) path to sed database
     """
     if isinstance(hg19_reference, str):
         print("Loading hg19 genome !")
@@ -35,7 +40,12 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
     print("Creation of a one based bed")
     bed_list = [bed_handler.bed_0based_2_1based(clip_bed, outputs[0])]
     print("Creation of intersect bed")
+    cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+    sf_name = os.path.basename(clip_bed).split("_")[0]
+    exon_template = bed_handler.bed_creator(cnx, cnx_sed, outputs[0], sf_name, regulation, chrom_size_file)
     list_template = bed_handler.get_files(bed_folder)
+    list_template.append(exon_template)
     for bed in list_template:
         base_name = os.path.basename(bed).split(".")[0]
         bed_list.append(bed_handler.intersect_bed(bed, bed_list[0], outputs[1], base_name))
@@ -58,6 +68,8 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
             bed_handler.meme_launcher(prg_path, fa_file, motif_search_dir)
             zagros_size = min(size, 8)
             bed_handler.zagros_launcher(prg_path, fa_file, zagros_size, motif_search_dir)
+    cnx.close()
+    cnx_sed.close()
 
 
 def launcher():
@@ -98,6 +110,11 @@ def launcher():
                         default=os.path.realpath(os.path.dirname(__file__)).replace("src", "data/meme_program/"))
     parser.add_argument('--chr_size', dest="chr_size", help="a tab file indicating the size of each chromosome in hg19",
                         default=os.path.realpath(os.path.dirname(__file__)).replace("src", "data/hg19.ren.chrom.sizes"))
+    parser.add_argument("--fasterdb", dest="fasterdb", help="path to fasterdb lite database",
+                        default=os.path.realpath(os.path.dirname(__file__)).replace("src", "data/fasterDB_lite.db"))
+    parser.add_argument("--seddb", dest="seddb", help="path to sed database",
+                        default=os.path.realpath(os.path.dirname(__file__)).replace("src", "data/sed.db"))
+    parser.add_argument("--reg", dest="reg", help="regulation wanted to build a bed", default="down")
 
     args = parser.parse_args()
 
@@ -134,7 +151,7 @@ def launcher():
 
     if os.path.isfile(args.clip_bed):
         main(args.clip_bed, args.fasterdb_bed, args.hg19_reference, args.output, args.size, args.meme_path,
-             args.enrichment)
+             args.enrichment, args.fasterdb, args.reg, args.chr_size, args.seddb)
     else:
         print("Loading hg19 genome !")
         dic_records = get_bed_sequences.create_sequence_dic(args.hg19_reference)
@@ -144,7 +161,7 @@ def launcher():
             if not os.path.isdir(output):
                 os.mkdir(output)
             main(mybed, args.fasterdb_bed, dic_records, output, args.size, args.meme_path,
-                 args.enrichment)
+                 args.enrichment, args.fasterdb, args.reg, args.chr_size, args.seddb)
 
 
 if __name__ == "__main__":

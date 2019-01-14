@@ -14,12 +14,16 @@ import union_dataset_function
 import control_exon_adapter
 import argparse
 import os
+import pandas as pd
 import plotly
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import random
 import group_factor
 sch = __import__('scipy.cluster.hierarchy')
+iupac_nt = {"S": ["G", "C"], "W": ["A", "T"], "Y": ["C", "T"], "R": ["A", "G"], "K": ["T", "G"], "M": ["A", "C"]}
+
+
 
 
 def redundant_ag_at_and_u1_u2(cnx, regulation):
@@ -39,8 +43,8 @@ def redundant_ag_at_and_u1_u2(cnx, regulation):
     for sf_name in group_factor.gc_rich_down:
         exon_gc += union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
     exon_gc = union_dataset_function.washing_events_all(exon_gc)
-    redundant_gc_at = [exon for exon in exon_at if exon in exon_gc]
     global redundant_gc_at
+    redundant_gc_at = [exon for exon in exon_at if exon in exon_gc]
     print("redundant exon GC and AT rich : %s" % len(redundant_gc_at))
 
     exon_u1 = []
@@ -51,9 +55,9 @@ def redundant_ag_at_and_u1_u2(cnx, regulation):
     for sf_name in group_factor.u2_factors:
         exon_u2 += union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
     exon_u2 = union_dataset_function.washing_events_all(exon_u2)
+    global redundant_u1_u2
     redundant_u1_u2 = [exon for exon in exon_u1 if exon in exon_u2]
     print("redundant exon U1 and U2 rich : %s" % len(redundant_u1_u2))
-    global redundant_u1_u2
 
 
 def difference(cnx, exon_list1, name_exon_list, regulation, sf_type):

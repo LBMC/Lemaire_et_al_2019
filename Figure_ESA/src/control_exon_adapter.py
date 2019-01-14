@@ -4,9 +4,9 @@
 import os
 import exon_control_handler
 import numpy as np
-import sqlite3
 import figure_producer
 import sys
+
 
 def get_control_exon_size_information(cnx, exon_type):
     """
@@ -20,14 +20,17 @@ def get_control_exon_size_information(cnx, exon_type):
     """
     cursor = cnx.cursor()
     if exon_type != "ALL":
-        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size
+        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size,
+                   iupac_upstream_intron, iupac_downstream_intron
                    FROM sed
                    WHERE exon_type LIKE '%{}%'""".format(exon_type)
     else:
-        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size
+        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size,
+                   iupac_upstream_intron, iupac_downstream_intron
                    FROM sed
                 """
     cursor.execute(query)
+    names = [description[0] for description in cursor.description]
     result = cursor.fetchall()
     # turn tuple into list
     nresult = []

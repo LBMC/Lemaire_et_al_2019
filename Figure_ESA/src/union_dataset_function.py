@@ -2,6 +2,7 @@
 
 # coding: utf-8
 
+import group_factor
 
 def get_gene_name(cnx, gene_id):
     """
@@ -46,7 +47,7 @@ def get_projects_links_to_a_splicing_factor(cnx, sf_name):
     query = "SELECT id FROM rnaseq_projects WHERE sf_name = ?"
     cursor.execute(query, (sf_name,))
     res = cursor.fetchall()
-    idp = [val[0] for val in res]
+    idp = [val[0] for val in res if val[0] not in group_factor.bad_id_projects]
     return idp
 
 

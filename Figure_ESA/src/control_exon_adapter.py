@@ -39,18 +39,46 @@ def get_control_exon_size_information(cnx, exon_type):
     return nresult
 
 
+def get_median_iupac_introns(upstream, downstream):
+    """
+    Get the median value for every iupac nucleotide frequencies in upstream and downstream intron of an exon.
+
+    :param upstream: (string) frequency of each nucleotides/dnt in full upstream intron separated by a ';',
+    the last value corresponds to the size of the upstream sequence
+    :param downstream: (string) frequency of each nucleotides/dnt in full downstream intron separated by a ';',
+    the last value corresponds to the size of the downstream sequence
+    :return: (list of float) the frequencies of nt and dnt in the introns
+    """
+    if upstream is not None and downstream is not None:
+        upstream = list(map(float, upstream.split(";")))
+        downstream = list(map(float, downstream.split(";")))
+        result = []
+        for i in range(len(upstream)):
+            result.append(np.mean([upstream[i], downstream[i]]))
+        return result
+    else:
+        return [None] * 10
+
+
 def tmp_dic_creator(exon_info):
     """
     :param exon_info: (list of tuple) each tuple corresponds to an exon \
     (or a row in sed table)
     :return: (dictionary of list of values) contains relative_size info information about exon in exon_info
     """
-    new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": [], 'median_flanking_intron_size': [],
-               "min_flanking_intron_size": []}
+    new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": [],
+               'median_flanking_intron_size': [],
+               "min_flanking_intron_size": [], "iupac_mean_intron": {nt: [] for nt in figure_producer.nt_dic},
+               }
     count = 0
     exon_info_len = len(exon_info)
     for exon in exon_info:
-        exon = np.array(exon, dtype=float)
+        intron = exon[-2:]
+        exon = np.array(exon[:-2], dtype=float)
+        mean_intron_iupac = get_median_iupac_introns(intron[0], intron[1])
+        for key in new_dic["iupac_mean_intron"].keys():
+            new_dic["iupac_mean_intron"][key].append(mean_intron_iupac[figure_producer.nt_dic[key]])
+
         new_dic['median_flanking_intron_size'].append(np.nanmedian([exon[0], exon[2]]))
         new_dic["min_flanking_intron_size"].append(np.nanmin([exon[0], exon[2]]))
         if exon[0] != 0:
@@ -81,13 +109,21 @@ def get_summary_dictionaries(exons_dictionary):
     """
     median_dic = {}
     for key in exons_dictionary:
-        cur_list = np.array(exons_dictionary[key], dtype=float)
-        median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
+        if "iupac" in key:
+            median_dic[key] = {}
+            if "iupac" in key:
+                for nt in exons_dictionary[key].keys():
+                    cur_list = np.array(exons_dictionary[key][nt], dtype=float)
+                    median_dic[key][nt] = np.median(cur_list[~np.isnan(cur_list)])
+        else:
+            cur_list = np.array(exons_dictionary[key], dtype=float)
+            median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
     return median_dic
 
 
 def write_adapted_dic(control_file, exon_type, str2write):
     """
+    Write the dictionary ``str2write`` in the ``control_file``.
 
     :param control_file: (string) the control file
     :param exon_type: (string) the control exon type
@@ -134,7 +170,8 @@ def control_handler(cnx, exon_type):
         write_adapted_dic(control_file, exon_type, str(ctrl_list))
     return ctrl_list
 
+
 if __name__ == "__main__":
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
-    cnx = figure_producer.connexion(seddb)
-    control_handler(cnx, "CCE")
+    cnx_sed = figure_producer.connexion(seddb)
+    control_handler(cnx_sed, "CCE")

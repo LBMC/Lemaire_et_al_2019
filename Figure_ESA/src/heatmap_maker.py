@@ -224,78 +224,93 @@ def removing_projects(full_projects_list, name_projects_list, project_2_remove):
     return wanted_project_id, wanted_project_name
 
 
-def get_projects_links_to_a_splicing_factor_list(cnx, sf_list):
+def simple_heatmap(data_array, labelsx, labelsy, output, contrast, name=""):
     """
-    Get the id of every projects corresponding to a particular splicing factor.
+    Create a heatmap link to a single dendrogram.
 
-    :param cnx: (sqlite3 connection object) connexion to sed database
-    :param sf_list: (list of strings) list of splicing factor name
-    :return: (2 lists):
-        * (list of int) the list of project we want to analye
-        * (list of string) the list of projects name we want to  analyse
+    :param data_array: (lif of list of float) the medians value for a project (line) for every characteristic of \
+    interests (number of value in one line corresponding to a project).
+    :param labelsy: (list of strings) list of projects name
+    :param labelsx: (list of strings) list of characteristics of interest
+    :param output: (string)  path where the results will be created
+    :param contrast: (int) the value of the contrast
+    :param name: (string) partial name of the file
     """
-    id_projects = []
-    name_projects = []
-    cursor = cnx.cursor()
-    query = "SELECT id, sf_name, db_id_project, cl_name FROM rnaseq_projects WHERE sf_name = ?"
-    for sf_name in sf_list:
-        cursor.execute(query, (sf_name,))
-        res = cursor.fetchall()
-        for val in res:
-            id_projects.append(val[0])
-            name_projects.append("%s_%s_%s" % (val[1], val[2], val[3]))
-    return id_projects, name_projects
+    for i in range(len(data_array)):
+        data_array[i][0] += random.random() / 1000000000
+    data_array = np.array(data_array)
+    d = {labelsy[i]: {labelsx[j]: [i, j] for j in range(len(labelsx))} for i in range(len(labelsy))}
+    # Initialize figure by creating upper dendrogram
+    # Create Side Dendrogram
+    figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'average'))
+    for i in range(len(figure['data'])):
+        figure['data'][i]['xaxis'] = 'x2'
 
+    # Add Side Dendrogram Data to Figure
 
-def get_id_and_name_project_wanted(cnx, sf_type):
-    """
-    Get the list of project of interest and the name of the project wanted
-    :param cnx: (sqlite3 connect object) connection to sed database
-    :param sf_type: (string) the type of sf we want to analyze
-    :return: (2 lists):
-        * (list of int) the list of project we want to analye
-        * (list of string) the list of projects name we want to  analyse
-    """
-    if sf_type is None:
-        good_sf = group_factor.at_rich_down + group_factor.gc_rich_down + \
-                  group_factor.u1_factors + group_factor.u2_factors
-        id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
+    # Create Heatmap
+    dendro_leaves = figure['layout']['yaxis']['ticktext']
+    dendro_leaves2 = labelsx
+    data_arrange = np.array([[None] * len(data_array[0])] * len(data_array))
+    for i in range(len(dendro_leaves)):
+        for j in range(len(dendro_leaves2)):
+            vx = d[dendro_leaves[i]][dendro_leaves2[j]][0]
+            vy = d[dendro_leaves[i]][dendro_leaves2[j]][1]
+            data_arrange[i][j] = data_array[vx][vy]
+    for i in range(len(data_arrange)):
+        data_arrange[i][0] = round(data_arrange[i][0], 7)
+    heatmap = [
+        go.Heatmap(
+            x=dendro_leaves2,
+            y=dendro_leaves,
+            z=data_arrange,
+            colorbar={"x": -0.05},
+            colorscale="Picnic",
+            #colorscale = [[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'], [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
+            zmin=-contrast,
+            zmax=contrast
+        )
+    ]
+    heatmap[0]['x'] = figure['layout']['xaxis']['tickvals']
+    heatmap[0]['y'] = figure['layout']['yaxis']['tickvals']
 
-    elif sf_type == "GC_rich":
-        good_sf = group_factor.gc_rich_down + group_factor.u1_factors
-        id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "AT_rich":
-        good_sf = group_factor.at_rich_down
-        id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "CF":
-        good_sf = group_factor.chromatin_factors
-        id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    else:
-        good_sf = group_factor.u1_factors + group_factor.u2_factors + ["DDX5_DDX17"]
-        id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    return id_projects, name_projects
+    # Add Heatmap Data to Figure
+    figure['data'].extend(heatmap)
 
+    # Edit Layout
+    figure['layout'].update({"title": "Clustering of '%s' for %s exons" % (labelsx[0], name),
+                             "autosize": True, "height": 1080, "width": 1920,
+                             'showlegend': False, 'hovermode': 'closest',
+                             })
+    # Edit xaxis
+    figure['layout']['xaxis'].update({'domain': [0.805, 0.9],
+                                      'mirror': False,
+                                      'showgrid': False,
+                                      'showline': False,
+                                      'zeroline': False,
+                                      'ticks': "", })
+    # Edit xaxis2
+    figure['layout'].update({'xaxis2': {'domain': [0, .8],
+                                        'mirror': False,
+                                        'showgrid': False,
+                                        'showline': False,
+                                        'zeroline': False,
+                                        'showticklabels': False,
+                                        'ticks': ""}})
 
-def get_wanted_sf_name(sf_type):
-    """
-    Return the list of splicing factors of interest.
+    # Edit yaxis
+    figure['layout']['yaxis'].update({'domain': [0, 1],
+                                      'mirror': False,
+                                      'showgrid': False,
+                                      'showline': False,
+                                      'zeroline': False,
+                                      'showticklabels': True,
+                                      'ticks': "",
+                                      "side": "right"})
 
-    :param sf_type: (string) the type of sf wanted
-    :return: (list of string) the list of sf of interest
-    """
-    if sf_type is None:
-        name_projects = group_factor.at_rich_down + group_factor.gc_rich_down + \
-                  group_factor.u1_factors + group_factor.u2_factors
-    elif sf_type == "GC_rich":
-        name_projects = group_factor.gc_rich_down + group_factor.u1_factors
-    elif sf_type == "AT_rich":
-        name_projects = group_factor.at_rich_down
-    elif sf_type == "CF":
-        name_projects = group_factor.chromatin_factors
-    else:
-        name_projects = group_factor.u1_factors + group_factor.u2_factors + ["DDX5_DDX17"]
-    return name_projects
-
+    print('%s%s_%s.html' % (output, labelsx[0], name))
+    plotly.offline.plot(figure, filename='%s%s.html' % (output, name),
+                        auto_open=False)
 
 def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
     """

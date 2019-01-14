@@ -40,12 +40,17 @@ def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control
     :return: (float) the relative median value of the ``target_column`` in the list of exon comapred to control
     """
     if nt:
-        values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt))
+        if "mean_intron" in target_column:
+            values1 = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt), dtype=float)
+            values2 = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt), dtype=float)
+            values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+        else:
+            values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt))
     else:
         if target_column == "median_flanking_intron_size":
-            values_up = np.array(figure_producer.get_list_of_value(cnx, exon_list, "upstream_intron_size"))
-            values_down = np.array(figure_producer.get_list_of_value(cnx, exon_list, "downstream_intron_size"))
-            values = np.array([np.median([values_up[i], values_down[i]]) for i in range(len(values_up))])
+            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values = np.array([np.nanmedian([values_up[i], values_down[i]]) for i in range(len(values_up))])
 
         elif target_column == "min_flanking_intron_size":
             values_up = np.array(
@@ -140,29 +145,39 @@ def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
     print(len(exon_list))
     exon_name = ["%s_%s" % (union_dataset_function.get_gene_name(cnx, a[0]), a[1]) for a in exon_list]
     if nt1:
-        values1 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column1, nt1)
+        if "mean_intron" in target_column1:
+            valuesa = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt1), dtype=float)
+            valuesb = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt1), dtype=float)
+            values1 = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))])
+        else:
+            values1 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column1, nt1)
     else:
         if target_column1 == "median_flanking_intron_size":
-            values_up = figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size")
-            values_down = figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size")
-            values1 = np.array([np.mean([values_up[i], values_down[i]]) for i in range(len(values_up))])
+            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values1 = np.array([np.nanmean([values_up[i], values_down[i]]) for i in range(len(values_up))])
         elif target_column1 == "min_flanking_intron_size":
-            values_up = figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size")
-            values_down = figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size")
-            values1 = [min([values_up[i], values_down[i]]) for i in range(len(values_up))]
+            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values1 = [np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))]
         else:
             values1 = figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column1)
     if nt2:
-        values2 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column2, nt2)
+        if "mean_intron" in target_column2:
+            valuesa = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt2), dtype=float)
+            valuesb = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt2), dtype=float)
+            values2 = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))])
+        else:
+            values2 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column2, nt2)
     else:
         if target_column2 == "median_flanking_intron_size":
-            values_up = figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size")
-            values_down = figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size")
-            values2 = [np.mean([values_up[i], values_down[i]]) for i in range(len(values_up))]
+            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values2 = [np.nanmean([values_up[i], values_down[i]]) for i in range(len(values_up))]
         elif target_column2 == "min_flanking_intron_size":
-            values_up = figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size")
-            values_down = figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size")
-            values2 = [min([values_up[i], values_down[i]]) for i in range(len(values_up))]
+            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values2 = [np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))]
         else:
             values2 = figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column2)
     return values1, values2, exon_name
@@ -394,7 +409,7 @@ def get_relative_values(list_values, ctrl_dic, name_list, exon_name):
         if "$" in name_list:
             target_column, nt = name_list.split("$")
             for i in range(len(exon_name)):
-                if exon_name[i] == "HES4_2":
+                if exon_name[i] == "KIF26B_2":
                     print(exon_name[i])
                     print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[target_column][nt],
                                                            ctrl_dic[target_column][nt]))
@@ -535,7 +550,8 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
                            y=line,
                            mode='lines',
                            line=dict(width=3),
-                           name="Fit : p=%.2E, c=%.2f" % (pval, cor)
+                           name="Fit : p=%.2E, c=%.2f" % (pval, cor),
+                           showlegend=False
                            ))
     data.append(dict(type='histogram2dcontour',
                      x=values_xaxis, y=values_yaxis, name='density', ncontours=50,
@@ -795,9 +811,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
     couple_targets = define_couple_targets(xaxis, yaxis, nt_list)
     if level == "project":
         name_fig += "_project"
-        id_projects_full, name_projects_full = figure_producer.get_interest_project(cnx)
-        unwanted_projects = project_t2_remove(cnx, group_factor.chromatin_factors)
-        id_projects, name_projects = removing_projects(id_projects_full, name_projects_full, unwanted_projects)
+        id_projects, name_projects = group_factor.get_id_and_name_project_wanted(cnx, None)
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
@@ -812,8 +826,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
     elif level == "exon":
         name_fig += "_Exon_LVL"
         if exon_class is None:
-            list_sf_full = sorted(union_dataset_function.get_splicing_factor_name(cnx))
-            list_sf = [sf for sf in list_sf_full if sf not in group_factor.chromatin_factors]
+            list_sf = group_factor.get_wanted_sf_name(None)
         else:
             if exon_class == "AT":
                 name_fig += "_AT_sf"
@@ -860,8 +873,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
     else:
         name_fig += "_union"
-        list_sf_full = sorted(union_dataset_function.get_splicing_factor_name(cnx))
-        list_sf = [sf for sf in list_sf_full if sf not in group_factor.chromatin_factors]
+        list_sf = group_factor.get_wanted_sf_name(None)
         if not os.path.isdir(output):
             os.mkdir(output)
         for i in range(len(couple_targets)):

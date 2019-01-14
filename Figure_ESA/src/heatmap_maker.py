@@ -146,7 +146,15 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
                 if "_nt_" in new_targets[j]:
                     nt = new_targets[j].split("_")[0]
                     name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
-                    values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
+                    if "mean_intron" in new_targets[j]:
+                        values1 = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt))
+                        values2 = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt))
+                        values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                    else:
+                        values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
+                        if names[i] == "QKI" and nt == "G":
+                            print(exon_list)
+                            print(values)
                     median_obs = np.median(values[~np.isnan(values)])
                     final_value = float(median_obs - control_dic[name_col][nt]) / \
                         control_dic[name_col][nt] * 100
@@ -159,6 +167,14 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
                             figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
                             dtype=float)
                         values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                    elif new_targets[j] == "min_flanking_intron_size":
+                        values1 = np.array(
+                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                            dtype=float)
+                        values2 = np.array(
+                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                            dtype=float)
+                        values = np.array([np.nanmin([values1[i], values2[i]]) for i in range(len(values1))])
                     else:
 
                         values = np.array(figure_producer.get_list_of_value(cnx, exon_list, new_targets[j]))

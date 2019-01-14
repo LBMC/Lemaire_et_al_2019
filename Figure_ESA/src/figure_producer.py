@@ -18,6 +18,7 @@ import plotly
 import os
 import sys
 import union_dataset_function
+import group_factor
 nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7, "K": 8, "M": 9}
 dnt_dic = {"AA": 0, "AC": 1, "AG": 2, "AT": 3, "CA": 4, "CC": 5,
            "CG": 6, "CT": 7, "GA": 8, "GC": 9, "GG": 10, "GT": 11,
@@ -46,8 +47,12 @@ def get_interest_project(cnx):
     query = "SELECT id, project_name FROM rnaseq_projects"
     cursor.execute(query)
     res = cursor.fetchall()
-    idp = [val[0] for val in res]
-    name = [val[1] for val in res]
+    idp = []
+    name = []
+    for val in res:
+        if val[0] not in group_factor.bad_id_projects:
+            idp.append(val[0])
+            name.append(val[1])
     return idp, name
 
 
@@ -236,11 +241,25 @@ def get_values_for_many_projects(cnx, id_projects_sf_names, target_column, regul
     if not union:
         for id_project in id_projects_sf_names:
             exon_list = get_ase_events(cnx, id_project, regulation)
-            results.append(get_list_of_value(cnx, exon_list, target_column))
+            if target_column == "median_flanking_intron_size":
+                values1 = np.array(get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),dtype=float)
+                values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                results.append(values)
+
+            else:
+                results.append(get_list_of_value(cnx, exon_list, target_column))
+
     else:
         for sf_name in id_projects_sf_names:
             exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
-            results.append(get_list_of_value(cnx, exon_list, target_column))
+            if target_column == "median_flanking_intron_size":
+                values1 = np.array(get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
+                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),dtype=float)
+                values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                results.append(values)
+            else:
+                results.append(get_list_of_value(cnx, exon_list, target_column))
     return results
 
 

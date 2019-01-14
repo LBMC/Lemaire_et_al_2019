@@ -312,7 +312,8 @@ def simple_heatmap(data_array, labelsx, labelsy, output, contrast, name=""):
     plotly.offline.plot(figure, filename='%s%s.html' % (output, name),
                         auto_open=False)
 
-def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
+
+def heatmap_creator(data_array, labelsx, labelsy, output, contrast, name=""):
     """
     Create a heatmap.
 
@@ -321,6 +322,7 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
     :param labelsy: (list of strings) list of projects name
     :param labelsx: (list of strings) list of characteristics of interest
     :param output: (string)  path where the results will be created
+    :param contrast: (int) the value of the contrast
     :param name: (string) partial name of the file
     """
     for i in range(len(data_array)):
@@ -329,14 +331,14 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
     # Initialize figure by creating upper dendrogram
     data_side = data_array.transpose()
     data_up = ff.create_dendrogram(data_side, orientation='bottom', labels=labelsx,
-                                   linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'weighted'))
+                                   linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'average'))
 
     for i in range(len(data_up['data'])):
         data_up['data'][i]['yaxis'] = 'y2'
 
     # Create Side Dendrogram
     figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy,
-                                  linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'weighted'))
+                                  linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'average'))
     for i in range(len(figure['data'])):
         figure['data'][i]['xaxis'] = 'x2'
 
@@ -363,8 +365,8 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
             colorscale="Picnic",
             # colorscale=[[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'],
             #            [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
-            zmin=-20,
-            zmax=20
+            zmin=-contrast,
+            zmax=contrast
         )
     ]
     figure['layout']['xaxis']['tickvals'] = data_up['layout']['xaxis']['tickvals']
@@ -418,7 +420,126 @@ def heatmap_creator(data_array, labelsx, labelsy, output, name=""):
                         auto_open=False)
 
 
-def main(union, columns, name, sf_type):
+def write_file_from_list(list_val, output_name):
+    """
+    Write the file ``output_name`` containing the values in ``list_val``
+    :param list_val: (list of string) list of sf name
+    :param output_name: (string) the name of the file that will be created
+    """
+    with open(output_name, "w") as outfile:
+        for val in list_val:
+            outfile.write(val + "\n")
+
+
+def load_order_file(order_file):
+    """
+    Load the content of ``order_file``
+    :param order_file:  (string) a file containing sf name
+    :return: (pandas dataframe object) a dataframe with a column containing the sf name \
+    and the other the order of them
+    """
+    list_sf_name = []
+    with open(order_file, "r") as outfile:
+        for line in outfile:
+            list_sf_name.append(line.replace("\n", ""))
+    df = pd.DataFrame({"sf": list_sf_name, "val": [i for i in range(len(list_sf_name))]})
+    return df
+
+
+def heatmap_gc_sorted(data_array, labelsx, labelsy, output, contrast, name=""):
+    """
+    Create a GC sorted heatmap, sorted on gc content if they are presents in labels X
+
+    :param data_array: (lif of list of float) the medians value for a project (line) for every characteristic of \
+    interests (number of value in one line corresponding to a project).
+    :param labelsy: (list of strings) list of projects name
+    :param labelsx: (list of strings) list of characteristics of interest
+    :param output: (string)  path where the results will be created
+    :param contrast: (int) the value of the contrast
+    :param name: (string) partial name of the file
+    """
+    df = pd.DataFrame(data_array, index=labelsy)
+    if not order:
+        index_g = []
+        index_c = []
+        index_s = []
+        for i in range(len(labelsx)):
+            if "S" in labelsx[i]:
+                index_s.append(i)
+            if "G" in labelsx[i]:
+                index_g.append(i)
+            if "C" in labelsx[i]:
+                index_c.append(i)
+        if len(index_s) > 0:
+            final_df = df.sort_values(index_s[0], ascending=ascending)
+        elif len(index_g) > 0 and len(index_c) > 0:
+            df["m"] = (df[index_g[0]] +  df[index_c[0]]) / 2
+            df = df.sort_values("m", ascending=ascending)
+            final_df = df.drop("m", axis=1)
+        else:
+            final_df = df.sort_values(0, ascending=ascending)
+        if write_order == "Y" or write_order == "y":
+            list_val = final_df.index
+            output_name = '%s%s_sorted.txt' % (output, name)
+            write_file_from_list(list_val, output_name)
+    else:
+        if os.path.isfile(order):
+            df2 = load_order_file(order)
+            df["sf"] = df.index
+            final_df = pd.merge(df, df2)
+            final_df = final_df.sort_values("val", ascending=ascending)
+            final_df.index = final_df["sf"]
+            final_df = final_df.drop("sf", axis=1)
+            final_df = final_df.drop("val", axis=1)
+        else:
+            if order not in list("WSRYMK"):
+                index_nt = []
+                for i in range(len(labelsx)):
+                    if order in labelsx[i]:
+                        index_nt.append(i)
+                if len(index_nt) > 0:
+                    final_df = df.sort_values(index_nt[0], ascending=ascending)
+                else:
+                    print("Warning the nucleotide %s was not found" % order)
+                    final_df = df.sort_values(0, ascending=True)
+            else:
+                index_nt1 = []
+                index_nt2 = []
+                for i in range(len(labelsx)):
+                    if iupac_nt[order][0] in labelsx[i]:
+                        index_nt1.append(i)
+                    if iupac_nt[order][1] in labelsx[i]:
+                        index_nt2.append(i)
+                if len(index_nt1) > 0 and len(index_nt2) > 0:
+                    df["m"] = (df[index_nt1[0]] + df[index_nt2[0]]) / 2
+                    df = df.sort_values("m", ascending=ascending)
+                    final_df = df.drop("m", axis=1)
+                else:
+                     final_df = df.sort_values(0, ascending=ascending)
+    if final_df is not None:
+        heatmap = [go.Heatmap(z=final_df.values,
+                              x=labelsx,
+                              y=list(final_df.index),
+                              colorbar={"x": -0.05},
+                              colorscale="Picnic",
+                              zmin=-contrast,
+                              zmax=contrast)]
+        layout = go.Layout(yaxis = dict(
+                                          ticks="",
+                                          side="right"),
+                            xaxis = dict(ticks=""))
+        figure = go.Figure(data=heatmap, layout=layout)
+        plotly.offline.plot(figure, filename='%s%s_sorted.html' % (output, name),
+                        auto_open=False)
+
+def make_global(my_list):
+    """
+    :param my_list: (list)
+    """
+    global nt_list
+    nt_list = my_list
+
+def main(union, columns, name, sf_type, contrast):
     """
     Launch the main function.
     """
@@ -433,7 +554,7 @@ def main(union, columns, name, sf_type):
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
-        id_projects, name_projects = get_id_and_name_project_wanted(cnx, sf_type)
+        id_projects, name_projects = group_factor.get_id_and_name_project_wanted(cnx, sf_type)
         print(id_projects)
         print(name_projects)
         for regulations in [["down"]]:
@@ -443,15 +564,18 @@ def main(union, columns, name, sf_type):
             projects_tab, project_names, new_targets = create_matrix(cnx, id_projects, name_projects,
                                                                      target_columns, ctrl_dic, regulations, None,
                                                                      sf_type)
-            heatmap_creator(np.array(projects_tab), new_targets, project_names, output,
-                            name)
+            if len(new_targets) > 1:
+                heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
+            else:
+                simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
+            heatmap_gc_sorted(np.array(projects_tab), new_targets, project_names, output, contrast, name=name)
 
     else:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_heatmap_union/"
         # If the output directory does not exist, then we create it !
         if not os.path.isdir(output):
             os.mkdir(output)
-        name_projects = get_wanted_sf_name(sf_type)
+        name_projects = group_factor.get_wanted_sf_name(sf_type)
         for regulations in [["down"]]:
             # Creating heatmap
             if sf_type is not None:
@@ -460,7 +584,11 @@ def main(union, columns, name, sf_type):
                                                                      target_columns, ctrl_dic, regulations,
                                                                      "union", sf_type)
             print(project_names)
-            heatmap_creator(np.array(projects_tab), new_targets, project_names, output, name)
+            if len(new_targets) > 1:
+                heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
+            else:
+                simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
+            heatmap_gc_sorted(np.array(projects_tab), new_targets, project_names, output, contrast, name)
 
 
 def launcher():
@@ -480,6 +608,9 @@ def launcher():
     parser.add_argument('--union', dest='union',
                         help="""union if you want create an heatmap on union dataset, nothing else""",
                         default="")
+    parser.add_argument('--ascending', dest='ascending',
+                        help="""the order of sorted graphic, True ascending, False descending""",
+                        default="True")
 
     required_args.add_argument('--columns', dest='columns',
                                help="The columns (in sed database) you want to analyze, they must be coma separated",
@@ -493,20 +624,54 @@ def launcher():
                                                           "the heatmap (GC_rich, AT_rich, spliceosome)", default=None)
 
     parser.add_argument("--nt", dest="nt", help="the list ow wanted nucleoitdes coma separted",
-                        default="A,C,G,T")
+                        default="A,T,G,C")
+    parser.add_argument("--contrast", dest="contrast", help="value for the color-scale of the heatmap",
+                        default=50)
+    parser.add_argument("--write_order", dest="write_order", help="Y if we want to have the list of splicing factor display as in the heatmap sorted in a text file",
+                        default="N")
+    parser.add_argument("--order", dest="order", help="A file with the list of splicing factor in the order wanted or a nucleotide",
+                        default=None)
     args = parser.parse_args()  # parsing arguments
 
+
+    # Defining global parameters
+    global write_order
+    write_order = args.write_order
+    global ascending
+    if args.ascending == "True":
+        args.ascending = True
+    if args.ascending == "False":
+        args.ascending = False
+    ascending = args.ascending
+    global order
+    if args.order == "None":
+        args.order = None
+    if args.order:
+        if not os.path.isfile(args.order):
+            if args.order not in list("ACGTSW"):
+                print("--order corresponds neither to a file nor a nucleotide !")
+                order = None
+            else:
+                order = args.order
+        else:
+            order = args.order
+    else:
+        order = args.order
+
+    global nt_list
     nt_list = args.nt.split(",")
     for nt in nt_list:
         if nt not in ["A", "C", "G", "T", "S", "W", "K", "M"]:
             parser.error("Wrong value given in the parameter nt")
-    global nt_list
     if args.sf_type == "None":
         args.sf_type = None
     if args.sf_type not in ["GC_rich", "AT_rich", "spliceosome", "CF", None]:
         parser.error("Wrong value given for argument sf_type")
-    print("hello")
-    main(args.union, args.columns, args.name, args.sf_type)  # executing the program
+    try:
+        args.contrast = int(args.contrast)
+    except ValueError:
+        parser.error("contrast argument must be an integer !")
+    main(args.union, args.columns, args.name, args.sf_type, args.contrast)  # executing the program
 
 
 if __name__ == "__main__":

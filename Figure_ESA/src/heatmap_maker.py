@@ -27,8 +27,7 @@ sch = __import__('scipy.cluster.hierarchy')
 iupac_nt = {"S": ["G", "C"], "W": ["A", "T"], "Y": ["C", "T"], "R": ["A", "G"], "K": ["T", "G"], "M": ["A", "C"]}
 
 
-
-
+# Functions
 def redundant_ag_at_and_u1_u2(cnx, regulation):
     """
     Create the list of redundant exons between the AT and GC rich list of exons and \
@@ -63,16 +62,14 @@ def redundant_ag_at_and_u1_u2(cnx, regulation):
     print("redundant exon U1 and U2 rich : %s" % len(redundant_u1_u2))
 
 
-def difference(cnx, exon_list1, name_exon_list, regulation, sf_type):
+def difference(exon_list1, name_exon_list, sf_type):
     """
     Remove the redundant exons within the ``exon_list1``  i.e the exons regulated by both u1 and u2 \
     if ``name_exon_list`` corresponds to a component a the spliceosome or the exons regulated by \
     both AT and GC factors if ``name_exon_list`` corresponds to a splicing factors name.
-    :param cnx: (sqlite3 connection object) connection to sed database
     :param exon_list1: (list of list of 2 int) a list of exons (each exon are identified by its gene id and its \
     position within the gene) regulated in ``name_exon_list`` project
     :param name_exon_list: (string) a splicing factor or a project's name.
-    :param regulation: (string) the regulation of each exon within the exon list
     :param sf_type: (string) the type of splicing factor we want to display in the final figures
     :return: (list of list of 2 int) the ``exon_list1`` without the the exons regulated by both u1 and u2 \
     if ``name_exon_list`` corresponds to a component a the spliceosome or the exons regulated by \
@@ -132,7 +129,8 @@ def mann_withney_test_r(list_values1, list_values2):
     return pval
 
 
-def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, union=None, sf_type=None):
+def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, union=None,
+                  sf_type=None):
     """
     Create a matrix of relative medians (toward control) for iupac characteristics of an exon set.
 
@@ -143,7 +141,7 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
     :param target_columns: (list of strings) list of interest characteristics for a set of exons.
     :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
     teh control set of exons.
-    :param control_dic: (dictionary of list of float) dictionary storing every values for every characteristics of \
+    :param ctrl_full: (dictionary of list of float) dictionary storing every values for every characteristics of \
     the control set of exons.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
     :param union: (None or string) None if we want to work project by project, anything else to work \
@@ -167,19 +165,24 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                 project_names.append("%s_%s" % (names[i], regulation))
             if not union:
                 exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
-                print("Splicing factor : %s, project %s  - exons %s - reg %s" % (names[i], id_projects[i], len(exon_list), regulation))
-                exon_list = difference(cnx, exon_list, names[i], regulation, sf_type)
+                print("Splicing factor : %s, project %s  - exons %s - reg %s" %
+                      (names[i], id_projects[i], len(exon_list), regulation))
+                exon_list = difference(exon_list, names[i], sf_type)
             else:
                 exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
                 print("Splicing factor : %s - exons %s - reg %s" % (names[i], len(exon_list), regulation))
-                exon_list = difference(cnx, exon_list, names[i], regulation, sf_type)
+                exon_list = difference(exon_list, names[i], sf_type)
             for j in range(len(new_targets)):
                 if "_nt_" in new_targets[j]:
                     nt = new_targets[j].split("_")[0]
                     name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
                     if "mean_intron" in new_targets[j]:
-                        values1 = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt))
-                        values2 = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt))
+                        values1 = np.array(
+                            figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt)
+                                  )
+                        values2 = np.array(
+                            figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt)
+                                  )
                         values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
                     else:
                         values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
@@ -283,7 +286,8 @@ def simple_heatmap(data_array, labelsx, labelsy, output, contrast, name=""):
     d = {labelsy[i]: {labelsx[j]: [i, j] for j in range(len(labelsx))} for i in range(len(labelsy))}
     # Initialize figure by creating upper dendrogram
     # Create Side Dendrogram
-    figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy, linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'average'))
+    figure = ff.create_dendrogram(data_array, orientation='right', labels=labelsy,
+                                  linkagefun=lambda x: sch.cluster.hierarchy.linkage(x, 'average'))
     for i in range(len(figure['data'])):
         figure['data'][i]['xaxis'] = 'x2'
 
@@ -307,7 +311,6 @@ def simple_heatmap(data_array, labelsx, labelsy, output, contrast, name=""):
             z=data_arrange,
             colorbar={"x": -0.05},
             colorscale="Picnic",
-            #colorscale = [[0.0, 'rgb(0, 114, 178)'], [0.25, 'rgb(86, 180, 233)'], [0.5, 'rgb(255, 255, 255)'], [0.75, 'rgb(240, 228, 66)'], [1.0, 'rgb(230, 159, 0)']],
             zmin=-contrast,
             zmax=contrast
         )
@@ -532,7 +535,7 @@ def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contr
         if len(index_s) > 0:
             final_df = df.sort_values(index_s[0], ascending=ascending)
         elif len(index_g) > 0 and len(index_c) > 0:
-            df["m"] = (df[index_g[0]] +  df[index_c[0]]) / 2
+            df["m"] = (df[index_g[0]] + df[index_c[0]]) / 2
             df = df.sort_values("m", ascending=ascending)
             final_df = df.drop("m", axis=1)
         else:
@@ -583,19 +586,20 @@ def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contr
                               colorscale="Picnic",
                               zmin=-contrast,
                               zmax=contrast)]
-        layout = go.Layout(yaxis = dict(
-                                          ticks="",
-                                          side="right"),
-                            xaxis = dict(ticks=""))
+        layout = go.Layout(yaxis=dict(
+                                      ticks="",
+                                      side="right"),
+                           xaxis=dict(ticks=""))
         figure = go.Figure(data=heatmap, layout=layout)
         plotly.offline.plot(figure, filename='%s%s_sorted.html' % (output, name),
-                        auto_open=False)
+                            auto_open=False)
 
         pdf.columns = labelsx
         pdf = pdf.reindex(index=final_df.index[::-1])
         pdf.to_csv('%s%s_sorted_stat.txt' % (output, name), sep="\t")
         df2 = adjust_pvalues(pdf)
         df2.to_csv('%s%s_sorted_stat_corrected.txt' % (output, name), sep="\t")
+
 
 def make_global(my_list):
     """
@@ -627,14 +631,15 @@ def main(union, columns, name, sf_type, contrast):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_pvalues, project_names, new_targets = create_matrix(cnx, id_projects, name_projects,
-                                                                     target_columns, ctrl_dic, ctrl_full, regulations, None,
-                                                                     sf_type)
+            projects_tab, project_pvalues, project_names, new_targets = \
+                create_matrix(cnx, id_projects, name_projects, target_columns,
+                              ctrl_dic, ctrl_full, regulations, None, sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets, project_names, output, contrast, name=name)
+            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues),
+                              new_targets, project_names, output, contrast, name=name)
 
     else:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_heatmap_union/"
@@ -646,14 +651,15 @@ def main(union, columns, name, sf_type, contrast):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_pvalues, project_names, new_targets = create_matrix(cnx, None, name_projects,
-                                                                     target_columns, ctrl_dic, ctrl_full, regulations,
-                                                                     "union", sf_type)
+            projects_tab, project_pvalues, project_names, new_targets = \
+                create_matrix(cnx, None, name_projects, target_columns,
+                              ctrl_dic, ctrl_full, regulations, "union", sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets, project_names, output, contrast, name)
+            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets,
+                              project_names, output, contrast, name)
 
 
 def launcher():
@@ -692,12 +698,14 @@ def launcher():
                         default="A,T,G,C")
     parser.add_argument("--contrast", dest="contrast", help="value for the color-scale of the heatmap",
                         default=50)
-    parser.add_argument("--write_order", dest="write_order", help="Y if we want to have the list of splicing factor display as in the heatmap sorted in a text file",
+    parser.add_argument("--write_order", dest="write_order",
+                        help="Y if we want to have the list of splicing factor display as "
+                             "in the heatmap sorted in a text file",
                         default="N")
-    parser.add_argument("--order", dest="order", help="A file with the list of splicing factor in the order wanted or a nucleotide",
+    parser.add_argument("--order", dest="order", help="A file with the list of splicing factor "
+                                                      "in the order wanted or a nucleotide",
                         default=None)
     args = parser.parse_args()  # parsing arguments
-
 
     # Defining global parameters
     global write_order

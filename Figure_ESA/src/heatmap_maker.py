@@ -20,6 +20,9 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import random
 import group_factor
+import rpy2.robjects as robj
+from rpy2.robjects.packages import importr
+import rpy2.robjects.vectors as v
 sch = __import__('scipy.cluster.hierarchy')
 iupac_nt = {"S": ["G", "C"], "W": ["A", "T"], "Y": ["C", "T"], "R": ["A", "G"], "K": ["T", "G"], "M": ["A", "C"]}
 
@@ -109,7 +112,27 @@ def create_columns_names(target_columns):
     return new_targets
 
 
-def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulations, union=None, sf_type=None):
+def mann_withney_test_r(list_values1, list_values2):
+    """
+    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
+
+    :param list_values1: (list of float)  list of float
+    :param list_values2: (list of float)  list of float
+    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
+    """
+    wicox = robj.r("""
+
+    function(x, y){
+        test = wilcox.test(x,y, alternative='two.sided', correct=F)
+        return(test$p.value)
+    }
+
+                   """)
+    pval = float(wicox(v.FloatVector(list_values1), v.FloatVector(list_values2))[0])
+    return pval
+
+
+def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, union=None, sf_type=None):
     """
     Create a matrix of relative medians (toward control) for iupac characteristics of an exon set.
 
@@ -120,6 +143,8 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
     :param target_columns: (list of strings) list of interest characteristics for a set of exons.
     :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
     teh control set of exons.
+    :param control_dic: (dictionary of list of float) dictionary storing every values for every characteristics of \
+    the control set of exons.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
@@ -127,20 +152,26 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
     :return: (lif of list of float) the medians value for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     """
+    print(regulations)
     new_targets = create_columns_names(target_columns)
     project_names = []
     projects_tab = []
+    project_pvalues = []
     for i in range(len(names)):
         for regulation in regulations:
             project_res = []
-            project_names.append("%s" % (names[i]))
+            project_pval = []
+            if len(regulations) == 1:
+                project_names.append("%s" % (names[i]))
+            else:
+                project_names.append("%s_%s" % (names[i], regulation))
             if not union:
                 exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
-                print("Splicing factor : %s, project %s  - exons %s" % (names[i], id_projects[i], len(exon_list)))
+                print("Splicing factor : %s, project %s  - exons %s - reg %s" % (names[i], id_projects[i], len(exon_list), regulation))
                 exon_list = difference(cnx, exon_list, names[i], regulation, sf_type)
             else:
                 exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
-                print("Splicing factor : %s - exons %s" % (names[i], len(exon_list)))
+                print("Splicing factor : %s - exons %s - reg %s" % (names[i], len(exon_list), regulation))
                 exon_list = difference(cnx, exon_list, names[i], regulation, sf_type)
             for j in range(len(new_targets)):
                 if "_nt_" in new_targets[j]:
@@ -155,9 +186,13 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
                         if names[i] == "QKI" and nt == "G":
                             print(exon_list)
                             print(values)
-                    median_obs = np.median(values[~np.isnan(values)])
+                    list_val = values[~np.isnan(values)]
+                    median_obs = np.median(list_val)
                     final_value = float(median_obs - control_dic[name_col][nt]) / \
                         control_dic[name_col][nt] * 100
+                    ctrl_val = np.array(ctrl_full[name_col][nt], dtype=float)
+                    ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
+                    pval = mann_withney_test_r(list(list_val), ctrl_val)
                 else:
                     if new_targets[j] == "median_flanking_intron_size":
                         values1 = np.array(
@@ -178,12 +213,18 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, regulati
                     else:
 
                         values = np.array(figure_producer.get_list_of_value(cnx, exon_list, new_targets[j]))
+                    list_val = values[~np.isnan(values)]
                     median_obs = np.median(values[~np.isnan(values)])
                     final_value = float(median_obs - control_dic[new_targets[j]]) / \
                         control_dic[new_targets[j]] * 100
+                    ctrl_val = np.array(ctrl_full[new_targets[j]], dtype=float)
+                    ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
+                    pval = mann_withney_test_r(list(list_val), ctrl_val)
                 project_res.append(final_value)
+                project_pval.append(pval)
             projects_tab.append(project_res)
-    return projects_tab, project_names, new_targets
+            project_pvalues.append(project_pval)
+    return projects_tab, project_pvalues, project_names, new_targets
 
 
 def project_t2_remove(cnx, sf_list):
@@ -446,11 +487,28 @@ def load_order_file(order_file):
     return df
 
 
-def heatmap_gc_sorted(data_array, labelsx, labelsy, output, contrast, name=""):
+def adjust_pvalues(df):
+    """
+    A dataframe corresponding to p-value
+    :param df: (pandas DataFrame) a dataframe containing pvalue
+    :return: (pandas DataFrame) the same dataframe with the pvalues adjusted
+    """
+    pvalues = df.values.flatten()
+    rstats = robj.packages.importr('stats')
+    pcor = np.array(rstats.p_adjust(v.FloatVector(pvalues), method="BH"))
+    pcor = pcor.reshape(-1, len(df.columns))
+    df_padjust = pd.DataFrame(pcor, index=df.index)
+    df_padjust.columns = df.columns
+    return df_padjust
+
+
+def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contrast, name=""):
     """
     Create a GC sorted heatmap, sorted on gc content if they are presents in labels X
 
     :param data_array: (lif of list of float) the medians value for a project (line) for every characteristic of \
+    interests (number of value in one line corresponding to a project).
+    :param pvalues_array: (list of list of float) the p-values for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     :param labelsy: (list of strings) list of projects name
     :param labelsx: (list of strings) list of characteristics of interest
@@ -459,6 +517,7 @@ def heatmap_gc_sorted(data_array, labelsx, labelsy, output, contrast, name=""):
     :param name: (string) partial name of the file
     """
     df = pd.DataFrame(data_array, index=labelsy)
+    pdf = pd.DataFrame(pvalues_array, index=labelsy)
     if not order:
         index_g = []
         index_c = []
@@ -515,7 +574,7 @@ def heatmap_gc_sorted(data_array, labelsx, labelsy, output, contrast, name=""):
                     df = df.sort_values("m", ascending=ascending)
                     final_df = df.drop("m", axis=1)
                 else:
-                     final_df = df.sort_values(0, ascending=ascending)
+                    final_df = df.sort_values(0, ascending=ascending)
     if final_df is not None:
         heatmap = [go.Heatmap(z=final_df.values,
                               x=labelsx,
@@ -532,12 +591,19 @@ def heatmap_gc_sorted(data_array, labelsx, labelsy, output, contrast, name=""):
         plotly.offline.plot(figure, filename='%s%s_sorted.html' % (output, name),
                         auto_open=False)
 
+        pdf.columns = labelsx
+        pdf = pdf.reindex(index=final_df.index[::-1])
+        pdf.to_csv('%s%s_sorted_stat.txt' % (output, name), sep="\t")
+        df2 = adjust_pvalues(pdf)
+        df2.to_csv('%s%s_sorted_stat_corrected.txt' % (output, name), sep="\t")
+
 def make_global(my_list):
     """
     :param my_list: (list)
     """
     global nt_list
     nt_list = my_list
+
 
 def main(union, columns, name, sf_type, contrast):
     """
@@ -547,7 +613,7 @@ def main(union, columns, name, sf_type, contrast):
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
-    ctrl_dic = control_exon_adapter.control_handler(cnx, exon_type)
+    ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type)
     print("test")
     if union != "union":
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_heatmap/"
@@ -561,14 +627,14 @@ def main(union, columns, name, sf_type, contrast):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_names, new_targets = create_matrix(cnx, id_projects, name_projects,
-                                                                     target_columns, ctrl_dic, regulations, None,
+            projects_tab, project_pvalues, project_names, new_targets = create_matrix(cnx, id_projects, name_projects,
+                                                                     target_columns, ctrl_dic, ctrl_full, regulations, None,
                                                                      sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), new_targets, project_names, output, contrast, name=name)
+            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets, project_names, output, contrast, name=name)
 
     else:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_heatmap_union/"
@@ -580,15 +646,14 @@ def main(union, columns, name, sf_type, contrast):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_names, new_targets = create_matrix(cnx, None, name_projects,
-                                                                     target_columns, ctrl_dic, regulations,
+            projects_tab, project_pvalues, project_names, new_targets = create_matrix(cnx, None, name_projects,
+                                                                     target_columns, ctrl_dic, ctrl_full, regulations,
                                                                      "union", sf_type)
-            print(project_names)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), new_targets, project_names, output, contrast, name)
+            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets, project_names, output, contrast, name)
 
 
 def launcher():

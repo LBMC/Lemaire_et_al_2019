@@ -147,7 +147,8 @@ def control_handler(cnx, exon_type):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
     control_file = control_folder + "/control.py"
-    ctrl_list = exon_control_handler.get_control_information(exon_type, control_file)
+    control_full = control_folder + "/control_full.pkl"
+    ctrl_list, tmp = exon_control_handler.get_control_information(exon_type, control_file, control_full)
     if ctrl_list is None:
         print("Control dictionary was not found !")
         print("Creating control information")
@@ -157,18 +158,21 @@ def control_handler(cnx, exon_type):
         tmp = exon_control_handler.create_a_temporary_dictionary(names, exon_tuple)
         ctrl_list = exon_control_handler.get_summary_dictionaries(names, tmp)
         exon_control_handler.write_control_file(exon_type, control_file, str(ctrl_list))
+        exon_control_handler.write_pickle(control_full, tmp)
     if "rel_exon_intron_up" not in ctrl_list.keys():
         print("relative exon_intron size where not found.")
         print("getting relative exon_intron size")
         exon_tuple = get_control_exon_size_information(cnx, exon_type)
         print("Relative size calculation...")
         tmp_dic = tmp_dic_creator(exon_tuple)
+        tmp = dict(tmp, **tmp_dic)
         print("summarizing")
         sum_dic = get_summary_dictionaries(tmp_dic)
         ctrl_list = dict(ctrl_list, **sum_dic)
         print("writting...")
         write_adapted_dic(control_file, exon_type, str(ctrl_list))
-    return ctrl_list
+        exon_control_handler.write_pickle(control_full, tmp)
+    return ctrl_list, tmp
 
 
 if __name__ == "__main__":

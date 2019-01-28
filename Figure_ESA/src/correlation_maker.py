@@ -234,7 +234,7 @@ def get_gene_values(cnx, sf_list, target_column1, target_column2, regulation):
     if nt2:
         values2 = get_list_of_value_iupac_dnt(cnx, exon_list, target_column2, nt2)
     else:
-        values2 = figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column2)
+        values2 = figure_producer.get_list_of_value(cnx, exon_list, target_column2)
 
     return values1, values2, gene_name
 
@@ -369,9 +369,12 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
         title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title=x_title),
+            title=x_title,
+            tickfont=dict(size=25)),
         yaxis=dict(
-            title=y_title),
+            title=y_title,
+            tickfont=dict(
+                size=25)),
         showlegend=True
     )
     fig = go.Figure(data=data, layout=layout)
@@ -408,11 +411,6 @@ def get_relative_values(list_values, ctrl_dic, name_list, exon_name):
     else:
         if "$" in name_list:
             target_column, nt = name_list.split("$")
-            for i in range(len(exon_name)):
-                if exon_name[i] == "KIF26B_2":
-                    print(exon_name[i])
-                    print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[target_column][nt],
-                                                           ctrl_dic[target_column][nt]))
             list_values2 = [float(val - ctrl_dic[target_column][nt]) /
                             ctrl_dic[target_column][nt] * 100 for val in list_values]
         else:
@@ -492,9 +490,11 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
         title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title=x_title),
+            title=x_title,
+            tickfont=dict(size=25)),
         yaxis=dict(
-            title=y_title),
+            title=y_title,
+            tickfont=dict(size=25)),
         showlegend=True
     )
 
@@ -804,7 +804,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
     """
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
-    ctrl_dic = control_exon_adapter.control_handler(cnx, exon_type)
+    ctrl_dic, full_dic = control_exon_adapter.control_handler(cnx, exon_type)
     nt_list = nt_list.split(",")
     regulation = "down"
     output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_correlation/"
@@ -836,7 +836,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                 exon_list = difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
         if not os.path.isdir(output):
             os.mkdir(output)
-        if xaxis == "median_intron_size" and yaxis == "iupac_gene":
+        if xaxis in ["median_intron_size", "iupac_gene"] and yaxis in ["iupac_gene", "median_intron_size"]:
             for i in range(len(couple_targets)):
                 if exon_class is None:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, list_sf, couple_targets[i][0],
@@ -844,9 +844,9 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                 else:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, exon_list, couple_targets[i][0],
                                                                           couple_targets[i][1], regulation)
+                print("--")
                 print(len(value_xaxis))
                 print(len(value_yaxis))
-                print(len(exon_name))
                 value_xaxis, value_yaxis, exon_name =  remove_none_values(value_xaxis, value_yaxis, exon_name)
                 value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], exon_name)
                 value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], exon_name)

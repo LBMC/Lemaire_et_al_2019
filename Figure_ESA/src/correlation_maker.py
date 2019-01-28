@@ -41,15 +41,23 @@ def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control
     """
     if nt:
         if "mean_intron" in target_column:
-            values1 = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt), dtype=float)
-            values2 = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt), dtype=float)
+            values1 = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
+                dtype=float)
+            values2 = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
+                dtype=float)
             values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
         else:
             values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt))
     else:
         if target_column == "median_flanking_intron_size":
-            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values_up = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                dtype=float)
+            values_down = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                dtype=float)
             values = np.array([np.nanmedian([values_up[i], values_down[i]]) for i in range(len(values_up))])
 
         elif target_column == "min_flanking_intron_size":
@@ -146,37 +154,61 @@ def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
     exon_name = ["%s_%s" % (union_dataset_function.get_gene_name(cnx, a[0]), a[1]) for a in exon_list]
     if nt1:
         if "mean_intron" in target_column1:
-            valuesa = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt1), dtype=float)
-            valuesb = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt1), dtype=float)
+            valuesa = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt1),
+                dtype=float)
+            valuesb = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt1),
+                dtype=float)
             values1 = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))])
         else:
             values1 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column1, nt1)
     else:
         if target_column1 == "median_flanking_intron_size":
-            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values_up = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                dtype=float)
+            values_down = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                dtype=float)
             values1 = np.array([np.nanmean([values_up[i], values_down[i]]) for i in range(len(values_up))])
         elif target_column1 == "min_flanking_intron_size":
-            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values_up = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                dtype=float)
+            values_down = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                dtype=float)
             values1 = [np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))]
         else:
             values1 = figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column1)
     if nt2:
         if "mean_intron" in target_column2:
-            valuesa = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt2), dtype=float)
-            valuesb = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt2), dtype=float)
+            valuesa = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt2),
+                dtype=float)
+            valuesb = np.array(
+                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt2),
+                dtype=float)
             values2 = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))])
         else:
             values2 = figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column2, nt2)
     else:
         if target_column2 == "median_flanking_intron_size":
-            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values_up = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                dtype=float)
+            values_down = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                dtype=float)
             values2 = [np.nanmean([values_up[i], values_down[i]]) for i in range(len(values_up))]
         elif target_column2 == "min_flanking_intron_size":
-            values_up = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-            values_down = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
+            values_up = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                dtype=float)
+            values_down = np.array(
+                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                dtype=float)
             values2 = [np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))]
         else:
             values2 = figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column2)
@@ -382,14 +414,13 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
                         auto_open=False)
 
 
-def get_relative_values(list_values, ctrl_dic, name_list, exon_name):
+def get_relative_values(list_values, ctrl_dic, name_list):
     """
     Get the relative value of a list given.
 
     :param list_values: (list of float) the list of value
     :param name_list: (string) the name of the list
     :param ctrl_dic: :param ctrl_dic: (dictionary) median for every exon within ``ctrl_dic``
-    :param exon_name: (list of string) list of exon name
     :return: - (list of float) the list of relative values toward control exons
              - (string) the new name for the list
     """
@@ -797,7 +828,6 @@ def difference(cnx, list1, list2, regulation):
     return [exon for exon in exon_list1 if exon not in exon_list2]
 
 
-
 def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
     """
     Create the correlation matrix (gene_size vs iupac)
@@ -844,12 +874,9 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                 else:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, exon_list, couple_targets[i][0],
                                                                           couple_targets[i][1], regulation)
-                print("--")
-                print(len(value_xaxis))
-                print(len(value_yaxis))
                 value_xaxis, value_yaxis, exon_name =  remove_none_values(value_xaxis, value_yaxis, exon_name)
-                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], exon_name)
-                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], exon_name)
+                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
+                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
                 figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
                                     exon_name, output, name_fig)
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
@@ -862,12 +889,14 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                     value_xaxis, value_yaxis, exon_name = get_exons_values(cnx, exon_list, couple_targets[i][0],
                                                                            couple_targets[i][1], regulation)
                 value_xaxis, value_yaxis, exon_name = remove_none_values(value_xaxis, value_yaxis, exon_name)
-                value_xaxis, value_yaxis, exon_name = remove_wrong_size_values(value_xaxis, couple_targets[i][0], exon_name, value_yaxis, couple_targets[i][1])
+                value_xaxis, value_yaxis, exon_name = remove_wrong_size_values(value_xaxis, couple_targets[i][0],
+                                                                               exon_name, value_yaxis,
+                                                                               couple_targets[i][1])
 
                 if len(value_xaxis) != len(value_yaxis) or len(value_xaxis) != len(exon_name):
                     print("Warning the list of value do'nt have the same length")
-                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], exon_name)
-                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], exon_name)
+                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
+                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
                 figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
                                     exon_name, output, name_fig)
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
@@ -895,37 +924,34 @@ def launcher():
                                      description="""
     Create a correlation graphics
 
-    """,
-                                     usage='%(prog)s --xaxis --yaxis [--name --exon_type --level --nt_list] ' )
+    """)
     # Arguments for the parser
     required_args = parser.add_argument_group("required argument")
 
     parser.add_argument('--level', dest='level',
-                               help="""exon for each point to be an exon, project for each point tb be a project and sf for each point to be a sf""",
-                              default="project")
+                        help="""exon for each point to be an exon, 
+                                project for each point tb be a project and sf for each point to be a sf""",
+                        default="project")
 
     parser.add_argument('--name', dest='name', help='the name of the graphics', default="correlation")
 
-    parser.add_argument('--nt_list', dest='nt_list', help='the list of nucleotide you want to analyse (they must be separated by a coma)',
-                        default= "S,W")
+    parser.add_argument('--nt_list', dest='nt_list', help='the list of nucleotide you '
+                                                          'want to analyse (they must be separated by a coma)',
+                        default="S,W")
 
     parser.add_argument('--exon_type', dest='exon_type', help='name of control exons', default="CCE")
     parser.add_argument('--exon_class', dest='exon_class', help='the class of exon we want to study', default=None)
 
     required_args.add_argument('--xaxis', dest='xaxis',
                                help="""element of the xaxis""",
-                              required=True)
+                               required=True)
 
     required_args.add_argument('--yaxis', dest='yaxis',
                                help="""element in the yaxis""",
-                              required=True)
-
-
-
+                               required=True)
     args = parser.parse_args()  # parsing arguments
-
-
-    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class)  # executing the program
+    # executing the program
+    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class)
 
 
 if __name__ == "__main__":

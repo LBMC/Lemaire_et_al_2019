@@ -5,31 +5,33 @@
 import os
 import sys
 import numpy as np
-
+import pickle
 
 # function
-def get_control_information(exon_type, control_file):
+def get_control_information(exon_type, control_file, control_full):
     """
     Test whether we have all the information we need for ``exon_type`` exons
 
     :param exon_type: (string) the type of control exon we want to use
     :param control_file: (string) the file were we want to write the control data results
+    :param control_full: (string) the file were we want to write the full control data results
     :return: None if the control file does'nt exist, or a dictionary that contains \
     all the information about the CCE exon
     """
     control_folder = os.path.dirname(control_file)
     if not os.path.isdir(control_folder):
         os.mkdir(control_folder)
-        return None
+        return None, None
     if not os.path.isfile(control_file):
-        return None
+        return None, None
     sys.path.insert(0, control_folder)
-    mod = __import__("control")
+    mod = __import__(os.path.basename(control_file).replace(".py", ""))
     try:
         dic = eval("mod.%s_dic" % exon_type)
     except AttributeError:
-        return None
-    return dic
+        return None, None
+    tmp = load_pickle(control_full)
+    return dic, tmp
 
 
 def get_control_exon_information(cnx, exon_type):
@@ -162,14 +164,17 @@ def get_summary_dictionaries(names, exons_dictionary):
     return median_dic
 
 
-def write_control_file(exon_type, control_file, str2write):
+def write_control_file(exon_type, control_file, str2write, name=True):
     """
     :param exon_type: (string) the type of control exon we want to use
     :param control_file: (string) the file were we want to write the control data results
     :param str2write:  (string) the result we want to write in the file
     """
     with open(control_file, "a") as ctrl_file:
-        ctrl_file.write("%s_dic = %s\n" % (exon_type, str2write))
+        if name:
+            ctrl_file.write("%s_dic = %s\n" % (exon_type, str2write))
+        else:
+            ctrl_file.write(str2write)
 
 
 def remove_redundant_gene_information(exon_list):
@@ -201,11 +206,37 @@ def remove_redundant_gene_information(exon_list):
     return exon_list
 
 
+def write_pickle(filename, dictionary):
+    """
+    Write a pickle dictionary.
+
+    :param filename: (string) the name used to write the pickle dictionary
+    :param dictionary: (dictionary) a dictionary
+    """
+    output = open(filename, 'wb')
+    pickle.dump(dictionary, output)
+    output.close()
+
+
+def load_pickle(filename):
+    """
+    load a pickle dictionary.
+
+    :param filename: (string) the name used to write the pickle dictionary
+    :return: (dictionary) the dictionary in filename
+    """
+    output = open(filename, 'rb')
+    my_dic = pickle.load(output)
+    output.close()
+    return my_dic
+
+
 def control_handler(cnx, exon_type):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
     control_file = control_folder + "/control.py"
-    ctrl_list = get_control_information(exon_type, control_file)
+    control_full = control_folder + "/control_full.pkl"
+    ctrl_list, tmp = get_control_information(exon_type, control_file, control_full)
     if ctrl_list is None:
         print("Control dictionary was not found !")
         print("Creating control information")
@@ -215,4 +246,5 @@ def control_handler(cnx, exon_type):
         tmp = create_a_temporary_dictionary(names, exon_tuple)
         ctrl_list = get_summary_dictionaries(names, tmp)
         write_control_file(exon_type, control_file, str(ctrl_list))
-    return ctrl_list
+        write_pickle(control_full, tmp)
+    return ctrl_list, tmp

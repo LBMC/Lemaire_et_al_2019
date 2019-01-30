@@ -114,21 +114,32 @@ def web_logo_creator(sequence_list, sequence_name, output):
 
     function(mys_seq, name_file, mytitle, size){
         s1 = 15
-        cs1 = make_col_scheme(chars=c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M'), groups=c('g1','g2','g3','g4','g5', 'g6', 'g7', 'g8', 'g9', 'g10'),cols=c('limegreen','brown1','gold','dodgerblue3','darkorange', "brown1", "limegreen", "dodgerblue3", "darkorchid3", "dodgerblue3"), name='custom1')
+        cs1 = make_col_scheme(chars=c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M'), 
+                              groups=c('g1','g2','g3','g4','g5', 'g6', 'g7', 'g8', 'g9', 'g10'),
+                              cols=c('limegreen','brown1','gold','dodgerblue3','darkorange', "brown1", 
+                                     "limegreen", "dodgerblue3", "darkorchid3", "dodgerblue3"),
+                              name='custom1')
 
-        p1 = ggseqlogo(mys_seq,  method = "bit", col_scheme=cs1, namespace = c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M')) + theme_logo() + scale_x_discrete(limits = as.character(seq(1,size, by=1)), labels = as.character(seq(1,size, by=2)), breaks = as.character(seq(1, size, by=2))) + theme(axis.title.y=element_text(size=s1+25), legend.position="none")
+        p1 = ggseqlogo(mys_seq,  method = "bit", col_scheme=cs1, 
+                       namespace = c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M')) + 
+             theme_logo() + scale_x_discrete(limits = as.character(seq(1,size, by=1)), 
+             labels = as.character(seq(1,size, by=2)), breaks = as.character(seq(1, size, by=2))) + 
+             theme(axis.title.y=element_text(size=s1+25), legend.position="none")
         p1 = p1 + ggtitle(mytitle) +  theme(plot.title = element_text(hjust = 0.5))
 
 
         p1 = p1 + theme(axis.text=element_text(size=s1 + 25), plot.title = element_text(size=s1 + 30))
-        p1 = p1 + scale_y_discrete(limits = c(0, 0.5, 1), labels = as.character(seq(0,1, length=3)), breaks = as.character(seq(0,1, length=3)), expand = c(0,0.05))
+        p1 = p1 + scale_y_discrete(limits = c(0, 0.5, 1), 
+                                   labels = as.character(seq(0,1, length=3)), 
+                                   breaks = as.character(seq(0,1, length=3)), expand = c(0,0.05))
         #p1 = p1 + ylim(0,1)
         png(file=paste(name_file,"_weblogo.png"),height=149 * 2,width=52 * size * 2 )
         print(p1)
         dev.off()
     }
     """)
-    weblogo_maker(v.StrVector(sequence_list), v.StrVector([output + sequence_name]), v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
+    weblogo_maker(v.StrVector(sequence_list), v.StrVector([output + sequence_name]),
+                  v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
 
 
 def create_figure(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
@@ -140,6 +151,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     :param list_name: (list of string) list of name of different factor studied
     :param output: (string) path where the output_file will be created
     :param regulation: (string) up or down
+    :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
     :param type_fig: (string) the type of figure group or U1
     """
     filename = "%s%s_%s_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
@@ -202,6 +214,7 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
     :param list_name: (list of string) list of name of different factor studied
     :param output: (string) path where the output_file will be created
     :param regulation: (string) up or down
+    :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
     :param type_fig: (string) the type of figure group or U1
     """
     list_name = [name.replace("_exons", "") for name in list_name]
@@ -221,9 +234,9 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
     trace = go.Bar(x=list_name,
                    y=mean_values,
                    marker=dict(color=color_list),
-                   error_y = dict(type="data",
-                                  array=sd_values,
-                                  visible=True))
+                   error_y=dict(type="data",
+                                array=sd_values,
+                                visible=True))
     layout = go.Layout(
         title=title,
         yaxis=dict(
@@ -249,7 +262,7 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
 
     fig = {"data": [trace], "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_%s_exons_lvl_%s_error_bar.html" % (output, name_fig, regulation, type_fig),
-                    auto_open=False, validate=False)
+                        auto_open=False, validate=False)
 
 
 def frequency_test(obs1, tot1, obs2, tot2):
@@ -306,7 +319,7 @@ def write_proportion_pvalues(list_values, list_name, output, regulation, name_fi
     :param type_fig: (string) the type of graphics created
     """
     list_col = ["nb_branch_point", "factor1", "factor2", "nb_bp1", "tot1",
-            "nb_bp2",  "tot2", "pval"]
+                "nb_bp2",  "tot2", "pval"]
     data = {my_name: [] for my_name in list_col}
     filename = "%s%s_%s_exons_lvl_%s_barplot_pvalue.txt" % (output, name_fig, regulation, type_fig)
     for i in range(len(list_values) - 1):
@@ -385,7 +398,7 @@ def create_barplot(list_values, list_name, output, regulation, name_fig, type_fi
 
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_%s_exons_lvl_%s_barplot.html" % (output, name_fig, regulation, type_fig),
-                    auto_open=False, validate=False)
+                        auto_open=False, validate=False)
 
 
 def mann_withney_test_r(list_values1, list_values2):
@@ -415,7 +428,8 @@ def get_bp_ppt_score_list(output, exon_list, name_list, size, regulation):
     print(name_store_file)
     if not os.path.isfile(name_store_file):
         print("Calculating ppt bp score using SVM BP FINDER")
-        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list, hbound_list, uaa_list, una_list = function.bp_ppt_calculator(exon_list, size)
+        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, \
+            ag_count_list, hbound_list, uaa_list, una_list = function.bp_ppt_calculator(exon_list, size)
         with open(name_store_file, "w") as outfile:
             outfile.write("bp_score_list=%s\n" % str(bp_score_list))
             outfile.write("ppt_score_list=%s\n" % str(ppt_score_list))
@@ -439,7 +453,8 @@ def get_bp_ppt_score_list(output, exon_list, name_list, size, regulation):
         hbound_list = stored.hbound
         uaa_list = stored.uaa_count
         una_list = stored.una_count
-    return bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list, hbound_list, uaa_list, una_list
+    return bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, \
+        ag_count_list, hbound_list, uaa_list, una_list
 
 
 def initiate_list_of_factor(file_dir, exon_type, type_analysis):
@@ -484,12 +499,14 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation="down"):
     print("%s : %s %s exons" % (list_names[pos], len(exon_list), regulation))
     return exon_list
 
+
 def main():
     exon_class.set_debug(0)
     exon_type = "CCE"
-    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt", "result/make_control_files_bp_ppt/")
+    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt",
+                                                                      "result/make_control_files_bp_ppt/")
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt",
-                                                                      "result/bp_ppt_score/")
+                                                                 "result/bp_ppt_score/")
     file_dir = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt", "result/")
     if not os.path.isdir(ctrl_output):
         os.mkdir(ctrl_output)
@@ -497,18 +514,21 @@ def main():
         os.mkdir(output)
     ctrl_dir = os.path.realpath(os.path.dirname(__file__)) + "/control_dictionaries/"
     sys.path.insert(0, ctrl_dir)
-    fasterdb = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt", "data/fasterDB_lite.db")
+    fasterdb = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt",
+                                                                   "data/fasterDB_lite.db")
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt", "data/sed.db")
     cnx = sqlite3.connect(fasterdb)
     cnx_sed = sqlite3.connect(seddb)
     type_factors = ["exon", "spliceosome", "spliceosome"]
     regulations = ["down", "down", "up"]
 
-    for i in range(len(type_factors)):
-        type_analysis = type_factors[i]
-        regulation = regulations[i]
+    for j in range(len(type_factors)):
+        type_analysis = type_factors[j]
+        regulation = regulations[j]
         name_file, list_file = initiate_list_of_factor(file_dir, exon_type, type_analysis)
-        dict_score_3ss = {i:{"bp_score_list":[], "ppt_score_list":[], "nb_bp_list":[], "nb_good_bp_list":[], "ag_count": [], "hbound": [], "uaa_count": [], "una_count": []} for i in [100, 50, 35, 25]}
+        dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [],
+                              "nb_good_bp_list": [], "ag_count": [], "hbound": [], "uaa_count": [],
+                              "una_count": []} for k in [100, 50, 35, 25]}
         list_force_acceptor = []
         list_force_donor = []
         for i in range(len(name_file)):
@@ -517,7 +537,9 @@ def main():
                 list_force_acceptor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_acceptor"))
                 list_force_donor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_donor"))
                 for size in dict_score_3ss.keys():
-                    bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list, hbound_list, uaa_list, una_list = get_bp_ppt_score_list(ctrl_output, exon_list, name_file[i], size, regulation)
+                    bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list,\
+                        hbound_list, uaa_list, una_list = \
+                        get_bp_ppt_score_list(ctrl_output, exon_list, name_file[i], size, regulation)
                     dict_score_3ss[size]["bp_score_list"].append(bp_score_list)
                     dict_score_3ss[size]["ppt_score_list"].append(ppt_score_list)
                     dict_score_3ss[size]["nb_bp_list"].append(nb_bp_list)
@@ -527,7 +549,6 @@ def main():
                     dict_score_3ss[size]["hbound"].append(hbound_list)
                     dict_score_3ss[size]["uaa_count"].append(uaa_list)
                     dict_score_3ss[size]["una_count"].append(una_list)
-
 
             else:
                 for size in dict_score_3ss.keys():
@@ -546,9 +567,12 @@ def main():
 
         for size in dict_score_3ss.keys():
             print("------------> %s nt " % size)
-            create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation, "prop_nb_branch_point_(%snt)" % size, type_analysis)
-            create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation, "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation, "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
+                           "prop_nb_branch_point_(%snt)" % size, type_analysis)
+            create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                                     "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
                            "AG_count_downstream_bp(%snt)" % size, type_analysis)
             write_proportion_pvalues(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
@@ -562,14 +586,16 @@ def main():
                            "UNA_count(%snt)" % size, type_analysis)
             write_proportion_pvalues(dict_score_3ss[size]["una_count"], name_file, output, regulation,
                                      "UNA_count(%snt)" % size, type_analysis)
-            create_figure(dict_score_3ss[size]["hbound"], name_file, output, regulation, "nb_h_bound_%s_nt" % size, type_analysis)
-            create_barplot_with_error_bar(dict_score_3ss[size]["hbound"], name_file, output, regulation, "nb_h_bound_%s_nt" % size,
-                          type_analysis)
+            create_figure(dict_score_3ss[size]["hbound"], name_file, output, regulation,
+                          "nb_h_bound_%s_nt" % size, type_analysis)
+            create_barplot_with_error_bar(dict_score_3ss[size]["hbound"], name_file, output,
+                                          regulation, "nb_h_bound_%s_nt" % size,
+                                          type_analysis)
         create_figure(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
-        create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
+        create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation,
+                                      "force_acceptor", type_analysis)
         create_figure(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
         create_barplot_with_error_bar(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
-
 
 
 if __name__ == "__main__":

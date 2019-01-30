@@ -16,7 +16,8 @@ import sys
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 import numpy as np
-sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("boxplot_GC_content_and_flanking_intron_size", ""))
+sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace(
+    "boxplot_GC_content_and_flanking_intron_size", ""))
 import group_factor
 
 
@@ -54,22 +55,28 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     """
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
+    color_bright = group_factor.color_dic_bright
     data = []
     title = """%s of %s %s containing those exons regulated by different factors""" % (name_fig, regulation, type_fig)
     if "intron" in name_fig:
         list_values = [list(map(math.log10, cur_list)) for cur_list in list_values]
-        title += "<br/>(median flanking intron size for exons and median introns size for genes)"
+        name_fig = "log " + name_fig
+        title += "<br/>(log min flanking intron size for exons and log median introns size for genes)"
     if "gene_size" in name_fig:
         list_values = [list(map(math.log10, cur_list)) for cur_list in list_values]
+        name_fig = "log " + name_fig
         title = """%s of %s exons of different exons set""" % (name_fig, regulation)
     for i in range(len(list_name) - 1):
-        pval = mann_withney_test_r(list_values[i], list_values[-1])
-        title += "<br> mw two-sided test %s vs %s : p = %.2E" % (list_name[i], list_name[-1], pval)
+        for j in range(i + 1, len(list_name)):
+            pval = mann_withney_test_r(list_values[i], list_values[j])
+            title += "<br> mw two-sided test %s vs %s : p = %.2E" % (list_name[i], list_name[j], pval)
     for i in range(len(list_values)):
+        cur_color = color_dic["_".join(list_name[i].split("_")[:-1])]
+        color_b = color_bright["_".join(list_name[i].split("_")[:-1])]
         data.append({"y": list_values[i], "type": "violin",
-                     "name": list_name[i], "visible": True,  # "fillcolor": color_list[i], "opacity": 0.6,
-                     "line": {"color": color_dic["_".join(list_name[i].split("_")[:-1])]},
-                     "box": {"visible": True}, "meanline": {"visible": True}})
+                     "name": list_name[i], "visible": True, "fillcolor": color_b, "opacity": 1,
+                     "line": {"color": "black"},
+                     "box": {"visible": True,  "fillcolor": cur_color}, "meanline": {"visible": False}})
 
     layout = go.Layout(
         title=title,
@@ -126,18 +133,20 @@ def main():
         for i in range(len(name_file)):
             if "exons" in name_file[i]:
                 if exon_type not in name_file[i]:
-                    list_gc_content.append(boxplot_gc_content_maker.extract_exon_gc_content_from_file(cnx, list_file[i]))
+                    list_gc_content.append(boxplot_gc_content_maker.extract_exon_gc_content_from_file(
+                        cnx, list_file[i]))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.extract_exon_median_flanking_intron_size_from_file(cnx, list_file[i])
+                        boxplot_flanking_intron_size.extract_exon_min_flanking_intron_size_from_file(cnx, list_file[i])
                     )
                 else:
                     list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.get_exon_control_median_flanking_intron_size(cnx, exon_type)
+                        boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type)
                     )
             if "genes" in name_file[i]:
                 if exon_type not in name_file[i]:
-                    list_gc_content.append(boxplot_gc_content_maker.extract_gene_gc_content_from_file(cnx, list_file[i]))
+                    list_gc_content.append(boxplot_gc_content_maker.extract_gene_gc_content_from_file(
+                        cnx, list_file[i]))
                     list_intron_size.append(
                         boxplot_flanking_intron_size.extract_gene_median_intron_size_from_file(cnx, list_file[i])
                     )
@@ -149,8 +158,10 @@ def main():
                     )
                     list_gene_size.append(boxplot_gene_size.get_control_gene_size(cnx, exon_type))
         create_figure(list_gc_content, name_file, output, "down", "GC_content", my_level)
-        create_figure(list_intron_size, name_file, output, "down", "median_intron_size", my_level)
+        if my_level == "exons":
+            create_figure(list_intron_size, name_file, output, "down", "min_intron_size", my_level)
         if my_level == "genes":
+            create_figure(list_intron_size, name_file, output, "down", "median_intron_size", my_level)
             create_figure(list_gene_size, name_file, output, "down", "gene_size", my_level)
 
 

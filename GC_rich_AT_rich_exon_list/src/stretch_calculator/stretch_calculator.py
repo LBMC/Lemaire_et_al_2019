@@ -8,6 +8,7 @@ Description :
 import sys
 import config
 
+
 def stretch_finder_nt(sequence, nt, stretch_len, stretch_content):
     """
     :param sequence: (string) an amino acid sequences
@@ -65,4 +66,3 @@ def stretch_counter(exon_list, stretch_data, sequence_boundaries):
                 sequence = exon.upstream_intron.sequence_proxi[sequence_boundaries[0]:sequence_boundaries[1]]
                 stretch_dic[nt].append(stretch_finder_nt(sequence, nt, stretch_data[0], stretch_data[1]))
     return stretch_dic
-

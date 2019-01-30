@@ -15,7 +15,9 @@ sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/weblogo
 import group_factor
 
 # sed_name 2 real_name
-sed2real = {"iupac_upstream_intron_adjacent1": "25 nt", "iupac_upstream_intron_adjacent2": "50 nt", "iupac_upstream_intron_proxi": "100 nt"}
+sed2real = {"iupac_upstream_intron_adjacent1": "25 nt",
+            "iupac_upstream_intron_adjacent2": "50 nt",
+            "iupac_upstream_intron_proxi": "100 nt"}
 
 
 def get_control_ct_content(cnx, exon_type, list_targets):
@@ -48,7 +50,6 @@ def get_control_ct_content(cnx, exon_type, list_targets):
     return dic_ct_content
 
 
-
 def calculate_ct_content(cnx, gene_id, exon_pos, target_column):
     """
     Get the pyrimidine content of the upstream sequence of exon within the gene identified by ``gene_id`` and \
@@ -68,7 +69,6 @@ def calculate_ct_content(cnx, gene_id, exon_pos, target_column):
     return res[0].split(";")[7]
 
 
-
 def extract_ct_content_from_file(cnx, filename, list_targets):
     """
     Get the pyrimidine content of the upstream sequence of 25, 50 and 100 nt of the exon in ``filename``
@@ -80,7 +80,7 @@ def extract_ct_content_from_file(cnx, filename, list_targets):
     long upstream sequences of each exon  in ``filename``
     """
 
-    dic_gc = {sed2real[target]:[] for target in list_targets}
+    dic_gc = {sed2real[target]: [] for target in list_targets}
     with open(filename, "r") as in_file:
         line = in_file.readline()
         while line:
@@ -93,6 +93,7 @@ def extract_ct_content_from_file(cnx, filename, list_targets):
                     dic_gc[sed2real[list_targets[i]]].append(val)
             line = in_file.readline()
     return dic_gc
+
 
 def extract_ct_content_from_list(cnx, exon_list, list_targets):
     """
@@ -122,6 +123,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
     :param list_name: (list of string) list of name of different factor studied
     :param output: (string) path where the output_file will be created
     :param regulation: (string) up or down
+    :param name_fig: (string) the name of the figure (corresponding to the feature studied)
     """
     color_dic = group_factor.color_dic
     color_b_dic = group_factor.color_dic_bright
@@ -163,14 +165,14 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
         paper_bgcolor='white',
         plot_bgcolor='white',
         showlegend=True,
-        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) -0.5, y1=np.median(list_values[-1]),
+        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+                     y1=np.median(list_values[-1]),
                      line=dict(color=color_dic[list_name[-1]]))]
     )
 
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_%s_exons_lvl.html" % (output, name_fig, regulation),
-                    auto_open=False, validate=False)
-
+                        auto_open=False, validate=False)
 
 
 def mann_withney_test_r(list_values1, list_values2):
@@ -191,7 +193,8 @@ def main():
     exon_type = "CCE"
     list_targets = ["iupac_upstream_intron_adjacent1", "iupac_upstream_intron_adjacent2", "iupac_upstream_intron_proxi"]
     path = os.path.realpath(os.path.dirname(__file__)).replace("src/weblogo_and_pyrimidine_content", "result/")
-    output = os.path.realpath(os.path.dirname(__file__)).replace("src/weblogo_and_pyrimidine_content", "result/boxplot_CT_content/")
+    output = os.path.realpath(os.path.dirname(__file__)).replace("src/weblogo_and_pyrimidine_content",
+                                                                 "result/boxplot_CT_content/")
     if not os.path.isdir(output):
         os.mkdir(output)
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src/weblogo_and_pyrimidine_content", "data/sed.db")
@@ -211,8 +214,8 @@ def main():
         new_targets_ct_content = []
         for i in range(len(list_ct_content)):
             new_targets_ct_content.append(list_ct_content[i][sed2real[target]])
-        create_figure(new_targets_ct_content, name_file, output, "down", "CT content upstream intron %s" %  sed2real[target])
-
+        create_figure(new_targets_ct_content, name_file, output, "down", "CT content upstream intron %s" %
+                      sed2real[target])
 
 
 if __name__ == "__main__":

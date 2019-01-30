@@ -11,9 +11,9 @@ median_intron_size of the AT, GC, CCE genes (gene containing at least one exons 
 import numpy as np
 
 
-def get_exon_control_median_flanking_intron_size(cnx, exon_type):
+def get_exon_control_min_flanking_intron_size(cnx, exon_type):
     """
-    Get the median flanking intron size of every exons with the exon type ``exon_type``
+    Get the min flanking intron size of every exons with the exon type ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param exon_type: (string) the type of exon for which we want to
     :return: (list of float) the flanking intron size of exons with the exon type ``exon_tyep``
@@ -32,7 +32,7 @@ def get_exon_control_median_flanking_intron_size(cnx, exon_type):
     tuple_list = cursor.fetchall()
     median_intron_size = []
     for size in tuple_list:
-        median_intron_size.append(np.nanmedian(np.array([size[0], size[1]], dtype=float)))
+        median_intron_size.append(np.nanmin(np.array([size[0], size[1]], dtype=float)))
     # turn tuple into list
     return median_intron_size
 
@@ -64,9 +64,9 @@ def get_gene_control_median_flanking_intron_size(cnx, exon_type):
     return median_intron_size
 
 
-def calculate_exon_median_flanking_intron_size(cnx, gene_id, exon_pos):
+def calculate_exon_min_flanking_intron_size(cnx, gene_id, exon_pos):
     """
-    Get the median flanking intron size of the exons with ``gene_id`` and ``exon_pos``
+    Get the min flanking intron size of the exons with ``gene_id`` and ``exon_pos``
     :param cnx: (sqlite3 connect object) connection to sed database.
     :param gene_id: (int) the id of the gene containing the exons.
     :param exon_pos: (int) the id of the exon of interest
@@ -76,7 +76,7 @@ def calculate_exon_median_flanking_intron_size(cnx, gene_id, exon_pos):
     query = "SELECT upstream_intron_size, downstream_intron_size FROM sed WHERE gene_id = ? and exon_pos = ?"
     cursor.execute(query, (gene_id, exon_pos,))
     res = cursor.fetchone()
-    return np.nanmedian(np.array([res[0], res[1]], dtype=float))
+    return np.nanmin(np.array([res[0], res[1]], dtype=float))
 
 
 def calculate_gene_median_intron_size(cnx, gene_id):
@@ -93,16 +93,16 @@ def calculate_gene_median_intron_size(cnx, gene_id):
     return res[0]
 
 
-def extract_exon_median_flanking_intron_size_from_list(cnx, exon_list):
+def extract_exon_min_flanking_intron_size_from_list(cnx, exon_list):
     """
-    Get the median flanking intron size of every exon located in exons list
+    Get the min flanking intron size of every exon located in exons list
     :param cnx: (sqlite3 connect object) connection to sed database
     :param exon_list: (list of 2 int) list of exons identified by their gene_id and their position in the gene.
     :return: (list of float) the list of median flaking intron size
     """
     list_gc = []
     for exon in exon_list:
-        list_gc.append(calculate_exon_median_flanking_intron_size(cnx, exon[0], exon[1]))
+        list_gc.append(calculate_exon_min_flanking_intron_size(cnx, exon[0], exon[1]))
     return list_gc
 
 
@@ -121,9 +121,9 @@ def extract_gene_median_intron_size_from_list(cnx, gene_list):
     return list_gc
 
 
-def extract_exon_median_flanking_intron_size_from_file(cnx, filename):
+def extract_exon_min_flanking_intron_size_from_file(cnx, filename):
     """
-    Get the median flanking intron size of the exon within the file ``filename``
+    Get the min flanking intron size of the exon within the file ``filename``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the file where the exons are stored
     :return: (list of float) list of median intron size of the exon in ``filename``
@@ -133,7 +133,7 @@ def extract_exon_median_flanking_intron_size_from_file(cnx, filename):
         line = in_file.readline()
         while line:
             line = line.split("\t")
-            median_intron_size.append(calculate_exon_median_flanking_intron_size(cnx, line[0], line[1]))
+            median_intron_size.append(calculate_exon_min_flanking_intron_size(cnx, line[0], line[1]))
             line = in_file.readline()
     return median_intron_size
 

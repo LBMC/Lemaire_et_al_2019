@@ -124,6 +124,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
     :param regulation: (string) up or down
     """
     color_dic = group_factor.color_dic
+    color_b_dic = group_factor.color_dic_bright
     data = []
     list_values[-1] = list(map(float, list_values[-1]))
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
@@ -133,9 +134,12 @@ def create_figure(list_values, list_name, output, regulation, name_fig):
 
     for i in range(len(list_values)):
         data.append({"y": list_values[i], "type": "violin",
-                     "name": list_name[i], "visible": True, # "fillcolor": color_list[i], "opacity": 0.6,
-                     "line": {"color": color_dic[list_name[i]]},
-                     "box": {"visible": True}, "meanline": {"visible": True}})
+                     "name": list_name[i], "visible": True, "fillcolor": color_b_dic[list_name[i]], "opacity": 1,
+                     "line": {"color": "black"},
+                     "box": {"visible": True,  "fillcolor": color_dic[list_name[i]]}, "meanline": {"visible": False}})
+    if len(list_values) == 3:
+        pval = mann_withney_test_r(list_values[0], list_values[1])
+        title += "<br> %s vs %s, p=%.2E" % (list_name[0], list_name[1], pval)
 
     layout = go.Layout(
         title=title,

@@ -6,6 +6,7 @@
 import os
 import sqlite3
 import exon_class
+import win_size
 
 
 def get_control_exon_information(cnx, exon_type):
@@ -77,7 +78,7 @@ def main():
     """
     launch the creation of control dictionaries
     """
-    window_size = 20
+    window_size = win_size.window_size
     control_dictionaries_creator(window_size)
 
 

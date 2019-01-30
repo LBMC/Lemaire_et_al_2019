@@ -8,6 +8,7 @@ import os
 import exon_class
 import metaexon_figure_creator
 import argparse
+import win_size
 
 
 def extract_exon_list(a_file):
@@ -40,7 +41,7 @@ def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend):
     :param legend: (boolean) True if you want to draw an exon + legend false else
     """
     exon_class.set_debug(0)
-    window_size = 20
+    window_size = win_size.window_size
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "result/metaexon_figure/")
     if not os.path.isdir(output):
         os.mkdir(output)

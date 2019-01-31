@@ -24,7 +24,8 @@ import sys
 
 def chrom_name_adapter(bed_file, new_name):
     """
-    Correct chromosome name
+    Correct chromosome name.
+
     :param bed_file: (string) a bed obtain from a clip experiment
     :param new_name: (string) new name of the file
     :return: (string) the name of the
@@ -56,7 +57,7 @@ def bed2bw(bed_file, refsize, outfolder):
     :param outfolder: (string) path where the bigwig file will be created.
     :return: (string) the name of the bigwig file
     """
-    #adapting chromosome column.
+    # adapting chromosome column.
     bed_chrom = outfolder + os.path.basename(bed_file).replace(".bed", "nochr.bed").replace(".gz", "")
     chrom_name_adapter(bed_file, bed_chrom)
     # sorting the bed
@@ -146,6 +147,7 @@ def get_control_exon_information(cnx, exon_type):
 def get_gene_id(cnx, coord, gene_symbol):
     """
     From coordinates of an exon retrieve the gene_id of the gene that contains this exons.
+
     :param cnx: (pymysql connect instance) connection to splicing lore database
     :param coord: (string) the coordinates of an exon (format chr:start-stop)
     :param gene_symbol: (string) the gene name of the exon with coordinates ``coord``
@@ -172,7 +174,8 @@ def get_gene_id(cnx, coord, gene_symbol):
 
 def get_retained_exon(cnx, cell_line):
     """
-    Get retained exons (high psi) in a particular cell line
+    Get retained exons (high psi) in a particular cell line.
+
     :param cnx: (pymysql connect instance) connection to splicing lore database
     :param cell_line: (string) the name of a particular cell line.
     :return: (list of 2 int) gene_id and exon_pos
@@ -199,10 +202,11 @@ def get_retained_exon(cnx, cell_line):
 
 def get_exon_list(cnx, annotation_name, regulation):
     """
-    Get the exon_list wanted
+    Get the exon_list wanted.
 
     :param cnx: (sqlite3 connect object) connection to sed database
     :param annotation_name: (string) GC-AT or a sf_name
+    :param regulation: (string) the regulation of an exon list by a factor(s)
     :return: (list of 2 int) gene id and exon_pos
     """
     if "GC" in annotation_name or "AT" in annotation_name:
@@ -226,8 +230,10 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
     Get the name of the annotation file.
 
     :param cnx: (sqlite3 connect object) connection to sed database
-    :param cnx_fasterdb: (sqtlie3 connect object) connection to fasterDB
+    :param cnx_fasterdb: (sqtite3 connect object) connection to fasterDB
     :param annotation_name: (string) GC-AT or a sf_name
+    :param template_fodler: (string) a folder containing template bed file.
+    :param chrom_size_file: (string) a file containing the length of hg19 chromosomes.
     :param regulation: (string) up or down
     :param cell_line: (string) the name of the cell line where the clip experiments was performed
     :return:
@@ -267,7 +273,8 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
 
 def load_chrom_size_dic(chrom_size_file):
     """
-    load in the form a a dictionary the chromosome size file
+    Load in the form a a dictionary the chromosome size file.
+
     :param chrom_size_file: (float) chromosome size filz
     :return: (dictionary of int) dictionary that links each chromosome to it's size
     """
@@ -283,11 +290,12 @@ def load_chrom_size_dic(chrom_size_file):
 def bed_creator(cnx_fasterdb, exon_list, dest_folder, name_bed, chrom_size_file):
     """
     Create a bed file containing all the exons regulated by ``sf_name`` with ``regulation``.
+
     :param cnx_fasterdb: (sqlite3 connector object) connection to fasterDB lite database
     :param exon_list: (list of 2 int) gene id + exon pos
     :param dest_folder: (string) path where the bed will be created
     :param name_bed: (string) name of the file
-    :param: (string) a file containing chromosome size
+    :param chrom_size_file: (string) a file containing chromosome size
     :return: (string) the name of the bed file created
     """
     in_exon = 50 - 1
@@ -297,7 +305,8 @@ def bed_creator(cnx_fasterdb, exon_list, dest_folder, name_bed, chrom_size_file)
     exon_info_left = []
     exon_info_right = []
     for exon in exon_list:
-        query = """SELECT t1.chromosome, t1.start_on_chromosome, t1.end_on_chromosome, t2.official_symbol, t1.pos_on_gene,
+        query = """SELECT t1.chromosome, t1.start_on_chromosome, t1.end_on_chromosome, 
+                          t2.official_symbol, t1.pos_on_gene,
                    t2.strand, t1.end_on_chromosome - t1.start_on_chromosome + 1
                    FROM exons t1, genes t2
                    WHERE t1.id_gene = t2.id
@@ -314,18 +323,18 @@ def bed_creator(cnx_fasterdb, exon_list, dest_folder, name_bed, chrom_size_file)
         exon_right = None
         if res[0][5] == 1:
             if res[0][1] - out_exon > 0 and res[0][1] + in_exon <= dic_size[str(res[0][0])]:
-                exon_left = [res[0][0], res[0][1] - out_exon, res[0][1] + in_exon] + ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [
-                    res[0][5], res[0][6]]
+                exon_left = [res[0][0], res[0][1] - out_exon, res[0][1] + in_exon] +\
+                            ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [res[0][5], res[0][6]]
             if res[0][2] - in_exon > 0 and res[0][2] + out_exon <= dic_size[str(res[0][0])]:
-                exon_right = [res[0][0], res[0][2] - in_exon, res[0][2] + out_exon] + ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [
-                    res[0][5], res[0][6]]
+                exon_right = [res[0][0], res[0][2] - in_exon, res[0][2] + out_exon] + \
+                             ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [res[0][5], res[0][6]]
         else:
             if res[0][2] - in_exon > 0 and res[0][2] + out_exon <= dic_size[str(res[0][0])]:
-                exon_left = [res[0][0], res[0][2] - in_exon, res[0][2] + out_exon] + ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [
-                    res[0][5], res[0][6]]
+                exon_left = [res[0][0], res[0][2] - in_exon, res[0][2] + out_exon] + \
+                            ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [res[0][5], res[0][6]]
             if res[0][1] - out_exon > 0 and res[0][1] + in_exon <= dic_size[str(res[0][0])]:
-                exon_right = [res[0][0], res[0][1] - out_exon, res[0][1] + in_exon] + ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [
-                    res[0][5], res[0][6]]
+                exon_right = [res[0][0], res[0][1] - out_exon, res[0][1] + in_exon] + \
+                             ["%s_%s" % (res[0][3], res[0][4])] + ["."] + [res[0][5], res[0][6]]
         if exon_left:
             exon_info_left.append("\t".join(list(map(str, exon_left))))
         if exon_right:
@@ -344,7 +353,6 @@ def bed_creator(cnx_fasterdb, exon_list, dest_folder, name_bed, chrom_size_file)
         # else:
         #     fasterdb_bed_add_exon_type.add_intron_sequence(filename, final_name, chrom_size_file, 50, 200)
     return final_names
-
 
 
 def main(input_bed, refsize, output, metagene_script, cond, annotation, color, outname, regulation, cell_line):
@@ -368,7 +376,8 @@ def main(input_bed, refsize, output, metagene_script, cond, annotation, color, o
         os.mkdir(template_fodler)
     cnx = sqlite3.connect(seddb)
     cnx_fasterdb = sqlite3.connect(fasterdb)
-    tplt_start, tplt_stop, n_start, n_stop = handle_bed_creator(cnx, cnx_fasterdb, annotation, template_fodler, refsize, regulation, cell_line)
+    tplt_start, tplt_stop, n_start, n_stop = handle_bed_creator(cnx, cnx_fasterdb, annotation,
+                                                                template_fodler, refsize, regulation, cell_line)
     output_bw = output + "bigwig/"
     output_graph = output + "figure/"
     if not os.path.isdir(output_bw):
@@ -387,11 +396,11 @@ def main(input_bed, refsize, output, metagene_script, cond, annotation, color, o
             outname += "GC_AT_group_down"
         else:
             outname += "spliceosome_%s" % regulation
-    try :
-        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_start, n_start, color, outname + "_start", output_graph,
-                                   200)
-        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_stop, n_stop, color, outname + "_stop", output_graph,
-                                   50)
+    try:
+        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_start,
+                                   n_start, color, outname + "_start", output_graph, 200)
+        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_stop, n_stop,
+                                   color, outname + "_stop", output_graph, 50)
     except subprocess.CalledProcessError:
         print("Error metagene script")
 
@@ -416,8 +425,9 @@ def launcher():
     req_arg.add_argument('--metagene_script', dest='metagene_script', help="path where the meatagne script is located",
                          required=True)
     parser.add_argument('--title', dest='title', help="title of the graphic",
-                         default=None)
-    req_arg.add_argument('--annotation', dest='annotation', help="GC-AT or the name of a splicing factor", required=True)
+                        default=None)
+    req_arg.add_argument('--annotation', dest='annotation',
+                         help="GC-AT or the name of a splicing factor", required=True)
     parser.add_argument('--color', dest='color', help="color of the annotation", default=None)
     parser.add_argument('--outname', dest='outname', help="the name of the figure", default=None)
     parser.add_argument('--regulation', dest='regulation', help="regulation", default="down")

@@ -11,7 +11,6 @@ Description:
 import gzip
 from Bio import SeqIO
 import math
-import numpy as np
 
 
 # Functions
@@ -107,7 +106,7 @@ def get_middle_sequences(list_coordinates, fasta_dic, size):
     return list_seq
 
 
-def full_defined(sequence):
+def totaly_defined(sequence):
     """
     Says if all the nucleotide are well defined within the sequence
 
@@ -115,31 +114,48 @@ def full_defined(sequence):
     :return: (boolean) True if all nucleotide are well defined, False else
     """
     seq_defined = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
-    if seq_defined / len(sequence) >= 0.95:
+    if seq_defined == len(sequence):
         return True
     return False
 
 
-def get_nt_frequencies(list_seq):
+def get_list_sequence_hexanucleotide_frequencies(list_seq):
     """
-    Get the frequencies of every nucleotide within the list of sequence ``list_seq``
+    Get the average frequencies of every hexanucleotide in a list of nucleotide sequence ``list_seq``
     :param list_seq: (list of string) list of nucleotide sequence
-    :return: (dictionary of float) dictionary that containing the mean value for each nucleotide in ``list_seq``
+    :return: (dictionary of float) dictionary that containing the mean value for each hexanucleotide in ``list_seq``
     """
-    iupac = list("ATCG")
-    dic_nt = {nt: [] for nt in iupac}
+    mean_hexa_count = {}
+    nb_sequence_selected = 0
     for sequence in list_seq:
-        if full_defined(sequence):
-            seq_len = sequence.count("A") + sequence.count("T") + sequence.count("G") + sequence.count("C")
-            for nt in dic_nt.keys():
-                dic_nt[nt].append((sequence.count(nt) / seq_len) * 100)
+        if totaly_defined(sequence):
+            hex_dic = get_hexanucleotide_frequencies(sequence)
+            for hexa in hex_dic.keys():
+                if hexa not in mean_hexa_count.keys():
+                    mean_hexa_count[hexa] = [hex_dic[hexa]]
+                else:
+                    mean_hexa_count[hexa].append(hex_dic[hexa])
+            nb_sequence_selected += 1
     final_dic = {}
-    for nt in dic_nt.keys():
-        final_dic[nt] = np.mean(dic_nt[nt])
-    final_dic["S"] = np.mean(list(np.array(dic_nt["G"]) + np.array(dic_nt["C"])))
-    final_dic["W"] = np.mean(list(np.array(dic_nt["A"]) + np.array(dic_nt["T"])))
-    final_dic["nb_sequences"] = len(list_seq)
+    for hexa in mean_hexa_count.keys():
+        final_dic[hexa] = sum(mean_hexa_count[hexa]) / nb_sequence_selected
     return final_dic
+
+
+def get_hexanucleotide_frequencies(sequence):
+    """
+    Get the frequencies of each hexanucleotide within the nucleotide sequence ``sequence``
+    :param sequence: (string) a nucleotide sequence
+    :return: (dictionary of float) link each hexanucleotide to it's frequency within ``sequence``
+    """
+    dic_freq = {}
+    for i in range(len(sequence) - 5):
+        hexa = sequence[i:i+6]
+        if hexa not in dic_freq:
+            dic_freq[hexa] = 1 / (len(sequence) - 5)
+        else:
+            dic_freq[hexa] += 1 / (len(sequence) - 5)
+    return dic_freq
 
 
 def write_fasta_file(list_coordinates, fasta_dic, output):

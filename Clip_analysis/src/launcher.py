@@ -7,9 +7,11 @@ import bed_handler
 import argparse
 import os
 import sqlite3
+import pandas as pd
 
 
-def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichment, fasterdb, regulation, chrom_size_file, seddb):
+def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichment, fasterdb,
+         regulation, chrom_size_file, seddb):
     """
     Create a weblogo of the sequences in ``clip_bed`` overlapping those in ``fasterdb_bed``.
 
@@ -55,10 +57,13 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
         list_coordinates = list_coordinates
         print("   --> nb list_coordinates: %s" % len(list_coordinates))
         list_sequence = get_bed_sequences.get_middle_sequences(list_coordinates, dic_records, size)
-        dic_freq = get_bed_sequences.get_nt_frequencies(list_sequence)
+        dic_freq = get_bed_sequences.get_list_sequence_hexanucleotide_frequencies(list_sequence)
         name_result = os.path.basename(bed_list[i]).split(".")[1]
-        with open("%sfrequencies_%s.py" % (outputs[2], name_result), "w") as outfile:
-            outfile.write("dic_freq = %s\n" % str(dic_freq))
+        my_filename = "%sfrequencies_%s.txt" % (outputs[2], name_result)
+        df = pd.DataFrame.from_records(
+            dic_freq, index=["frequencies"]).transpose().sort_values("frequencies",
+                                                                     ascending=False)
+        df.to_csv(my_filename, sep="\t")
         if enrichment == "Y":
             motif_search_dir = output + "motif_search_%s/" % name_result
             if not os.path.isdir(motif_search_dir):
@@ -104,8 +109,6 @@ def launcher():
     req_arg.add_argument('--output', dest='output', help="path where the weblogo will be created",
                          required=True)
     parser.add_argument('--size', dest='size', help='size', default=10)
-    parser.add_argument('--nb_iteration', dest='nb_iteration', help='nb control iteration', default=1000)
-    parser.add_argument('--exon_type', dest='exon_type', help='exon type (ACE, CCE, or ALL)', default="CCE")
     parser.add_argument('--meme_path', dest="meme_path", help="path to meme program",
                         default=os.path.realpath(os.path.dirname(__file__)).replace("src", "data/meme_program/"))
     parser.add_argument('--chr_size', dest="chr_size", help="a tab file indicating the size of each chromosome in hg19",
@@ -141,13 +144,6 @@ def launcher():
         parser.error("Wrong value for --enrichment, the values Y/N/y/n/yes/no are accepted")
     else:
         args.enrichment = response[args.enrichment]
-
-    try:
-        args.nb_iteration = int(args.nb_iteration)
-        if args.nb_iteration < 1:
-            parser.error("Wrong parameter for nb_iteration, it must be a positive value")
-    except ValueError:
-        parser.error("Wrong parameter for nb_iteration, it must be a number")
 
     if os.path.isfile(args.clip_bed):
         main(args.clip_bed, args.fasterdb_bed, args.hg19_reference, args.output, args.size, args.meme_path,

@@ -84,13 +84,12 @@ def clip_sequence_size(list_coordinates):
     return min_val, max_val
 
 
-def get_middle_sequences(list_coordinates, fasta_dic, size):
+def get_sequences(list_coordinates, fasta_dic):
     """
     Get the sequence defined by each set of coordinates in ``list_coordinates``
     :param list_coordinates: (list of 3 ints) the chromosome and the chromosomal coordinates of each features
     :param fasta_dic: (dictionary of Seq object) dictionary where the chromomsome number are the key and their sequence\
      are defined in the values of the dictionary
-    :param size: (int) the wanted size for the weblogo
     :return: (list of strings) list of sequence of interest
     """
     list_seq = []
@@ -100,9 +99,8 @@ def get_middle_sequences(list_coordinates, fasta_dic, size):
             sequence = str(fasta_dic[coord[0]][coord[1] - 1:coord[2]].reverse_complement())
         else:
             sequence = str(fasta_dic[coord[0]][coord[1] - 1:coord[2]])
-        new_seq = get_middle_coordinates(sequence, size)
-        if new_seq is not None:
-            list_seq.append(new_seq)
+        if len(sequence) > 5:
+            list_seq.append(sequence)
     return list_seq
 
 
@@ -180,21 +178,6 @@ def write_fasta_file(list_coordinates, fasta_dic, output):
                 fasta.write(">seq%s|1\n" % count)
                 fasta.write(sequence + "\n")
     return name_file
-
-
-def get_middle_coordinates(sequence, size):
-    """
-    Get the coordinates in the middle of the sequence defined by ``coordinates`` with the size ``size``
-    :param sequence:  (string) the sequence of interest
-    :param size: (int) the wanted size for the weblogo
-    :return: (string) the new sequence for the weblogo
-    """
-    if 9 < len(sequence) < size:
-        return sequence
-    if len(sequence) < 10:
-        return None
-    middle = math.floor(len(sequence) / 2)
-    return sequence[middle - math.floor(size / 2): middle + math.ceil(size / 2)]
 
 
 def create_sequence_dic(hg19_fasta):

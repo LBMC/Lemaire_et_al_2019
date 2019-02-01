@@ -147,12 +147,13 @@ def get_hexanucleotide_frequencies(sequence):
     :return: (dictionary of float) link each hexanucleotide to it's frequency within ``sequence``
     """
     dic_freq = {}
-    for i in range(len(sequence) - 5):
+    seq_len = len(sequence) - 5
+    for i in range(seq_len):
         hexa = sequence[i:i+6]
         if hexa not in dic_freq:
-            dic_freq[hexa] = 1 / (len(sequence) - 5)
+            dic_freq[hexa] = 1 / seq_len
         else:
-            dic_freq[hexa] += 1 / (len(sequence) - 5)
+            dic_freq[hexa] += 1 / seq_len
     return dic_freq
 
 

@@ -64,6 +64,8 @@ def creation_of_intron_table(new_db):
         pos_on_gene int(10),
         start_on_gene int(10) NOT NULL,
         end_on_gene int(10) NOT NULL,
+        start_on_chromosome int(10) NOT NULL,
+        end_on_chromosome int(10) NOT NULL,
         PRIMARY KEY(id_gene, pos_on_gene),
         FOREIGN KEY (id_gene) REFERENCES genes(id)
     );

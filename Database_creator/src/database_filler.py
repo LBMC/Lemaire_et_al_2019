@@ -56,13 +56,14 @@ def fill_intron_table(cnx, new_db):
     """
     cursor = cnx.cursor()
     query = """
-    SELECT id_gene, pos_sur_gene, start_sur_gene, end_sur_gene
-    FROM introns_genomiques;
+    SELECT id_gene, pos_sur_gene, start_sur_gene, end_sur_gene, start_sur_chromosome,
+           end_sur_chromosome
+    FROM introns_genomiques_bis;
     """
     cursor.execute(query)
     result = cursor.fetchall()
     cursor = new_db.cursor()
-    cursor.executemany("INSERT INTO introns VALUES (?, ?, ?, ?)", result)
+    cursor.executemany("INSERT INTO introns VALUES (?, ?, ?, ?, ?, ?)", result)
     new_db.commit()
 
 

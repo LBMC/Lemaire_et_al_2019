@@ -252,7 +252,6 @@ def get_gene_values(cnx, sf_list, target_column1, target_column2, regulation):
         exon_list = union_dataset_function.washing_events_all(exon_list)
     else:
         exon_list = sf_list
-    print(len(exon_list))
     gene_id = []
     for val in exon_list:
         if val[0] not in gene_id:
@@ -435,7 +434,6 @@ def get_relative_values(list_values, ctrl_dic, name_list):
             #     if exon_name[i] == "ODZ3_23":
             #         print(exon_name[i])
             #         print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[name_list], ctrl_dic[name_list]))
-            print(min(list_values))
             list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[name_list])) /
                             math.log10(ctrl_dic[name_list]) * 100 for val in list_values]
             name_list = "log_%s" % name_list
@@ -828,6 +826,32 @@ def difference(cnx, list1, list2, regulation):
     return [exon for exon in exon_list1 if exon not in exon_list2]
 
 
+def get_concidered_exons(cnx, exon_class, regulation):
+    """
+    Get the exon considered
+    :param cnx: (sqlite3 connect object) connection to sed databse
+    :param exon_class: (string) None, GC, AT or GC-AT, the exons that we consider, if \
+    exon_class is set to None, all exon regulated by a splicing factor are considered
+    :param regulation: (string) up or down
+    :return: (list of string/list 2 int) list of sf_name if exon_class is None or list of exons if \
+                     exon_class is not None.
+    """
+    if exon_class is None:
+        list_sf = group_factor.get_wanted_sf_name(None)
+        return list_sf
+    else:
+        if exon_class == "AT":
+            exon_list = difference(cnx, group_factor.at_rich_down, group_factor.gc_rich_down, regulation)
+        elif exon_class == "GC":
+            exon_list = difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
+        else:
+            exon_list = difference(cnx, group_factor.at_rich_down, group_factor.gc_rich_down, regulation)
+            exon_list += difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
+            print("exons GC-AT concidered : %s" % len(exon_list))
+        return exon_list
+
+
+
 def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
     """
     Create the correlation matrix (gene_size vs iupac)
@@ -854,19 +878,15 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                            couple_targets[i][1], exon_type, output,
                            name_fig)
     elif level == "exon":
-        name_fig += "_Exon_LVL"
         if exon_class is None:
             list_sf = group_factor.get_wanted_sf_name(None)
         else:
-            if exon_class == "AT":
-                name_fig += "_AT_sf"
-                exon_list = difference(cnx, group_factor.at_rich_down, group_factor.gc_rich_down, regulation)
-            else:
-                name_fig += "_GC_sf"
-                exon_list = difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
+            exon_list = get_concidered_exons(cnx, exon_class, regulation)
+            name_fig += "_%s_exons" % exon_class
+        name_fig += "_Exon_LVL"
         if not os.path.isdir(output):
             os.mkdir(output)
-        if xaxis in ["median_intron_size", "iupac_gene"] and yaxis in ["iupac_gene", "median_intron_size"]:
+        if xaxis in ["median_intron_size", "iupac_gene", "gene_size"] and yaxis in ["iupac_gene", "median_intron_size", "gene_size"]:
             for i in range(len(couple_targets)):
                 if exon_class is None:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, list_sf, couple_targets[i][0],

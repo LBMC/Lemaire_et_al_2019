@@ -37,14 +37,16 @@ def main(clip_bed, bed_folder, hg19_reference, output, size, prg_path, enrichmen
         if not os.path.isdir(cur_output):
             os.mkdir(cur_output)
     print("Creation of a one based bed")
-    bed_list = [bed_handler.bed_0based_2_1based(clip_bed, outputs[0])]
+    bed_list = []
+    input_bed = bed_handler.bed_0based_2_1based(clip_bed, outputs[0])
     print("Creation of intersect bed")
     cnx = sqlite3.connect(fasterdb)
     cnx_sed = sqlite3.connect(seddb)
     list_template = bed_handler.get_files(bed_folder)
     for bed in list_template:
         base_name = os.path.basename(bed).split(".")[0]
-        bed_list.append(bed_handler.intersect_bed(bed, bed_list[0], outputs[1], base_name))
+        interbed = bed_handler.intersect_bed(bed, input_bed, outputs[1], base_name)
+        bed_list.append(interbed)
     for i in range(len(bed_list)):
         print("Working on %s bed file" % bed_list[i])
         list_coordinates = get_bed_sequences.get_bed_coordinates(bed_list[i], dic_records.keys())

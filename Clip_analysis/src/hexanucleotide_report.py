@@ -23,7 +23,7 @@ def frequencie_file_finder(folder):
     :return: (dictionary of list of string) each key of the dictionary is link with file having the same basename.
     """
     dic_files = {}
-    list_file = subprocess.check_output("find %s -name \"frequencies_hg19*\" -type f" % folder,
+    list_file = subprocess.check_output("find %s -name \"frequencies*\" -type f" % folder,
                                         shell=True, stderr=subprocess.STDOUT).decode("ascii")
     list_file = list_file.split("\n")[:-1]
     for my_file in list_file:
@@ -84,8 +84,14 @@ def result_writer(list_files, output, name_template, nb_seq):
     df.to_csv(filename, sep="\t")
     hexant = list(df.index)
     print(hexant)
-    base_name = os.path.basename(filename).split(".")[0]
-    figure_maker.web_logo_creator(hexant, base_name, output + "/")
+    sf_name = output.split("/")[-1]
+    if "intron" in name_template:
+        web_name = "Clip_%s_intron" % sf_name
+    elif "exon" in name_template:
+        web_name = "Clip_%s_exon" % sf_name
+    else:
+        web_name = "Clip_%s_all" % sf_name
+    figure_maker.web_logo_creator(hexant, web_name, output + "/")
 
 
 def main(folder, output, nb_seq):

@@ -61,7 +61,7 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |          dnt_exon                   | The frequency (%) of dinucleotides  AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the exon of interest                          |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_upstream_intron              | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [-100,-26] of the upstream intron                                       |
+|  iupac_upstream_intron              | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the upstream intron                                                                |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | dnt_upstream_intron                 | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [-100,-26] of the upstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -83,7 +83,7 @@ Here is described every field in the table sed:
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  dnt_downstream_intron_proxi        | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT + seq size respectively within region [1,100] of downstream intron |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  iupac_upstream_intron              | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the region [26;100] of the downstream intron                                       |
+|  iupac_downstream_intron            | The frequency (%) of nucleotides A, C, G, T, S, W, R, Y, K, M respectively within the downstream intron                                                              |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  dnt_upstream_intron                | The frequency (%) of dinucleotides AA, AC, AG, AT, CA, CC, CG, CT, GA, GC, GG, GT, TA, TC, TG, TT respectively within the region [26;100] of the downstream intron   |
 +-------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+

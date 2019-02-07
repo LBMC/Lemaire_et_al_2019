@@ -119,8 +119,7 @@ def get_list_of_value(cnx, exon_list, target_column):
                            AND exon_pos = %s """ % (target_column, exon[0], exon[1])
                 cursor.execute(query)
                 r = cursor.fetchone()[0]
-                if r is not None:
-                    res.append(r)
+                res.append(r)
                 redundancy_gene_dic[exon[0]] = 1
     return res
 

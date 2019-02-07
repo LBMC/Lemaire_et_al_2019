@@ -80,6 +80,28 @@ def get_interest_values(cnx, exon_list, target_column, nt):
     return values
 
 
+def get_control_exon(cnx, exon_type):
+    """
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param exon_type: (string) the type of control exon we want to use
+    :return: (list of 2 int) the list of control exons considerated
+    """
+    cursor = cnx.cursor()
+    if exon_type != "ALL":
+        query = """SELECT gene_id, exon_pos
+                   FROM sed
+                   WHERE exon_type LIKE '%{}%'""".format(exon_type)
+    else:
+        query = """SELECT gene_id, exon_pos
+                   FROM sed
+                """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    # turn tuple into list
+    print("control exon considerated : %s" % len(result))
+    return result
+
+
 def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt):
     """
     Return the median value of ``target_column`` in ``regulation`` exons for one exon list
@@ -812,10 +834,12 @@ def get_concidered_exons(cnx, exon_class, regulation):
             exon_list = difference(cnx, group_factor.at_rich_down, group_factor.gc_rich_down, regulation)
         elif exon_class == "GC":
             exon_list = difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
-        else:
+        elif exon_class == "GC-AT":
             exon_list = difference(cnx, group_factor.at_rich_down, group_factor.gc_rich_down, regulation)
             exon_list += difference(cnx, group_factor.gc_rich_down, group_factor.at_rich_down, regulation)
             print("exons GC-AT concidered : %s" % len(exon_list))
+        else:
+            exon_list = get_control_exon(cnx, exon_class)
         return exon_list
 
 
@@ -885,8 +909,9 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                     print("Warning the list of value do'nt have the same length")
                 value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
                 value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
-                figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
-                                    exon_name, output, name_fig)
+                if exon_class in ["GC", "AT", "GC-AT"]:
+                    figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
+                                        exon_name, output, name_fig)
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
     else:
         name_fig += "_union"
@@ -939,6 +964,9 @@ def launcher():
                                required=True)
     args = parser.parse_args()  # parsing arguments
     # executing the program
+    class_approuved = ["AT", "GC", "GC-AT", "CCE", "ACE", "ALL"]
+    if args.exon_class not in class_approuved:
+        parser.error("ERROR : wrong value for --exon_class argument : only %s are allowed" % " ".join(class_approuved))
     main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class)
 
 

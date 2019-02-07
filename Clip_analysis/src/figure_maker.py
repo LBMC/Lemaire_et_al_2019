@@ -33,7 +33,7 @@ def web_logo_creator(sequence_list, sequence_name, output):
         p1 = p1 + theme(axis.text=element_text(size=s1 + 25), plot.title = element_text(size=s1 + 30))
         p1 = p1 + scale_y_discrete(limits = c(0, 0.5, 1), labels = as.character(seq(0,1, length=3)), breaks = as.character(seq(0,1, length=3)), expand = c(0,0.05))
         #p1 = p1 + ylim(0,1)
-        png(file=paste(name_file,"_weblogo.png"),height=149 * 2,width=52 * size * 2 )
+        png(file=paste(name_file,"_weblogo.png", sep=""),height=149 * 2,width=52 * size * 2 )
         print(p1)
         dev.off()
     }

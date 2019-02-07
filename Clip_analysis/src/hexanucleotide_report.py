@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import figure_maker
 import argparse
-
+import re
 
 def frequencie_file_finder(folder):
     """
@@ -67,6 +67,22 @@ def get_sum_frequencies(list_files):
     return df_sum.sort_values("frequencies", ascending=False)
 
 
+def nt_seq_2_WS_seq(list_sequences):
+    """
+    Transform a list of sequence with the nucleotide A, T,C,S in a \
+    sequence list with W,S nucleotides.
+
+    :param list_sequences: (list of string) list of nucleotides sequence
+    :return: (list of string) the list of sequence adapted (WS nucleotides only)
+    """
+    new_seq_list = []
+    regex1 = re.compile("[GC]")
+    regex2 = re.compile("[AT]")
+    for seq in list_sequences:
+        new_seq_list.append(regex2.sub("W", regex1.sub("S", seq)))
+    return new_seq_list
+
+
 def result_writer(list_files, output, name_template, nb_seq):
     """
     Write the list of the ``nb_seq`` most frequent hexanucleotides and make a weblogo of them.
@@ -83,7 +99,6 @@ def result_writer(list_files, output, name_template, nb_seq):
     df = df.head(nb_seq)
     df.to_csv(filename, sep="\t")
     hexant = list(df.index)
-    print(hexant)
     sf_name = output.split("/")[-1]
     if "intron" in name_template:
         web_name = "Clip_%s_intron" % sf_name
@@ -92,6 +107,8 @@ def result_writer(list_files, output, name_template, nb_seq):
     else:
         web_name = "Clip_%s_all" % sf_name
     figure_maker.web_logo_creator(hexant, web_name, output + "/")
+    hexant_ws = nt_seq_2_WS_seq(hexant)
+    figure_maker.web_logo_creator(hexant_ws, web_name + "_WS", output + "/")
 
 
 def main(folder, output, nb_seq):

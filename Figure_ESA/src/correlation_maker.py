@@ -45,7 +45,8 @@ def get_interest_values(cnx, exon_list, target_column, nt):
             valuesb = np.array(
                 figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
                 dtype=float)
-            values = np.concatenate((valuesa, valuesb))
+            values = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))],
+                              dtype=float)
         elif "introns" in target_column:
             valuesa = np.array(
                 figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
@@ -55,7 +56,8 @@ def get_interest_values(cnx, exon_list, target_column, nt):
                 dtype=float)
             values = np.concatenate((valuesa, valuesb))
         else:
-            values = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt))
+            values = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt),
+                              dtype=float)
     else:
         if target_column in ["median_flanking_intron_size", "min_flanking_intron_size", "introns_size"]:
             values_up = np.array(
@@ -65,13 +67,16 @@ def get_interest_values(cnx, exon_list, target_column, nt):
                 figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
                 dtype=float)
             if target_column == "median_flanking_intron_size":
-                values = np.array([np.nanmedian([values_up[i], values_down[i]]) for i in range(len(values_up))])
+                values = np.array([np.nanmedian([values_up[i], values_down[i]]) for i in range(len(values_up))],
+                                  dtype=float)
             elif target_column == "min_flanking_intron_size":
-                values = [np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))]
+                values = np.array([np.nanmin([values_up[i], values_down[i]]) for i in range(len(values_up))],
+                                  dtype=float)
             else:
                 values = np.concatenate((values_up, values_down))
         else:
-            values = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column))
+            values = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column),
+                              dtype=float)
     return values
 
 
@@ -172,6 +177,8 @@ def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
     exon_name = ["%s_%s" % (union_dataset_function.get_gene_name(cnx, a[0]), a[1]) for a in exon_list]
     values1 = get_interest_values(cnx, exon_list, target_column1, nt1)
     values2 = get_interest_values(cnx, exon_list, target_column2, nt2)
+    if len(exon_name) * 2 == len(values1):
+        exon_name = ["%s_upstream" % a for a in exon_name ] + ["%s_downstream" % a for a in exon_name ]
     return values1, values2, exon_name
 
 
@@ -391,8 +398,8 @@ def get_relative_values(list_values, ctrl_dic, name_list):
             name_list = "log_%s" % target_column
         else:
             # for i in range(len(exon_name)):
-            #     if exon_name[i] == "ODZ3_23":
-            #         print(exon_name[i])
+            #     if exon_name[i] == "CDC25C_6_downstream":
+            #         print(exon_name[i], name_list)
             #         print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[name_list], ctrl_dic[name_list]))
             list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[name_list])) /
                             math.log10(ctrl_dic[name_list]) * 100 for val in list_values]
@@ -584,15 +591,16 @@ def remove_none_values(values_list1, values_list2, list_exon_name):
     :param list_exon_name: (list of list of string) each value of a substring si an exon name
     :return: the list without the none values
     """
-    i = 0
-    while i < len(values_list1):
-        if values_list1[i] is None or values_list2[i] is None:
-            del(values_list1[i])
-            del(values_list2[i])
-            del(list_exon_name[i])
-            i -= 1
-        i += 1
-    return values_list1, values_list2, list_exon_name
+    values_list1 = list(values_list1)
+    indice_2_remove = []
+    list_exon_name = np.array(list_exon_name)
+    for i in range(len(values_list1)):
+        if values_list1[i] is None or values_list2[i] is None or np.isnan(values_list1[i]) or np.isnan(values_list2[i]):
+            indice_2_remove.append(i)
+    values_list1 = np.delete(values_list1, indice_2_remove)
+    values_list2 = np.delete(values_list2, indice_2_remove)
+    list_exon_name = np.delete(list_exon_name, indice_2_remove)
+    return values_list1, values_list2, list(list_exon_name)
 
 
 def define_couple_targets(xaxis, yaxis, nt_list):

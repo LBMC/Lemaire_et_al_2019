@@ -69,18 +69,31 @@ def tmp_dic_creator(exon_info):
     new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": [],
                'median_flanking_intron_size': [],
                "min_flanking_intron_size": [], "iupac_mean_intron": {nt: [] for nt in figure_producer.nt_dic},
-               }
+               "iupac_introns": {nt: [] for nt in figure_producer.nt_dic},
+               "introns_size": []}
     count = 0
     exon_info_len = len(exon_info)
     for exon in exon_info:
         intron = exon[-2:]
         exon = np.array(exon[:-2], dtype=float)
         mean_intron_iupac = get_median_iupac_introns(intron[0], intron[1])
+        if intron[0] is not None:
+            upstream = list(map(float, intron[0].split(";")))
+        else:
+            upstream = [None] * 10
+        if intron[1] is not None:
+            downstream = list(map(float, intron[1].split(";")))
+        else:
+            downstream = [None] * 10
         for key in new_dic["iupac_mean_intron"].keys():
             new_dic["iupac_mean_intron"][key].append(mean_intron_iupac[figure_producer.nt_dic[key]])
+            new_dic["iupac_introns"][key].append(upstream[figure_producer.nt_dic[key]])
+            new_dic["iupac_introns"][key].append(downstream[figure_producer.nt_dic[key]])
 
         new_dic['median_flanking_intron_size'].append(np.nanmedian([exon[0], exon[2]]))
         new_dic["min_flanking_intron_size"].append(np.nanmin([exon[0], exon[2]]))
+        new_dic["introns_size"].append(exon[0])
+        new_dic["introns_size"].append(exon[2])
         if exon[0] != 0:
             new_dic["rel_exon_intron_up"].append(float(exon[1]) / float(exon[0]))
         else:

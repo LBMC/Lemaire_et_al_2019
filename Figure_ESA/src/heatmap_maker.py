@@ -129,7 +129,7 @@ def mann_withney_test_r(list_values1, list_values2):
     return pval
 
 
-def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, union=None,
+def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, operation, union=None,
                   sf_type=None):
     """
     Create a matrix of relative medians (toward control) for iupac characteristics of an exon set.
@@ -144,6 +144,7 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
     :param ctrl_full: (dictionary of list of float) dictionary storing every values for every characteristics of \
     the control set of exons.
     :param regulations: (list of strings) the strings can be "up" or "down" only for up or down-regulated exons.
+    :param operation: (string) the type of heatmp we want to produce : i.e heatmap of the mean or median
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
     :param sf_type: (string) the type of splicing factor we want to display in the final figures
@@ -183,15 +184,15 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                         values2 = np.array(
                             figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt)
                                   )
-                        values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                        values = np.array([np.nanmean([values1[i], values2[i]]) for i in range(len(values1))])
                     else:
                         values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
                         if names[i] == "QKI" and nt == "G":
                             print(exon_list)
                             print(values)
                     list_val = values[~np.isnan(values)]
-                    median_obs = np.median(list_val)
-                    final_value = float(median_obs - control_dic[name_col][nt]) / \
+                    val_obs = eval("np.%s(list_val)" % operation)
+                    final_value = float(val_obs - control_dic[name_col][nt]) / \
                         control_dic[name_col][nt] * 100
                     ctrl_val = np.array(ctrl_full[name_col][nt], dtype=float)
                     ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
@@ -217,8 +218,8 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
 
                         values = np.array(figure_producer.get_list_of_value(cnx, exon_list, new_targets[j]))
                     list_val = values[~np.isnan(values)]
-                    median_obs = np.median(values[~np.isnan(values)])
-                    final_value = float(median_obs - control_dic[new_targets[j]]) / \
+                    val_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
+                    final_value = float(val_obs - control_dic[new_targets[j]]) / \
                         control_dic[new_targets[j]] * 100
                     ctrl_val = np.array(ctrl_full[new_targets[j]], dtype=float)
                     ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
@@ -609,7 +610,7 @@ def make_global(my_list):
     nt_list = my_list
 
 
-def main(union, columns, name, sf_type, contrast):
+def main(union, columns, name, sf_type, contrast, operation):
     """
     Launch the main function.
     """
@@ -617,7 +618,7 @@ def main(union, columns, name, sf_type, contrast):
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
-    ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type)
+    ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, operation)
     print("test")
     if union != "union":
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_heatmap/"
@@ -633,7 +634,7 @@ def main(union, columns, name, sf_type, contrast):
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
             projects_tab, project_pvalues, project_names, new_targets = \
                 create_matrix(cnx, id_projects, name_projects, target_columns,
-                              ctrl_dic, ctrl_full, regulations, None, sf_type)
+                              ctrl_dic, ctrl_full, regulations, operation, None, sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
@@ -653,7 +654,7 @@ def main(union, columns, name, sf_type, contrast):
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
             projects_tab, project_pvalues, project_names, new_targets = \
                 create_matrix(cnx, None, name_projects, target_columns,
-                              ctrl_dic, ctrl_full, regulations, "union", sf_type)
+                              ctrl_dic, ctrl_full, regulations, operation, "union", sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
@@ -705,6 +706,8 @@ def launcher():
     parser.add_argument("--order", dest="order", help="A file with the list of splicing factor "
                                                       "in the order wanted or a nucleotide",
                         default=None)
+    parser.add_argument("--operation", dest="operation", help="the type of heatmap you want to produce (mean/median)",
+                        default="median")
     args = parser.parse_args()  # parsing arguments
 
     # Defining global parameters
@@ -744,7 +747,7 @@ def launcher():
         args.contrast = int(args.contrast)
     except ValueError:
         parser.error("contrast argument must be an integer !")
-    main(args.union, args.columns, args.name, args.sf_type, args.contrast)  # executing the program
+    main(args.union, args.columns, args.name, args.sf_type, args.contrast, args.operation)  # executing the program
 
 
 if __name__ == "__main__":

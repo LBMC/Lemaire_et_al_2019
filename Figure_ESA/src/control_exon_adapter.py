@@ -113,11 +113,12 @@ def tmp_dic_creator(exon_info):
     return new_dic
 
 
-def get_summary_dictionaries(exons_dictionary):
+def get_summary_dictionaries(exons_dictionary, summary):
     """
     Summary a dictionary that contains the data about individual exons.
 
     :param exons_dictionary: (dictionary of list of values) contains every information about exon in exon_info
+    :param summary: (string) mean or median
     :return: (dictionary) summarized mean sd and median for every exon within ``exons_dictionary``
     """
     median_dic = {}
@@ -127,10 +128,10 @@ def get_summary_dictionaries(exons_dictionary):
             if "iupac" in key:
                 for nt in exons_dictionary[key].keys():
                     cur_list = np.array(exons_dictionary[key][nt], dtype=float)
-                    median_dic[key][nt] = np.median(cur_list[~np.isnan(cur_list)])
+                    median_dic[key][nt] = eval("np.%s(cur_list[~np.isnan(cur_list)])" % summary)
         else:
             cur_list = np.array(exons_dictionary[key], dtype=float)
-            median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
+            median_dic[key] = eval("np.%s(cur_list[~np.isnan(cur_list)])" % summary)
     return median_dic
 
 
@@ -156,10 +157,10 @@ def write_adapted_dic(control_file, exon_type, str2write):
                 outfile.write("%s\n" % line)
 
 
-def control_handler(cnx, exon_type):
+def control_handler(cnx, exon_type, summary):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
-    control_file = control_folder + "/control.py"
+    control_file = "%s/control_%s.py" % (control_folder, summary)
     control_full = control_folder + "/control_full.pkl"
     ctrl_list, tmp = exon_control_handler.get_control_information(exon_type, control_file, control_full)
     if ctrl_list is None:
@@ -169,7 +170,7 @@ def control_handler(cnx, exon_type):
         # getting the new columns
         exon_tuple = exon_control_handler.remove_redundant_gene_information(exon_tuple)
         tmp = exon_control_handler.create_a_temporary_dictionary(names, exon_tuple)
-        ctrl_list = exon_control_handler.get_summary_dictionaries(names, tmp)
+        ctrl_list = exon_control_handler.get_summary_dictionaries(names, tmp, summary)
         exon_control_handler.write_control_file(exon_type, control_file, str(ctrl_list))
         exon_control_handler.write_pickle(control_full, tmp)
     if "rel_exon_intron_up" not in ctrl_list.keys():
@@ -180,7 +181,7 @@ def control_handler(cnx, exon_type):
         tmp_dic = tmp_dic_creator(exon_tuple)
         tmp = dict(tmp, **tmp_dic)
         print("summarizing")
-        sum_dic = get_summary_dictionaries(tmp_dic)
+        sum_dic = get_summary_dictionaries(tmp_dic, summary)
         ctrl_list = dict(ctrl_list, **sum_dic)
         print("writting...")
         write_adapted_dic(control_file, exon_type, str(ctrl_list))
@@ -191,4 +192,4 @@ def control_handler(cnx, exon_type):
 if __name__ == "__main__":
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx_sed = figure_producer.connexion(seddb)
-    control_handler(cnx_sed, "CCE")
+    control_handler(cnx_sed, "CCE", "median")

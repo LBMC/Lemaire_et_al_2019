@@ -134,11 +134,12 @@ def create_a_temporary_dictionary(names, exon_info):
     return new_dic
 
 
-def get_summary_dictionaries(names, exons_dictionary):
+def get_summary_dictionaries(names, exons_dictionary, summary):
     """
     Summary a dictionary that contains the data about individual exons.
     :param names: (list of string) the name of every column in sed table
     :param exons_dictionary: (dictionary of list of values) contains every information about exon in exon_info
+    :param summary: (string) indicates the type of summary dictionary we want to create
     :return: (dictionary) summarized mean sd and median for every exon within ``exons_dictionary``
     """
     median_dic = {}
@@ -154,13 +155,13 @@ def get_summary_dictionaries(names, exons_dictionary):
             for nt in nt_dnt_list:
                 if exons_dictionary[key][nt]:
                     cur_list = np.array(exons_dictionary[key][nt], dtype=float)
-                    median_dic[key][nt] = np.median(cur_list[~np.isnan(cur_list)])
+                    median_dic[key][nt] = eval("np.%s(cur_list[~np.isnan(cur_list)])" % summary)
                 else:
                     median_dic[key][nt] = [float("nan")]
         else:
             if exons_dictionary[key]:
                 cur_list = np.array(exons_dictionary[key], dtype=float)
-                median_dic[key] = np.median(cur_list[~np.isnan(cur_list)])
+                median_dic[key] = eval("np.%s(cur_list[~np.isnan(cur_list)])" % summary)
             else:
                 median_dic[key] = [float("nan")]
     return median_dic
@@ -234,10 +235,10 @@ def load_pickle(filename):
     return my_dic
 
 
-def control_handler(cnx, exon_type):
+def control_handler(cnx, exon_type, summary="median"):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
-    control_file = control_folder + "/control.py"
+    control_file = "%s/control_%s.py" % (control_folder, summary)
     control_full = control_folder + "/control_full.pkl"
     ctrl_list, tmp = get_control_information(exon_type, control_file, control_full)
     if ctrl_list is None:
@@ -247,7 +248,7 @@ def control_handler(cnx, exon_type):
         # getting the new columns
         exon_tuple = remove_redundant_gene_information(exon_tuple)
         tmp = create_a_temporary_dictionary(names, exon_tuple)
-        ctrl_list = get_summary_dictionaries(names, tmp)
+        ctrl_list = get_summary_dictionaries(names, tmp, summary)
         write_control_file(exon_type, control_file, str(ctrl_list))
         write_pickle(control_full, tmp)
     return ctrl_list, tmp

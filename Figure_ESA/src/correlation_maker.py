@@ -102,7 +102,7 @@ def get_control_exon(cnx, exon_type):
     return result
 
 
-def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt):
+def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt, operation):
     """
     Return the median value of ``target_column`` in ``regulation`` exons for one exon list
     :param cnx: (sqlite3 connexion object) allow connexion to sed database
@@ -112,10 +112,11 @@ def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control
     :param nt:  (string) the nt of interest
     :param control_dic: (dictionnary of list of float) median value of each possible control exons of \
     each feature in sed database.
+    :param operation : (string) mean or median
     :return: (float) the relative median value of the ``target_column`` in the list of exon comapred to control
     """
     values = get_interest_values(cnx, exon_list, target_column, nt)
-    median_obs = np.median(values[~np.isnan(values)])
+    median_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
     if nt:
         final_value = float(median_obs - control_dic[target_column][nt]) / control_dic[target_column][nt] * 100
     else:
@@ -123,7 +124,7 @@ def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control
     return final_value
 
 
-def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regulation, nt=None):
+def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regulation, operation, nt=None):
     """
     Return the median value of target_column in ``regulation`` exons of every  ``id_projects_sf_name``.
 
@@ -134,6 +135,7 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
     :param control_dic: (dictionnary of list of float) median value of each possible control exons of \
     each feature in sed database.
     :param regulation: (list of string) up or down or up + down
+    :param operation: (string) mean or median
     :param nt: (string) the nt of interest
     :return: (float) the relative median value (compared to control exons)  of ``target_column`` for every \
     ``regulation`` exons in every projects ``id_projects``
@@ -147,12 +149,14 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
     if sf_type == "project":
         for i in range(len(id_projects_sf_name)):
             exon_list = figure_producer.get_ase_events(cnx, id_projects_sf_name[i], regulation)
-            final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt)
+            final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt,
+                                                                operation)
             values_list.append(final_value)
     else:
         for sf_name in id_projects_sf_name:
             exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
-            final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt)
+            final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt,
+                                                                operation)
             values_list.append(final_value)
 
     return values_list
@@ -654,7 +658,7 @@ def define_couple_targets(xaxis, yaxis, nt_list):
         return couple_targets
 
 
-def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation):
+def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation, operation):
     """
     Get the wanted list of value
 
@@ -664,13 +668,14 @@ def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation):
     as point in our figure or list of every sf name that we want to analyze
     :param ctrl_dic: (dictionary) median for every exon within ``ctrl_dic``
     :param regulation: (string) down or up
+    :param operation: (string) median or mean
     :return: (the list of float) list of median value of the feature ``target`` for each exon regulated in each project
     """
     if "$" not in target:
-        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, nt=None)
+        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation, nt=None)
     else:
         target, nt = target.split("$")
-        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, nt=nt)
+        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation, nt=nt)
     return value_list
 
 
@@ -844,13 +849,13 @@ def get_concidered_exons(cnx, exon_class, regulation):
 
 
 
-def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
+def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operation):
     """
     Create the correlation matrix (gene_size vs iupac)
     """
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     cnx = figure_producer.connexion(seddb)
-    ctrl_dic, full_dic = control_exon_adapter.control_handler(cnx, exon_type)
+    ctrl_dic, full_dic = control_exon_adapter.control_handler(cnx, exon_type, operation)
     nt_list = nt_list.split(",")
     regulation = "down"
     output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/new_correlation/"
@@ -862,8 +867,8 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
         if not os.path.isdir(output):
             os.mkdir(output)
         for i in range(len(couple_targets)):
-            values_xaxis = get_axis_value(couple_targets[i][0], cnx, id_projects, ctrl_dic, regulation)
-            values_yaxis = get_axis_value(couple_targets[i][1], cnx, id_projects, ctrl_dic, regulation)
+            values_xaxis = get_axis_value(couple_targets[i][0], cnx, id_projects, ctrl_dic, regulation, operation)
+            values_yaxis = get_axis_value(couple_targets[i][1], cnx, id_projects, ctrl_dic, regulation, operation)
             if len(values_xaxis) != len(values_yaxis):
                 print("Warning the list of value don't have the same length")
             figure_creator(values_xaxis, values_yaxis, name_projects, regulation, couple_targets[i][0],
@@ -909,8 +914,8 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class):
                     print("Warning the list of value do'nt have the same length")
                 value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
                 value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
-                if exon_class in ["GC", "AT", "GC-AT"]:
-                    figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
+                #if exon_class in ["GC", "AT", "GC-AT"]:
+                figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
                                         exon_name, output, name_fig)
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
     else:
@@ -954,6 +959,8 @@ def launcher():
 
     parser.add_argument('--exon_type', dest='exon_type', help='name of control exons', default="CCE")
     parser.add_argument('--exon_class', dest='exon_class', help='the class of exon we want to study', default=None)
+    parser.add_argument("--operation", dest="operation", help="the type of heatmap you want to produce (mean/median)",
+                        default="median")
 
     required_args.add_argument('--xaxis', dest='xaxis',
                                help="""element of the xaxis""",
@@ -967,7 +974,7 @@ def launcher():
     class_approuved = ["AT", "GC", "GC-AT", "CCE", "ACE", "ALL"]
     if args.exon_class not in class_approuved:
         parser.error("ERROR : wrong value for --exon_class argument : only %s are allowed" % " ".join(class_approuved))
-    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class)
+    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class, args.operation)
 
 
 if __name__ == "__main__":

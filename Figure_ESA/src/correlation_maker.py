@@ -102,7 +102,7 @@ def get_control_exon(cnx, exon_type):
     return result
 
 
-def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt, operation):
+def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt, operation, representation):
     """
     Return the median value of ``target_column`` in ``regulation`` exons for one exon list
     :param cnx: (sqlite3 connexion object) allow connexion to sed database
@@ -113,18 +113,23 @@ def get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control
     :param control_dic: (dictionnary of list of float) median value of each possible control exons of \
     each feature in sed database.
     :param operation : (string) mean or median
+    :param representation: (string) relative or aboslute
     :return: (float) the relative median value of the ``target_column`` in the list of exon comapred to control
     """
     values = get_interest_values(cnx, exon_list, target_column, nt)
     median_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
-    if nt:
-        final_value = float(median_obs - control_dic[target_column][nt]) / control_dic[target_column][nt] * 100
+    if representation == "absolute":
+        return median_obs
     else:
-        final_value = float(median_obs - control_dic[target_column]) / control_dic[target_column] * 100
-    return final_value
+        if nt:
+            final_value = float(median_obs - control_dic[target_column][nt]) / control_dic[target_column][nt] * 100
+        else:
+            final_value = float(median_obs - control_dic[target_column]) / control_dic[target_column] * 100
+        return final_value
 
 
-def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regulation, operation, nt=None):
+def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regulation, operation,
+                     representation, nt=None):
     """
     Return the median value of target_column in ``regulation`` exons of every  ``id_projects_sf_name``.
 
@@ -136,6 +141,7 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
     each feature in sed database.
     :param regulation: (list of string) up or down or up + down
     :param operation: (string) mean or median
+    :param representation: (string) relative or absolute
     :param nt: (string) the nt of interest
     :return: (float) the relative median value (compared to control exons)  of ``target_column`` for every \
     ``regulation`` exons in every projects ``id_projects``
@@ -150,13 +156,13 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
         for i in range(len(id_projects_sf_name)):
             exon_list = figure_producer.get_ase_events(cnx, id_projects_sf_name[i], regulation)
             final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt,
-                                                                operation)
+                                                                operation, representation)
             values_list.append(final_value)
     else:
         for sf_name in id_projects_sf_name:
             exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
             final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt,
-                                                                operation)
+                                                                operation, representation)
             values_list.append(final_value)
 
     return values_list
@@ -312,7 +318,7 @@ def color_maker(name_projects, value_size, value_iupac):
 
 
 def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_xaxis, name_yaxis, ctrl, output,
-                   name_fig):
+                   name_fig, representation):
     """
     Create a scatter plot showing the potential correlation between projects.
 
@@ -325,6 +331,7 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
     :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
     :param name_fig: (string) the name of the figure
+    :param representation: (string) relative or absolute
     """
     nt1 = ""
     nt2 = ""
@@ -385,18 +392,18 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
     main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons ' \
                  'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' \
                  % (x_name, y_name, regulation, ctrl, round(cor, 2), pval)
-    x_title = 'relative %s' % x_name
-    y_title = 'relative %s frequency' % y_name
+    x_title = '%s %s' % (representation, x_name)
+    y_title = '%s %s frequency' % (representation, y_name)
     figname = '%s%s_%s_%s.html' % (output, nt, name_fig, regulation)
 
     layout = go.Layout(
         title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title=x_title,
+            title=x_title.replace("absolute", ""),
             tickfont=dict(size=25)),
         yaxis=dict(
-            title=y_title,
+            title=y_title.replace("absolute", ""),
             tickfont=dict(
                 size=25)),
         showlegend=True
@@ -406,42 +413,49 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
                         auto_open=False)
 
 
-def get_relative_values(list_values, ctrl_dic, name_list):
+def get_relative_values(list_values, ctrl_dic, name_list, representation):
     """
     Get the relative value of a list given.
 
     :param list_values: (list of float) the list of value
     :param name_list: (string) the name of the list
-    :param ctrl_dic: :param ctrl_dic: (dictionary) median for every exon within ``ctrl_dic``
+    :param ctrl_dic: (dictionary) median for every exon within ``ctrl_dic``
+    :param representation: (string) relative or absolute
     :return: - (list of float) the list of relative values toward control exons
              - (string) the new name for the list
     """
     if max(list_values) > 1000:
-        if "$" in name_list:
-            target_column, nt = name_list.split("$")
-            list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[target_column][nt])) /
-                            math.log10(ctrl_dic[target_column][nt]) * 100 for val in list_values]
-            name_list = "log_%s" % target_column
+        if representation == "relative":
+            if "$" in name_list:
+                target_column, nt = name_list.split("$")
+                list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[target_column][nt])) /
+                                math.log10(ctrl_dic[target_column][nt]) * 100 for val in list_values]
+            else:
+                # for i in range(len(exon_name)):
+                #     if exon_name[i] == "CDC25C_6_downstream":
+                #         print(exon_name[i], name_list)
+                #         print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[name_list], ctrl_dic[name_list]))
+                list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[name_list])) /
+                                math.log10(ctrl_dic[name_list]) * 100 for val in list_values]
+
         else:
-            # for i in range(len(exon_name)):
-            #     if exon_name[i] == "CDC25C_6_downstream":
-            #         print(exon_name[i], name_list)
-            #         print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[name_list], ctrl_dic[name_list]))
-            list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[name_list])) /
-                            math.log10(ctrl_dic[name_list]) * 100 for val in list_values]
-            name_list = "log_%s" % name_list
+            list_values2 = [math.log10(val) for val in list_values]
+        name_list = "log_%s" % name_list
     else:
-        if "$" in name_list:
-            target_column, nt = name_list.split("$")
-            list_values2 = [float(val - ctrl_dic[target_column][nt]) /
-                            ctrl_dic[target_column][nt] * 100 for val in list_values]
+        if representation == "relative":
+            if "$" in name_list:
+                target_column, nt = name_list.split("$")
+                list_values2 = [float(val - ctrl_dic[target_column][nt]) /
+                                ctrl_dic[target_column][nt] * 100 for val in list_values]
+            else:
+                list_values2 = [float(val - ctrl_dic[name_list]) / ctrl_dic[name_list] * 100 for val in list_values]
         else:
-            list_values2 = [float(val - ctrl_dic[name_list]) / ctrl_dic[name_list] * 100 for val in list_values]
+            list_values2 = list_values
     return list_values2, name_list
 
 
 def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name_yaxis, ctrl,
-                        exon_name, output, name_fig):
+                        exon_name, output, name_fig, representation):
     """
     Create a scatter plot showing the potential correlation for every exons regulated each splicing factor in \
     multiple cell lines.
@@ -457,6 +471,7 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
     :param output: (string) path where the results will be created
     :param exon_name: (list of string) the name of the interest exons
     :param name_fig: (string) the name of the graphics
+    :param representation: (string) relative or absolute
     """
     data = []
     nt1 = ""
@@ -505,17 +520,18 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
     main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons ' \
                  'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' \
                  % (x_name, y_name, regulation, ctrl, round(cor, 2), pval)
-    x_title = 'relative %s' % x_name
-    y_title = 'relative %s frequency' % y_name
-    figname = '%s%s_%s_%s.html' % (output, nt, name_fig, regulation)
+
+    x_title = '%s %s' % (representation, x_name)
+    y_title = '%s %s frequency' % (representation, y_name)
+    figname = '%s%s_%s_%s_%s.html' % (output, nt, name_fig, regulation, representation)
     layout = go.Layout(
         title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title=x_title,
+            title=x_title.replace("absolute", ""),
             tickfont=dict(size=25)),
         yaxis=dict(
-            title=y_title,
+            title=y_title.replace("absolute", ""),
             tickfont=dict(size=25)),
         showlegend=True
     )
@@ -524,7 +540,8 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
     plotly.offline.plot(fig, filename=figname, auto_open=False)
 
 
-def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name_yaxis, ctrl, output, name_fig):
+def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name_yaxis, ctrl, output, name_fig,
+                         representation):
     """
     Create a density plot showing the potential correlation for every exons regulated each splicing factor in \
     multiple cell lines.
@@ -539,6 +556,7 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
     :param ctrl: (string) the control exon used to calculate relative frequency.
     :param output: (string) path where the results will be created
     :param name_fig: (string) the name of the graphics
+    :param representation: (string) relative or absolute
     """
     data = []
     nt1 = ""
@@ -565,10 +583,18 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
     else:
         nt = nt2
     slope, intercept, r_value, p_value, std_err = stats.linregress(values_xaxis, values_yaxis)
-    line = slope * np.array(values_xaxis) + intercept
+    rep = values_xaxis
+    if representation == "relative":
+        line = slope * np.array(values_xaxis) + intercept
+    else:
+        if intercept < 0:
+            rep = [-intercept / slope] + list(values_xaxis)
+            line = slope * np.array(rep) + intercept
+        else:
+            rep = [0] + list(values_xaxis)
+            line = slope * np.array(rep) + intercept
     cor, pval = stats.pearsonr(values_xaxis, values_yaxis)
-    bins = 25
-    data.append(go.Scatter(x=values_xaxis,
+    data.append(go.Scatter(x=rep,
                            y=line,
                            mode='lines',
                            line=dict(width=3),
@@ -576,9 +602,9 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
                            showlegend=False
                            ))
     data.append(dict(type='histogram2dcontour',
-                     x=values_xaxis, y=values_yaxis, name='density', ncontours=50,
-                     xbins=dict(start=min(values_xaxis)-bins, end=max(values_yaxis)+bins, size=bins),
-                     ybins=dict(start=min(values_yaxis)-bins, end=max(values_yaxis)+bins, size=bins),
+                     x=values_xaxis, y=values_yaxis, ncontours=50,
+                     # xbins=dict(start=min(values_xaxis)-bins, end=max(values_xaxis)+bins, size=bins),
+                     # ybins=dict(start=min(values_yaxis)-bins, end=max(values_yaxis)+bins, size=bins),
                      colorscale='Hot', reversescale=True, contours={'showlines': False}
                      )
                 )
@@ -586,21 +612,21 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
     main_title = 'Density between %s and %s frequency in genes containing %s-regulated exons ' \
                  'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' \
                  % (x_name, y_name, regulation, ctrl, round(cor, 2), pval)
-    x_title = 'relative %s' % x_name
-    y_title = 'relative %s frequency' % y_name
-    figname = '%sdensity_%s_%s_%s.html' % (output, nt, name_fig, regulation)
+    x_title = '%s %s' % (representation, x_name)
+    y_title = '%s %s frequency' % (representation, y_name)
+    figname = '%sdensity_%s_%s_%s_%s.html' % (output, nt, name_fig, regulation, representation)
     layout = go.Layout(
         title=main_title,
         hovermode='closest',
         xaxis=dict(
-            title=x_title,
-            showgrid=True),
+            title=x_title.replace("absolute", ""),
+            showgrid=False),
         yaxis=dict(
-            title=y_title,
-            showgrid=True),
+            title=y_title.replace("absolute", ""),
+            showgrid=False),
         showlegend=True,
-        shapes=[dict(type='line', x0=0, y0=min(values_yaxis), x1=0, y1=max(values_yaxis), line=dict(color="black")),
-                dict(type='line', x0=min(values_xaxis), y0=0, x1=max(values_xaxis), y1=0, line=dict(color="black"))]
+        shapes=[dict(type='line', x0=0, y0=min(min(values_yaxis), 0), x1=0, y1=max(values_yaxis) * 1.4, line=dict(color="black")),
+                dict(type='line', x0=min(min(values_xaxis), 0), y0=0, x1=max(values_xaxis) * 1.4, y1=0, line=dict(color="black"))]
     )
     fig = go.Figure(data=data, layout=layout)
     plotly.offline.plot(fig, filename=figname, auto_open=False)
@@ -658,7 +684,7 @@ def define_couple_targets(xaxis, yaxis, nt_list):
         return couple_targets
 
 
-def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation, operation):
+def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation, operation, representation):
     """
     Get the wanted list of value
 
@@ -669,13 +695,16 @@ def get_axis_value(target, cnx, id_projects_sf_name, ctrl_dic, regulation, opera
     :param ctrl_dic: (dictionary) median for every exon within ``ctrl_dic``
     :param regulation: (string) down or up
     :param operation: (string) median or mean
+    :param representation: (string) relative or absolute
     :return: (the list of float) list of median value of the feature ``target`` for each exon regulated in each project
     """
     if "$" not in target:
-        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation, nt=None)
+        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation,
+                                      representation, nt=None)
     else:
         target, nt = target.split("$")
-        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation, nt=nt)
+        value_list = get_median_value(cnx, id_projects_sf_name, target, ctrl_dic, regulation, operation,
+                                      representation, nt=nt)
     return value_list
 
 
@@ -849,7 +878,7 @@ def get_concidered_exons(cnx, exon_class, regulation):
 
 
 
-def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operation):
+def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operation, representation):
     """
     Create the correlation matrix (gene_size vs iupac)
     """
@@ -867,13 +896,15 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
         if not os.path.isdir(output):
             os.mkdir(output)
         for i in range(len(couple_targets)):
-            values_xaxis = get_axis_value(couple_targets[i][0], cnx, id_projects, ctrl_dic, regulation, operation)
-            values_yaxis = get_axis_value(couple_targets[i][1], cnx, id_projects, ctrl_dic, regulation, operation)
+            values_xaxis = get_axis_value(couple_targets[i][0], cnx, id_projects, ctrl_dic, regulation, operation,
+                                          representation)
+            values_yaxis = get_axis_value(couple_targets[i][1], cnx, id_projects, ctrl_dic, regulation, operation,
+                                          representation)
             if len(values_xaxis) != len(values_yaxis):
                 print("Warning the list of value don't have the same length")
             figure_creator(values_xaxis, values_yaxis, name_projects, regulation, couple_targets[i][0],
                            couple_targets[i][1], exon_type, output,
-                           name_fig)
+                           name_fig, representation)
     elif level == "exon":
         if exon_class is None:
             list_sf = group_factor.get_wanted_sf_name(None)
@@ -883,7 +914,8 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
         name_fig += "_Exon_LVL"
         if not os.path.isdir(output):
             os.mkdir(output)
-        if xaxis in ["median_intron_size", "iupac_gene", "gene_size"] and yaxis in ["iupac_gene", "median_intron_size", "gene_size"]:
+        gene_columns = ["median_intron_size", "iupac_gene", "gene_size"]
+        if xaxis in  gene_columns and yaxis in gene_columns:
             for i in range(len(couple_targets)):
                 if exon_class is None:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, list_sf, couple_targets[i][0],
@@ -892,11 +924,12 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, exon_list, couple_targets[i][0],
                                                                           couple_targets[i][1], regulation)
                 value_xaxis, value_yaxis, exon_name =  remove_none_values(value_xaxis, value_yaxis, exon_name)
-                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
-                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
+                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], representation)
+                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], representation)
                 figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
-                                    exon_name, output, name_fig)
-                density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
+                                    exon_name, output, name_fig, representation)
+                density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig,
+                                     representation)
         else:
             for i in range(len(couple_targets)):
                 if exon_class is None:
@@ -912,25 +945,28 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
 
                 if len(value_xaxis) != len(value_yaxis) or len(value_xaxis) != len(exon_name):
                     print("Warning the list of value do'nt have the same length")
-                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0])
-                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1])
+                value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], representation)
+                value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], representation)
                 #if exon_class in ["GC", "AT", "GC-AT"]:
                 figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
-                                        exon_name, output, name_fig)
-                density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig)
+                                        exon_name, output, name_fig, representation)
+                density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig,
+                                     representation)
     else:
         name_fig += "_union"
         list_sf = group_factor.get_wanted_sf_name(None)
         if not os.path.isdir(output):
             os.mkdir(output)
         for i in range(len(couple_targets)):
-            values_xaxis = get_axis_value(couple_targets[i][0], cnx, list_sf, ctrl_dic, regulation)
-            values_yaxis = get_axis_value(couple_targets[i][1], cnx, list_sf, ctrl_dic, regulation)
+            values_xaxis = get_axis_value(couple_targets[i][0], cnx, list_sf, ctrl_dic, regulation, operation,
+                                          representation)
+            values_yaxis = get_axis_value(couple_targets[i][1], cnx, list_sf, ctrl_dic, regulation, operation,
+                                          representation)
             if len(values_xaxis) != len(values_yaxis):
                 print("Warning the list of value don't have the same length")
             figure_creator(values_xaxis, values_yaxis, list_sf, regulation, couple_targets[i][0],
                            couple_targets[i][1], exon_type, output,
-                           name_fig)
+                           name_fig, representation)
 
 
 def launcher():
@@ -961,6 +997,8 @@ def launcher():
     parser.add_argument('--exon_class', dest='exon_class', help='the class of exon we want to study', default=None)
     parser.add_argument("--operation", dest="operation", help="the type of heatmap you want to produce (mean/median)",
                         default="median")
+    parser.add_argument("--representation", dest="representation", help="relative to represent the relative frequencies"
+                                                                        "of exons of absolute else", default="relative")
 
     required_args.add_argument('--xaxis', dest='xaxis',
                                help="""element of the xaxis""",
@@ -971,10 +1009,13 @@ def launcher():
                                required=True)
     args = parser.parse_args()  # parsing arguments
     # executing the program
-    class_approuved = ["AT", "GC", "GC-AT", "CCE", "ACE", "ALL"]
+    class_approuved = ["AT", "GC", "GC-AT", "CCE", "ACE", "ALL", None]
     if args.exon_class not in class_approuved:
         parser.error("ERROR : wrong value for --exon_class argument : only %s are allowed" % " ".join(class_approuved))
-    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class, args.operation)
+    if args.representation not in ["absolute", "relative"]:
+        parser.error("Error : the argument representation can only by either absolute or relative")
+    main(args.level, args.xaxis, args.yaxis, args.name, args.exon_type, args.nt_list, args.exon_class, args.operation,
+         args.representation)
 
 
 if __name__ == "__main__":

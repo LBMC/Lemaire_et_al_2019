@@ -28,11 +28,13 @@ chromatin_factors = ("DNMT3A", "EZH2", "KMT2A", "KMT2D", "MBD2", "MBD3", "SETD2"
 color_dic = {"GC_pure": "#5555FF", "AT_pure":"#00aa00" , "GC_all": "#0394d9",
              "AT_all": "#03d994", "CCE": "red", "ALL": "red", "ACE": "red",
              "DDX5_DDX17": "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#5555D0", "SNRPC": "cyan",
+             "U1-factors" : "#7777F0", "U2-factors": "#33EE33",
              "U2AF1": "#006400", "U2AF2": "olive", "SF1": "#55FF55", "SF3A3": "#D8EF48", "SF3B4": "#8FBC8F"}
 
 color_dic_bright = {"GC_pure": "#AAAAFF", "AT_pure":"#99FF99" , "GC_all": "#53D4FF",
              "AT_all": "#50FFDF", "CCE": "#FF9999", "ALL": "#FF9999", "ACE": "#FF9999",
              "DDX5_DDX17": "#DD99FF", "DDX5_17": "#DD99FF", "SNRNP70": "#9999F0", "SNRPC": "#77FFFF",
+             "U1-factors" : "#9999FF", "U2-factors": "#66FF66",
              "U2AF1": "#55AA55", "U2AF2": "#DDDD55", "SF1": "#AAFFAA", "SF3A3": "#E8FF88", "SF3B4": "#AFECAF"}
 
 # The id project we have to delete

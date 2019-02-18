@@ -7,7 +7,7 @@ Description:
 
 exon_type = ["CCE"]
 stretches = [[4, 3], [5, 4], [6, 5], [7, 6]]
-sequence_boundaries = [-74, -34]
+sequence_boundaries = [-75, -35]
 abscissa = ["<=2", ">=3"]
 #nt_list = ["A", "C", "G", "T", "S", "W", "R", "Y"]
 nt_list = ["T"]

@@ -33,7 +33,7 @@ def get_control_exon_information(cnx, exon_type):
     else:
         query = """SELECT t2.official_symbol, t1.id_gene, t1.pos_on_gene
                    FROM exons t1, genes t2
-                   AND t1.id_gene = t2.id
+                   WHERE t1.id_gene = t2.id
                 """
     cursor.execute(query)
     result = cursor.fetchall()

@@ -125,7 +125,7 @@ def write_proportion_pvalues(list_values, list_name, output, regulation, name_fi
     :param name_fig: (string) the name of the figure
     :param type_fig: (string) the type of graphics created
     """
-    list_col = ["nb_branch_point", "factor1", "factor2", "nb_bp1", "tot1",
+    list_col = ["stretch", "factor1", "factor2", "nb_bp1", "tot1",
             "nb_bp2",  "tot2", "pval"]
     data = {my_name: [] for my_name in list_col}
     filename = "%s%s_%s_exons_lvl_%s_barplot_pvalue.txt" % (output, name_fig, regulation, type_fig)
@@ -241,7 +241,7 @@ def initiate_list_of_factor(file_dir, exon_type, type_analysis):
         name_list = ["GC_pure_exons", "AT_pure_exons", exon_type]
         list_file = [gc_pure_file, at_pure_file, None]
     else:
-        name_list = ["SNRNP70", "SNRPC", "U2AF2", "SF1", exon_type]
+        name_list = ["U1-factors", "U2-factors", exon_type]
         list_file = None
     return name_list, list_file
 
@@ -261,7 +261,11 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation):
     if list_files:
         exon_list = extract_exon_files(cnx, list_files[pos])
     else:
-        exon_list_tmp = union_dataset_function.get_every_events_4_a_sl(cnx_sed, list_names[pos], regulation)
+        dic_name = {"U1-factors": ["SNRPC", "SNRNP70", "DDX5_DDX17"], "U2-factors": ["U2AF2", "SF1", "SF3A3", "SF3B4"]}
+        exon_list_tmp = []
+        for sf_name in dic_name[list_names[pos]]:
+            exon_list_tmp += union_dataset_function.get_every_events_4_a_sl(cnx_sed, sf_name, regulation)
+        exon_list_tmp = union_dataset_function.washing_events_all(exon_list_tmp)
         exon_list = [exon_class.ExonClass(cnx, str(exon[0]), int(exon[0]), int(exon[1])) for exon in exon_list_tmp]
     print("%s : %s %s exons" % (list_names[pos], len(exon_list), regulation))
     return exon_list

@@ -10,37 +10,38 @@ for the gene containing those exons)
 import numpy as np
 
 
-def get_exon_control_gc_content(cnx, exon_type):
+def get_exon_control_gc_content(cnx, exon_type, exon2remove):
     """
     Get the GC content of every exon with ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sedb database
     :param exon_type: (string) the ``exon_type`` of interest
+    :param exon2remove: (list of list of 2 int) list of exons 2 remove
     :return: (list of float) list of the gc content of every exons with the ``exon_type`` of interest
     """
     cursor = cnx.cursor()
     if exon_type != "ALL":
-        query = """SELECT iupac_exon
+        query = """SELECT gene_id, exon_pos, iupac_exon
                        FROM sed
                        WHERE exon_type LIKE '%{}%'
                        """.format(exon_type)
     else:
-        query = """SELECT iupac_exon
+        query = """SELECT gene_id, exon_pos, iupac_exon
                        FROM exons
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    gc_content = []
-    for iupac in tuple_list:
-        gc_content.append(iupac[0].split(";")[4])
-    # turn tuple into list
+    print("Control exons before removing bad ones : %s" % len(tuple_list))
+    gc_content = [exon[2].split(";")[4] for exon in tuple_list if [exon[0], exon[1]] not in exon2remove]
+    print("Control exons after removing those regulated by a sf : %s" % len(gc_content))
     return gc_content
 
 
-def get_gene_control_gc_content(cnx, exon_type):
+def get_gene_control_gc_content(cnx, exon_type, gene2remove):
     """
     Get the GC content of every gene containing exons with ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sedb database
     :param exon_type: (string) the ``exon_type`` of interest
+    :param gene2remove: (string) gene regulated by a splicing factor
     :return: (list of float) list of the gc content of every exons with the ``exon_type`` of interest
     """
     cursor = cnx.cursor()
@@ -55,11 +56,8 @@ def get_gene_control_gc_content(cnx, exon_type):
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    print("NB control iupac retrieved : %s" % len(tuple_list))
-    gc_content = []
-    for iupac in tuple_list:
-        if iupac[0]:
-            gc_content.append(iupac[0].split(";")[4])
+    gc_content = [iupac[0].split(";")[4] for iupac  in tuple_list if iupac[0] and iupac[1] not in gene2remove]
+    print("NB gene not containing sf-regulated exons : %s" % len(gc_content))
     # turn tuple into list
     return gc_content
 

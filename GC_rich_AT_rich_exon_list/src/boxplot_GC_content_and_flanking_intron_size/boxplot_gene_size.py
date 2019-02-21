@@ -12,11 +12,12 @@ import numpy as np
 
 
 
-def get_control_gene_size(cnx, exon_type):
+def get_control_gene_size(cnx, exon_type, gene2remove):
     """
     Get thegene_size of every gene containing at least one exon type ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param exon_type: (string) the type of exon for which we want to
+    :param gene2remove: (string) the gene id we want to remove.
     :return: (list of float) the gene size of exons with the exon type ``exon_type``
     """
     cursor = cnx.cursor()
@@ -31,10 +32,8 @@ def get_control_gene_size(cnx, exon_type):
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    gene_size = []
-    print("NB control gene_size retrieved : %s" % len(tuple_list))
-    for size in tuple_list:
-        gene_size.append(size[0])
+    gene_size = [size[0] for size in tuple_list if size[0] and size[1] not in gene2remove]
+    print("NB control gene_size retrieved (not regulated by splicing factors): %s" % len(gene_size))
     # turn tuple into list
     return gene_size
 

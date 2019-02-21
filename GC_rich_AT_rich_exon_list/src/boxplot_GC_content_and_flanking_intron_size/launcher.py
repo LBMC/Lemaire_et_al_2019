@@ -19,6 +19,8 @@ import numpy as np
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace(
     "boxplot_GC_content_and_flanking_intron_size", ""))
 import group_factor
+import union_dataset_function
+
 
 
 def mann_withney_test_r(list_values1, list_values2):
@@ -116,6 +118,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
 
 def main():
     exon_type = "CCE"
+    regulation = "down"
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/boxplot_GC_content_and_flanking_intron_size",
                                                                  "result/boxplot_gc_content_and_flanking_intron_size/")
     if not os.path.isdir(output):
@@ -125,6 +128,8 @@ def main():
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src/boxplot_GC_content_and_flanking_intron_size",
                                                                 "data/sed.db")
     cnx = sqlite3.connect(seddb)
+    exon2remove = union_dataset_function.get_exon_regulated_by_sf(cnx, regulation)
+    gene2remove = [exon[0] for exon in exon2remove]
     at_file_pure = "%sAT_rich_exons" % path
     gc_file_pure = "%sGC_rich_exons" % path
     levels = ["exons", "genes"]
@@ -143,9 +148,9 @@ def main():
                         boxplot_flanking_intron_size.extract_exon_min_flanking_intron_size_from_file(cnx, list_file[i])
                     )
                 else:
-                    list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type))
+                    list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type, exon2remove))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type)
+                        boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type, exon2remove)
                     )
             if "genes" in name_file[i]:
                 if exon_type not in name_file[i]:
@@ -156,11 +161,11 @@ def main():
                     )
                     list_gene_size.append(boxplot_gene_size.extract_gene_size_from_file(cnx, list_file[i]))
                 else:
-                    list_gc_content.append(boxplot_gc_content_maker.get_gene_control_gc_content(cnx, exon_type))
+                    list_gc_content.append(boxplot_gc_content_maker.get_gene_control_gc_content(cnx, exon_type, gene2remove))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.get_gene_control_median_flanking_intron_size(cnx, exon_type)
+                        boxplot_flanking_intron_size.get_gene_control_median_flanking_intron_size(cnx, exon_type, gene2remove)
                     )
-                    list_gene_size.append(boxplot_gene_size.get_control_gene_size(cnx, exon_type))
+                    list_gene_size.append(boxplot_gene_size.get_control_gene_size(cnx, exon_type, gene2remove))
         create_figure(list_gc_content, name_file, output, "down", "GC_content", my_level)
         if my_level == "exons":
             create_figure(list_intron_size, name_file, output, "down", "min_intron_size", my_level)

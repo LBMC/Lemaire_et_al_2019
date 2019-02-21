@@ -11,37 +11,39 @@ median_intron_size of the AT, GC, CCE genes (gene containing at least one exons 
 import numpy as np
 
 
-def get_exon_control_min_flanking_intron_size(cnx, exon_type):
+def get_exon_control_min_flanking_intron_size(cnx, exon_type, exon2remove):
     """
     Get the min flanking intron size of every exons with the exon type ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sed database
-    :param exon_type: (string) the type of exon for which we want to
+    :param exon_type: (string) the type of exon for which we want to get
+    :param exon2remove: (string) the list of exon we want to remove
     :return: (list of float) the flanking intron size of exons with the exon type ``exon_tyep``
     """
     cursor = cnx.cursor()
     if exon_type != "ALL":
-        query = """SELECT upstream_intron_size, downstream_intron_size
+        query = """SELECT gene_id, exon_pos, upstream_intron_size, downstream_intron_size
                        FROM sed
                        WHERE exon_type LIKE '%{}%'
                        """.format(exon_type)
     else:
-        query = """SELECT upstream_intron_size, downstream_intron_size
+        query = """SELECT gene_id, exon_pos, upstream_intron_size, downstream_intron_size
                        FROM exons
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    median_intron_size = []
-    for size in tuple_list:
-        median_intron_size.append(np.nanmin(np.array([size[0], size[1]], dtype=float)))
+    median_intron_size = [np.nanmin(np.array([size[2], size[3]], dtype=float)) for size in tuple_list
+                          if [size[0], size[1]] not in exon2remove]
+    print("Control exons after removing those regulated (down or up) by a splicing factor : %s" % len(median_intron_size))
     # turn tuple into list
     return median_intron_size
 
 
-def get_gene_control_median_flanking_intron_size(cnx, exon_type):
+def get_gene_control_median_flanking_intron_size(cnx, exon_type, gene2remove):
     """
     Get the median intron size of every gene containing at least one exon type ``exon_type``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param exon_type: (string) the type of exon for which we want to
+    :param gene2remove: (list of int) list of genes to remove
     :return: (list of float) the medain intron size of exons with the exon type ``exon_type``
     """
     cursor = cnx.cursor()
@@ -56,11 +58,8 @@ def get_gene_control_median_flanking_intron_size(cnx, exon_type):
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    median_intron_size = []
-    print("NB control median_intron_size retrieved : %s" % len(tuple_list))
-    for size in tuple_list:
-        median_intron_size.append(size[0])
-    # turn tuple into list
+    median_intron_size = [size[0] for size in tuple_list if size[0] and size[1] not in gene2remove]
+    print("NB gene control median_intron_size retrieved (not regulated by SF) : %s" % len(median_intron_size))
     return median_intron_size
 
 

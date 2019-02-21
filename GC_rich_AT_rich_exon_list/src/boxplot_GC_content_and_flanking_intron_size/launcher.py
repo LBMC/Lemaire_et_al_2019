@@ -73,10 +73,15 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     for i in range(len(list_values)):
         cur_color = color_dic["_".join(list_name[i].split("_")[:-1])]
         color_b = color_bright["_".join(list_name[i].split("_")[:-1])]
-        data.append({"y": list_values[i], "type": "violin",
-                     "name": list_name[i], "visible": True, "fillcolor": color_b, "opacity": 1,
-                     "line": {"color": "black"},
-                     "box": {"visible": True,  "fillcolor": cur_color}, "meanline": {"visible": False}})
+        if type_fig == "exons":
+            data.append({"y": list_values[i], "type": "violin",
+                         "name": list_name[i], "visible": True, "fillcolor": color_b, "opacity": 1,
+                         "line": {"color": "black"},
+                         "box": {"visible": True,  "fillcolor": cur_color}, "meanline": {"visible": False}})
+        else:
+            data.append({"y": list_values[i], "type": "box",
+                         "name": list_name[i], "visible": True, "fillcolor":cur_color , "opacity": 1,
+                         "line": {"color": "black"}})
 
     layout = go.Layout(
         title=title,
@@ -84,7 +89,6 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
             title=name_fig,
             gridcolor='rgb(255, 255, 255)',
             gridwidth=1,
@@ -107,7 +111,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
 
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_%s_boxplot_%s.html" % (output, name_fig, regulation, type_fig),
-                        auto_open=False, validate=False)
+                        auto_open=False)
 
 
 def main():

@@ -503,7 +503,8 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
     data.append(go.Scatter(x=values_xaxis,
                            y=line,
                            mode='lines',
-                           line=dict(width=3),
+                           line=dict(width=3,
+                                     color="red"),
                            name="Fit : p=%.2E, c=%.2f" % (pval, cor)
                            ))
     data.append(go.Scatter(
@@ -513,8 +514,9 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
         mode='markers',
         text=exon_name,
         marker=dict(
-            size=10,
-            line=dict(width=1))
+            size=7,
+            color="navy"
+            )
     ))
 
     main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons ' \
@@ -529,10 +531,12 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
         hovermode='closest',
         xaxis=dict(
             title=x_title.replace("absolute", ""),
-            tickfont=dict(size=25)),
+            tickfont=dict(size=25),
+            showgrid=False),
         yaxis=dict(
             title=y_title.replace("absolute", ""),
-            tickfont=dict(size=25)),
+            tickfont=dict(size=25),
+            showgrid=False),
         showlegend=True
     )
 

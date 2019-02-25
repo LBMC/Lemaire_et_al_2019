@@ -5,10 +5,11 @@ import os
 import exon_control_handler
 import numpy as np
 import figure_producer
+import union_dataset_function
 import sys
 
 
-def get_control_exon_size_information(cnx, exon_type):
+def get_control_exon_size_information(cnx, exon_type, exon2remove):
     """
     Get the surrounding intron and the exon size information.
 
@@ -20,12 +21,12 @@ def get_control_exon_size_information(cnx, exon_type):
     """
     cursor = cnx.cursor()
     if exon_type != "ALL":
-        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size,
+        query = """SELECT gene_id, exon_pos, upstream_intron_size, exon_size, downstream_intron_size,
                    iupac_upstream_intron, iupac_downstream_intron
                    FROM sed
                    WHERE exon_type LIKE '%{}%'""".format(exon_type)
     else:
-        query = """SELECT upstream_intron_size, exon_size, downstream_intron_size,
+        query = """SELECT gene_id, exon_pos, upstream_intron_size, exon_size, downstream_intron_size,
                    iupac_upstream_intron, iupac_downstream_intron
                    FROM sed
                 """
@@ -33,9 +34,9 @@ def get_control_exon_size_information(cnx, exon_type):
     names = [description[0] for description in cursor.description]
     result = cursor.fetchall()
     # turn tuple into list
-    nresult = []
-    for exon in result:
-        nresult.append(list(exon))
+    print("in function get_control_exon_size_information, CCE exon before removing bad ones : %s" % len(result))
+    nresult = [list(exon)[2:] for exon in result if [exon[0], exon[1]] not in exon2remove]
+    print("CCE exon after removing those regulated by splicing factors : %s" % len(nresult))
     return nresult
 
 
@@ -157,16 +158,17 @@ def write_adapted_dic(control_file, exon_type, str2write):
                 outfile.write("%s\n" % line)
 
 
-def control_handler(cnx, exon_type, summary):
+def control_handler(cnx, exon_type, summary, regulation="down"):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
     control_file = "%s/control_%s.py" % (control_folder, summary)
     control_full = control_folder + "/control_full.pkl"
     ctrl_list, tmp = exon_control_handler.get_control_information(exon_type, control_file, control_full)
+    exon2remove = union_dataset_function.get_exon_regulated_by_sf(cnx, regulation)
     if ctrl_list is None:
         print("Control dictionary was not found !")
         print("Creating control information")
-        names, exon_tuple = exon_control_handler.get_control_exon_information(cnx, exon_type)
+        names, exon_tuple = exon_control_handler.get_control_exon_information(cnx, exon_type, exon2remove, regulation)
         # getting the new columns
         exon_tuple = exon_control_handler.remove_redundant_gene_information(exon_tuple)
         tmp = exon_control_handler.create_a_temporary_dictionary(names, exon_tuple)
@@ -176,7 +178,7 @@ def control_handler(cnx, exon_type, summary):
     if "rel_exon_intron_up" not in ctrl_list.keys():
         print("relative exon_intron size where not found.")
         print("getting relative exon_intron size")
-        exon_tuple = get_control_exon_size_information(cnx, exon_type)
+        exon_tuple = get_control_exon_size_information(cnx, exon_type, exon2remove)
         print("Relative size calculation...")
         tmp_dic = tmp_dic_creator(exon_tuple)
         tmp = dict(tmp, **tmp_dic)

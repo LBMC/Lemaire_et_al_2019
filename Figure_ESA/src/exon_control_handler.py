@@ -6,6 +6,7 @@ import os
 import sys
 import numpy as np
 import pickle
+import union_dataset_function
 
 
 # Function
@@ -35,10 +36,12 @@ def get_control_information(exon_type, control_file, control_full):
     return dic, tmp
 
 
-def get_control_exon_information(cnx, exon_type):
+def get_control_exon_information(cnx, exon_type, exon_2_remove, regulation):
     """
     :param cnx: (sqlite3 object) allow connection to sed database
     :param exon_type: (string) the type of control exon we want to use
+    :param exon_2_remove: (string) exons regulated by a splicing factor
+    :param regulation: (string)  up or down
     :return:
         * result: (list of tuple) every information about control exons
         * names: (list of string) the name of every column in sed table
@@ -56,9 +59,9 @@ def get_control_exon_information(cnx, exon_type):
     names = [description[0] for description in cursor.description]
     result = cursor.fetchall()
     # turn tuple into list
-    nresult = []
-    for exon in result:
-        nresult.append(list(exon))
+    print("CCE exons : %s" % len(result))
+    nresult = [list(exon) for exon in result if [exon[1], exon[2]] not in exon_2_remove]
+    print("CCE exons not %s-regulated by splicing factors : %s" % (regulation, len(nresult)))
     return names, nresult
 
 
@@ -235,7 +238,7 @@ def load_pickle(filename):
     return my_dic
 
 
-def control_handler(cnx, exon_type, summary="median"):
+def control_handler(cnx, exon_type, regulation, summary="median"):
     my_path = os.path.dirname(os.path.realpath(__file__))
     control_folder = my_path + "/control"
     control_file = "%s/control_%s.py" % (control_folder, summary)
@@ -244,7 +247,8 @@ def control_handler(cnx, exon_type, summary="median"):
     if ctrl_list is None:
         print("Control dictionary was not found !")
         print("Creating control information")
-        names, exon_tuple = get_control_exon_information(cnx, exon_type)
+        exon2remove = union_dataset_function.get_exon_regulated_by_sf(cnx, regulation)
+        names, exon_tuple = get_control_exon_information(cnx, exon_type, exon2remove, regulation)
         # getting the new columns
         exon_tuple = remove_redundant_gene_information(exon_tuple)
         tmp = create_a_temporary_dictionary(names, exon_tuple)

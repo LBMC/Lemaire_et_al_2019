@@ -3,6 +3,7 @@
 # coding: utf-8
 
 import group_factor
+import numpy as np
 
 def get_gene_name(cnx, gene_id):
     """
@@ -197,3 +198,21 @@ def washing_events_all(exon_list):
         my_exon = key.split("_")
         new_exon_list.append(my_exon)
     return new_exon_list
+
+
+def get_exon_regulated_by_sf(cnx, regulation):
+    """
+    Get the exons ``regulation`` regulated by a splicing factors.
+
+    :param cnx: (sqlite3 connect object) connection to sed database
+    :param regulation: (string) up or down
+    :return: (list of list of 2 int) list of exons regulated by a splicing factor
+    """
+    name_projects = group_factor.get_wanted_sf_name("all")
+    exon_list = []
+    for sf_name in name_projects:
+        exon_list += get_every_events_4_a_sl(cnx, sf_name, regulation)
+    exon_list = np.unique(exon_list, axis=0).tolist()
+    exon_list = [list(map(int, exon)) for exon in exon_list]
+    print("Number of exons regulated by a splicing factor : %s" % len(exon_list))
+    return exon_list

@@ -75,6 +75,6 @@ def get_wanted_sf_name(sf_type):
     :return: (list of string) the list of sf of interest
     """
 
-    name_projects = splicing_factors
+    name_projects = splicing_factors + u1_factors + u2_factors
 
     return name_projects

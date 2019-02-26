@@ -16,6 +16,7 @@ import sys
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 import numpy as np
+import pandas as pd
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace(
     "boxplot_GC_content_and_flanking_intron_size", ""))
 import group_factor
@@ -116,6 +117,24 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                         auto_open=False)
 
 
+def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
+    """
+    Create a pandas dataframe.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
+    :param name_df: (string) the type of values displayed in ``list_values``
+    :param output: (string) folder where the result will be created
+    :param regulation: (string) up or down
+    :param type_fig: (string) the type of graphic build
+    :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
+    """
+    new_values = list(np.hstack(list_values))
+    new_names = list(np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))]))
+    df = pd.DataFrame({name_df: new_values, "group": new_names})
+    df.to_csv("%s%s_%s_dataframe_%s.html" % (output, name_df, regulation, type_fig), index=False, sep="\t")
+
+
 def main():
     exon_type = "CCE"
     regulation = "down"
@@ -166,12 +185,13 @@ def main():
                         boxplot_flanking_intron_size.get_gene_control_median_flanking_intron_size(cnx, exon_type, gene2remove)
                     )
                     list_gene_size.append(boxplot_gene_size.get_control_gene_size(cnx, exon_type, gene2remove))
-        create_figure(list_gc_content, name_file, output, "down", "GC_content", my_level)
+        create_figure(list_gc_content, name_file, output, regulation, "GC_content", my_level)
+        dataframe_creator(list_gc_content, name_file, output, regulation, "GC_content", my_level)
         if my_level == "exons":
-            create_figure(list_intron_size, name_file, output, "down", "min_intron_size", my_level)
+            create_figure(list_intron_size, name_file, output, regulation, "min_intron_size", my_level)
         if my_level == "genes":
-            create_figure(list_intron_size, name_file, output, "down", "median_intron_size", my_level)
-            create_figure(list_gene_size, name_file, output, "down", "gene_size", my_level)
+            create_figure(list_intron_size, name_file, output, regulation, "median_intron_size", my_level)
+            create_figure(list_gene_size, name_file, output, regulation, "gene_size", my_level)
 
 
 if __name__ == "__main__":

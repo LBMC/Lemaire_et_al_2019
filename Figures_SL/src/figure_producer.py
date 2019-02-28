@@ -25,6 +25,7 @@ import function
 import function_mfe
 import exon_class
 import exon_class_mfe
+import statistical_analysis
 import rpy2.robjects as robj
 from rpy2.robjects.packages import importr
 import rpy2.robjects.vectors as v
@@ -33,7 +34,7 @@ nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7}
 dnt_dic = {"AA": 0, "AC": 1, "AG": 2, "AT": 3, "CA": 4, "CC": 5,
            "CG": 6, "CT": 7, "GA": 8, "GC": 9, "GG": 10, "GT": 11,
            "TA": 12, "TC": 13, "TG": 14, "TT": 15}
-log_columns = ["nb_intron_gene", "downstream_intron_size", "upstream_intron_size", "median_flanking_intron_size"]
+log_columns = ["nb_intron_gene", "downstream_intron_size", "upstream_intron_size", "median_flanking_intron_size", "min_flanking_intron_size"]
 exon_class.set_debug(0)
 exon_class_mfe.set_debug(0)
 size_bp_up_seq = 100
@@ -390,26 +391,6 @@ def get_values_for_many_projects_iupac_dnt(cnx, id_projects_sf_names, target_col
     return results
 
 
-def mann_withney_test_r(list_values1, list_values2):
-    """
-    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
-
-    :param list_values1: (list of float)  list of float
-    :param list_values2: (list of float)  list of float
-    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
-    """
-    wicox = robj.r("""
-
-    function(x, y){
-        test = wilcox.test(x,y, alternative='two.sided', correct=F)
-        return(test$p.value)
-    }
-
-                   """)
-    pval = float(wicox(v.FloatVector(list_values1), v.FloatVector(list_values2))[0])
-    return pval
-
-
 def create_statistical_report(list_values, list_name, ctrl_full, filename):
     """
     Create a statistical report.
@@ -428,12 +409,75 @@ def create_statistical_report(list_values, list_name, ctrl_full, filename):
         cur_list = list(cur_list[~np.isnan(cur_list)])
         # print("          Factor : %s, mean = %s" % (list_name[i], np.nanmean(list_values[i])))
 
-        dic_res["P-value"].append(mann_withney_test_r(cur_list, cur_ctrl))
+        dic_res["P-value"].append(statistical_analysis.mann_withney_test_r(cur_list, cur_ctrl))
     df = pd.DataFrame(dic_res)
     rstats = robj.packages.importr('stats')
     pcor = rstats.p_adjust(v.FloatVector(dic_res["P-value"]), method="BH")
     df["P-adjusted_BH"] = pcor
-    df.to_csv(filename.replace(".html", "_stat.txt"), sep="\t", index=False)
+    df.to_csv(filename.replace(".html", "wilcox_stat.txt"), sep="\t", index=False)
+
+
+def handle_dataframe_statistics(dataframe, filename, feature, list_name):
+    """
+    Make analysis on the dataFrame ``dataframe``
+
+    :param dataframe: (pandas DataFrame) a dataframe
+    :param filename: (string) the name of the output file
+    :return: (pandas DataFrame) the statistical analyzes
+    """
+    stat = None
+    if "iupac" in feature:
+        dataframe = statistical_analysis.anova_nt_stats(dataframe, filename)
+        stat = "ANOVA"
+    elif "size" in feature:
+        dataframe = statistical_analysis.nb_glm_stats(dataframe, filename)
+        stat = "GLM_nb_"
+    df = pd.DataFrame({"project": list_name})
+    dataframe = pd.merge(df, dataframe)
+    dataframe.to_csv(filename.replace(".html", "%s_stat.txt" % stat), sep="\t", index=False)
+
+
+def create_dataframe(list_values, list_name, ctrl_dic, feature, nt):
+    """
+    Create a control dataframe for statistical analysis.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of list of string) list of name
+    :param ctrl_dic: (dictionary of list of float) dictionary  of control values
+    :param feature: (string) the feature of interest
+    :param nt: (string) the nucleotide of interest
+    :return: (pandas Dataframe) a dataframe to make statistical anlaysis.
+    """
+    vect2 = [[list_name[i]] * len(list_values[i]) for i in range(len(list_name))]
+    vect2 = list(np.hstack(vect2))
+    if nt:
+        vect1 = list(np.hstack(list_values)) + ctrl_dic[feature][nt]
+        vect2 += [exon_type] * len(ctrl_dic[feature][nt])
+    else:
+        vect1 = list(np.hstack(list_values)) + ctrl_dic[feature]
+        vect2 += [exon_type] * len(ctrl_dic[feature])
+    d = {"values": vect1, "project": vect2}
+    d = pd.DataFrame(d)
+    return d
+
+
+def make_statistical_analysis(list_values, list_name, ctrl_dic, feature, nt, filename):
+    """
+    Create a control dataframe for statistical analysis.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of list of string) list of name
+    :param ctrl_dic: (dictionary of list of float) dictionary  of control values
+    :param feature: (string) the feature of interest
+    :param nt: (string) the nucleotide of interest
+    """
+    if nt is not None:
+        d = create_dataframe(list_values, list_name, ctrl_dic, feature, nt)
+        d.to_csv(filename.replace(".html", "_tab.csv"), sep="\t", index=False)
+        handle_dataframe_statistics(d, filename, feature, list_name)
+    else:
+        create_statistical_report(list_values, list_name, ctrl_dic[feature], filename)
+
 
 
 def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, regulation, output, ctrl_dic, output_bp_file, ctrl_full, union=None):
@@ -453,6 +497,7 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
     """
+    filename = "%s%s_%s_exons_figure.html" % (output, target_column, regulation)
     if not union:
         result = get_values_for_many_projects(cnx, cnx_fasterdb, id_projects, target_column, regulation, output_bp_file, union)
     else:
@@ -464,17 +509,22 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     log = False
     if target_column in log_columns:
         log = True
-    if not log:
-        new_result = [x[1] for x in e]
-    else:
-        new_result = [list(map(math.log10, x[1])) for x in e]
 
+    make_statistical_analysis(new_result_tmp, new_name, ctrl_full, target_column, None, filename)
+
+    # Adding CCE values to the list of wanted values
+    new_name += [exon_type]
+    my_ctrl = np.array(ctrl_full[target_column], dtype=float)
+    my_ctrl = list(my_ctrl[~np.isnan(my_ctrl)])
+    new_result_tmp += [my_ctrl]
     if not log:
-        new_result = [(np.array(val) - ctrl_dic[target_column]) / ctrl_dic[target_column] * 100 for val in new_result]
-        title = '%s of %s exons for every projects' % (target_column, regulation)
+        new_result = [(np.array(val) - ctrl_dic[target_column]) / ctrl_dic[target_column] * 100 for val in new_result_tmp]
     else:
-        title = 'log10 %s of %s exons for every projects' % (target_column, regulation)
-        new_result = [(np.array(val) - math.log10(ctrl_dic[target_column])) / math.log10(ctrl_dic[target_column]) * 100 for val in new_result]
+        new_result = [list(map(math.log10, x)) for x in new_result_tmp]
+        print("min : %s" % min(np.hstack(new_result)))
+        print("max : %s" % max(np.hstack(new_result)))
+    title = '%s of %s exons for every projects' % (target_column, regulation)
+
 
     cb = ['hsl(' + str(h) + ',50%' + ',60%)' for h in np.linspace(0, 360, len(new_result))]
     cv = ['hsl(' + str(h) + ',50%' + ',80%)' for h in np.linspace(0, 360, len(new_result))]
@@ -486,10 +536,11 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     layout = go.Layout(
         title=title,
         yaxis=dict(
-            autorange=True,
+            # type="log",
+            # autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             gridcolor='rgb(200, 200, 200)',
             gridwidth=1,
             zerolinecolor='rgb(200, 0, 0)',
@@ -508,10 +559,21 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     )
 
     fig = {"data": data, "layout": layout}
-    filename = "%s%s_%s_exons_figure.html" % (output, target_column, regulation)
+    if log:
+        my_ctrl = np.array(ctrl_full[target_column], dtype=float)
+        # ctrl_mean = np.mean(list(my_ctrl[~np.isnan(my_ctrl)]))
+        ctrl_median = np.median(list(map(math.log10, my_ctrl[~np.isnan(my_ctrl)])))
+        fig.update(dict(layout=dict(yaxis=dict(title="log10 %s" % target_column, zerolinecolor='rgb(200, 200, 200)'),
+                                    shapes=[dict(type="line", x0=0, y0=ctrl_median, layer="below",
+                                                 x1=len(new_result), y1=ctrl_median, line=dict(width=2,
+                                                                                            color='rgb(200, 0, 0)')),
+                                            # dict(type="line", x0=0, y0=ctrl_mean, layer="below",
+                                            #      x1=len(new_result), y1=ctrl_mean, line=dict(width=2,
+                                            #                                                    color='rgb(0, 0, 200)'))
+                                            ])))
     plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
-    create_statistical_report(new_result_tmp, new_name, ctrl_full[target_column], filename)
+
 
 
 def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, nt_dnt, ctrl_dic, ctrl_full, union=None):
@@ -531,6 +593,8 @@ def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regu
     :param union: (None or string) None if we want to work project by project, anything else to work \
     with exons regulation by a particular splicing factor.
     """
+    target_column_new = target_column.replace("iupac", "%s_nt" % nt_dnt).replace("dnt", "%s_dnt" % nt_dnt)
+    filename = "%s%s_%s_exons_figure.html" % (output, target_column_new, regulation)
     if not union:
         result = get_values_for_many_projects_iupac_dnt(cnx, id_projects, target_column, regulation, nt_dnt, union)
     else:
@@ -539,13 +603,19 @@ def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regu
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=True)
     new_name = [x[0] for x in e]
     new_result_tmp = [x[1] for x in e]
+
+    make_statistical_analysis(new_result_tmp, new_name, ctrl_full, target_column, nt_dnt, filename)
+
+    # Adding control values to the ones of interest
+    new_name += [exon_type]
+    my_ctrl = np.array(ctrl_full[target_column][nt_dnt], dtype=float)
+    my_ctrl = list(my_ctrl[~np.isnan(my_ctrl)])
+    new_result_tmp += [my_ctrl]
     #mean_val = np.nanmean(ctrl_full[target_column][nt_dnt])
     #new_result = [(np.array(val) - mean_val) / mean_val * 100 for val in new_result]
     new_result = [(np.array(val) - ctrl_dic[target_column][nt_dnt]) / ctrl_dic[target_column][nt_dnt] * 100 for val in new_result_tmp]
     cb = ['hsl(' + str(h) + ',50%' + ',60%)' for h in np.linspace(0, 360, len(new_result))]
     cv = ['hsl(' + str(h) + ',50%' + ',80%)' for h in np.linspace(0, 360, len(new_result))]
-    target_column_new = target_column.replace("iupac", "%s_nt" % nt_dnt)
-    target_column_new = target_column_new.replace("dnt", "%s_dnt" % nt_dnt)
     data = []
     for i in range(len(new_result)):
         data.append({"y": new_result[i], "type": "violin",
@@ -557,7 +627,7 @@ def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regu
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             gridcolor='rgb(200, 200, 200)',
             gridwidth=1,
             zerolinecolor='rgb(200, 0, 0)',
@@ -576,26 +646,27 @@ def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regu
     )
 
     fig = {"data": data, "layout": layout}
-    filename = "%s%s_%s_exons_figure.html" % (output, target_column_new, regulation)
+    # d.to_csv(filename.replace(".html", "_tmp_tab.txt"), sep="\t", index=False)
     plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
     # print("    Stat %s" % (target_column_new))
-    create_statistical_report(new_result_tmp, new_name, ctrl_full[target_column][nt_dnt], filename)
+    # create_statistical_report(new_result_tmp, new_name, ctrl_full[target_column][nt_dnt], filename)
 
 
 def main():
     """
     Launch the creation of figures.
     """
+    global exon_type
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
     fasterdb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/fasterDB_lite.db"
-    regs = ["up", "down"]
+    regs = ["down"]
     cnx = connexion(seddb)
     cnx_fasterdb = connexion(fasterdb)
     #columns = ["iupac_exon", "exon_size", "upstream_intron_size", "downstream_intron_size", "gene_size", "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1", "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss", "iupac_upstream_intron_ppt_area"]
     #columns = ["force_donor", "force_acceptor", "upstream_intron_size", "downstream_intron_size","iupac_exon", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi", "min_flanking_intron_size"]
-    columns = ["iupac_exon"]
+    columns = ["downstream_intron_size", "upstream_intron_size", "force_donor", "force_acceptor", "iupac_exon", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi"]
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, size_bp_up_seq)
     if len(sys.argv) < 2:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_new/"

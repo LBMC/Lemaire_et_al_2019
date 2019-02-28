@@ -208,7 +208,7 @@ def get_exon_regulated_by_sf(cnx, regulation):
     :param regulation: (string) up or down
     :return: (list of list of 2 int) list of exons regulated by a splicing factor
     """
-    name_projects = group_factor.get_wanted_sf_name(cnx)
+    name_projects = group_factor.get_wanted_sf_name(None)
     exon_list = []
     for sf_name in name_projects:
         exon_list += get_every_events_4_a_sl(cnx, sf_name, regulation)

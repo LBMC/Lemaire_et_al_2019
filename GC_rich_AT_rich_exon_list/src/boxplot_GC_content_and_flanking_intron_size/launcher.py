@@ -17,6 +17,7 @@ import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 import numpy as np
 import pandas as pd
+import stat_maker
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace(
     "boxplot_GC_content_and_flanking_intron_size", ""))
 import group_factor
@@ -106,15 +107,15 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
         ),
         paper_bgcolor='white',
         plot_bgcolor='white',
-        showlegend=True,
-        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
-                     y1=np.median(list_values[-1]),
-                     line=dict(color=color_dic["_".join(list_name[-1].split("_")[:-1])]))]
+        showlegend=True
+        # shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+        #              y1=np.median(list_values[-1]),
+        #              line=dict(color=color_dic["_".join(list_name[-1].split("_")[:-1])]))]
     )
 
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_%s_boxplot_%s.html" % (output, name_fig, regulation, type_fig),
-                        auto_open=False)
+                        auto_open=False, validate=False)
 
 
 def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
@@ -129,10 +130,45 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     :param type_fig: (string) the type of graphic build
     :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
     """
-    new_values = list(np.hstack(list_values))
-    new_names = list(np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))]))
-    df = pd.DataFrame({name_df: new_values, "group": new_names})
-    df.to_csv("%s%s_%s_dataframe_%s.html" % (output, name_df, regulation, type_fig), index=False, sep="\t")
+    new_values = np.hstack(list_values)
+    new_names = np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))])
+    new_values = new_values.astype(np.float)
+    new_names = list(new_names[~np.isnan(new_values)])
+    new_values = list(new_values[~np.isnan(new_values)])
+    df = pd.DataFrame({"values": new_values, "project": new_names})
+    filename = "%s%s_%s_dataframe_%s_stat.txt" % (output, name_df, regulation, type_fig)
+    if name_df == "GC_content":
+        new_df = stat_maker.anova_nt_stats(df, filename)
+    else:
+        new_df = stat_maker.nb_glm_stats(df, filename)
+    df.to_csv("%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig), index=False, sep="\t")
+    new_df.to_csv("%s%s_%s_dataframe_%s_stat.txt" % (output, name_df, regulation, type_fig), index=False, sep="\t")
+
+
+def dataframe_creator2(list_values, list_values2, list_name, output, regulation, name_df, name_df2, type_fig):
+    """
+    Create a pandas dataframe.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
+    :param name_df: (string) the type of values displayed in ``list_values``
+    :param output: (string) folder where the result will be created
+    :param regulation: (string) up or down
+    :param type_fig: (string) the type of graphic build
+    :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
+    """
+    new_values = np.hstack(list_values)
+    new_values2 = np.hstack(list_values2)
+    new_names = np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))])
+    new_values = new_values.astype(np.float)
+    new_values2 = new_values2.astype(np.float)
+    print(len(new_values))
+    print(len(new_values2))
+    print(len(new_names))
+    df = pd.DataFrame({"GC_content": new_values, "project": new_names, "Gene_size": new_values2})
+    filename = "%s%s-%s_%s_dataframe_%s_stat.txt" % (output, name_df, name_df2, regulation, type_fig)
+    df.to_csv(filename, index=False, sep="\t")
+
 
 
 def main():
@@ -151,7 +187,8 @@ def main():
     gene2remove = [exon[0] for exon in exon2remove]
     at_file_pure = "%sAT_rich_exons" % path
     gc_file_pure = "%sGC_rich_exons" % path
-    levels = ["exons", "genes"]
+    #levels = ["exons", "genes"]
+    levels = ["genes"]
     for my_level in levels:
         name_file = ["GC_pure_%s" % my_level, "AT_pure_%s" % my_level, "%s_%s" % (exon_type, my_level)]
         list_file = [gc_file_pure, at_file_pure, None]
@@ -189,9 +226,13 @@ def main():
         dataframe_creator(list_gc_content, name_file, output, regulation, "GC_content", my_level)
         if my_level == "exons":
             create_figure(list_intron_size, name_file, output, regulation, "min_intron_size", my_level)
+            dataframe_creator(list_intron_size, name_file, output, regulation, "min_intron_size", my_level)
         if my_level == "genes":
             create_figure(list_intron_size, name_file, output, regulation, "median_intron_size", my_level)
+            dataframe_creator(list_intron_size, name_file, output, regulation, "median_intron_size", my_level)
             create_figure(list_gene_size, name_file, output, regulation, "gene_size", my_level)
+            dataframe_creator(list_gene_size, name_file, output, regulation, "gene_size", my_level)
+            dataframe_creator2(list_gc_content, list_gene_size, name_file, output, regulation, "GC_content", "gene_size", my_level)
 
 
 if __name__ == "__main__":

@@ -56,7 +56,13 @@ def get_gene_control_gc_content(cnx, exon_type, gene2remove):
                     """
     cursor.execute(query)
     tuple_list = cursor.fetchall()
-    gc_content = [iupac[0].split(";")[4] for iupac  in tuple_list if iupac[0] and iupac[1] not in gene2remove]
+    gc_content = []
+    for iupac in tuple_list:
+        if iupac[1] not in gene2remove:
+            if iupac[0]:
+                gc_content.append(iupac[0].split(";")[4])
+            else:
+                gc_content.append(None)
     print("NB gene not containing sf-regulated exons : %s" % len(gc_content))
     # turn tuple into list
     return gc_content
@@ -157,4 +163,6 @@ def extract_gene_gc_content_from_list(cnx, gene_list):
         val = calculate_gene_gc_content(cnx, gene)
         if val:
             list_gc.append(val)
+        else:
+            list_gc.append(None)
     return list_gc

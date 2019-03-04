@@ -31,16 +31,15 @@ def file_reader(filename):
             line = line.replace("\n", "")
             if "#" not in line:
                 line = line.split("\t")
-                val1 = float(line[1].split("/")[0])
+                val = line[2]
                 name1 = line[0].split("-")[0]
-                val2 = float(line[3].split("/")[0])
                 name2 = line[0].split("-")[1]
-                if val1 > val2:
-                    dic_res[line[0]] = [float(line[7]), name1]
-                elif val1 < val2:
-                    dic_res[line[0]] = [float(line[7]), name2]
+                if val == "+":
+                    dic_res[line[0]] = [float(line[1]), name1]
+                elif val == "-":
+                    dic_res[line[0]] = [float(line[1]), name2]
                 else:
-                    dic_res[line[0]] = [float(line[7]), "NA"]
+                    dic_res[line[0]] = [float(line[1]), "NA"]
     return dic_res
 
 
@@ -157,7 +156,7 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             title="<-- -log10 pvalue %s area  -:-  log10 pvalue %s area -->" % (neg_reg, pos_reg),
             gridcolor='white',
             gridwidth=1,
@@ -183,7 +182,7 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_VS_%s_exon_%s_spliceosome_%s.html" %
                                       (output, pos_reg, neg_reg, group_exon, group_factor_content),
-                                      auto_open=False, validate=False)
+                                      auto_open=False) # , validate=False)
 
 
 def main(filename):

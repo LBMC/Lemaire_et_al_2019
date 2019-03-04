@@ -318,7 +318,7 @@ def color_maker(name_projects, value_size, value_iupac):
 
 
 def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_xaxis, name_yaxis, ctrl, output,
-                   name_fig, representation):
+                   name_fig, representation, ctrl_dic):
     """
     Create a scatter plot showing the potential correlation between projects.
 
@@ -337,10 +337,16 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
     nt2 = ""
     if "$" in name_xaxis:
         name_xaxis, nt1 = name_xaxis.split("$")
+        xmedian = ctrl_dic[name_xaxis][nt1]
         name_xaxis = name_xaxis.replace("iupac", "%s_nt" % nt1)
+    else:
+        xmedian = ctrl_dic[name_xaxis]
     if "$" in name_yaxis:
         name_yaxis, nt2 = name_yaxis.split("$")
+        ymedian = ctrl_dic[name_yaxis][nt2]
         name_yaxis = name_yaxis.replace("iupac", "%s_nt" % nt2)
+    else:
+        ymedian = ctrl_dic[name_yaxis]
     if nt1 != "":
         x_name = name_xaxis.replace("iupac", "%s_nt" % nt1)
     else:
@@ -409,8 +415,17 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
         showlegend=True
     )
     fig = go.Figure(data=data, layout=layout)
-    plotly.offline.plot(fig, filename=figname,
-                        auto_open=False)
+    print(ymedian)
+    print(xmedian)
+    if representation == "absolute":
+        fig.update(dict(layout=dict(shapes=[dict(type="line", x0=min(values_xaxis), y0=ymedian, layer="below",
+                                                 x1=max(values_xaxis), y1=ymedian, line=dict(width=2,
+                                                                                               color='rgb(200, 0, 0)')),
+                                            dict(type="line", x0=xmedian, y0=min(values_yaxis), layer="below",
+                                                 x1=xmedian, y1=max(values_yaxis), line=dict(width=2,
+                                                                                             color='rgb(200, 0, 0)'))
+                                            ])))
+    plotly.offline.plot(fig, filename=figname, auto_open=False)
 
 
 def get_relative_values(list_values, ctrl_dic, name_list, representation):
@@ -881,7 +896,6 @@ def get_concidered_exons(cnx, exon_class, regulation):
         return exon_list
 
 
-
 def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operation, representation):
     """
     Create the correlation matrix (gene_size vs iupac)
@@ -908,7 +922,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
                 print("Warning the list of value don't have the same length")
             figure_creator(values_xaxis, values_yaxis, name_projects, regulation, couple_targets[i][0],
                            couple_targets[i][1], exon_type, output,
-                           name_fig, representation)
+                           name_fig, representation, ctrl_dic)
     elif level == "exon":
         if exon_class is None:
             list_sf = group_factor.get_wanted_sf_name(None)
@@ -970,7 +984,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
                 print("Warning the list of value don't have the same length")
             figure_creator(values_xaxis, values_yaxis, list_sf, regulation, couple_targets[i][0],
                            couple_targets[i][1], exon_type, output,
-                           name_fig, representation)
+                           name_fig, representation, ctrl_dic)
 
 
 def launcher():

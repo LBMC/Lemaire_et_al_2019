@@ -22,6 +22,7 @@ import random
 import group_factor
 import rpy2.robjects as robj
 from rpy2.robjects.packages import importr
+import heatmap_stats
 import rpy2.robjects.vectors as v
 sch = __import__('scipy.cluster.hierarchy')
 iupac_nt = {"S": ["G", "C"], "W": ["A", "T"], "Y": ["C", "T"], "R": ["A", "G"], "K": ["T", "G"], "M": ["A", "C"]}
@@ -155,11 +156,12 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
     new_targets = create_columns_names(target_columns)
     project_names = []
     projects_tab = []
-    project_pvalues = []
+    project_abs = []
+    project_vect_names = []
+    project_col = []
     for i in range(len(names)):
         for regulation in regulations:
             project_res = []
-            project_pval = []
             if len(regulations) == 1:
                 project_names.append("%s" % (names[i]))
             else:
@@ -194,9 +196,7 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                     val_obs = eval("np.%s(list_val)" % operation)
                     final_value = float(val_obs - control_dic[name_col][nt]) / \
                         control_dic[name_col][nt] * 100
-                    ctrl_val = np.array(ctrl_full[name_col][nt], dtype=float)
-                    ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
-                    pval = mann_withney_test_r(list(list_val), ctrl_val)
+                    # ctrl_val = np.array(ctrl_full[name_col][nt], dtype=float)
                 else:
                     if new_targets[j] == "median_flanking_intron_size":
                         values1 = np.array(
@@ -221,14 +221,27 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                     val_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
                     final_value = float(val_obs - control_dic[new_targets[j]]) / \
                         control_dic[new_targets[j]] * 100
-                    ctrl_val = np.array(ctrl_full[new_targets[j]], dtype=float)
-                    ctrl_val = ctrl_val[~np.isnan(ctrl_val)]
-                    pval = mann_withney_test_r(list(list_val), ctrl_val)
+                    # ctrl_val = np.array(ctrl_full[new_targets[j]], dtype=float)
+                project_abs.append(list_val)
+                project_vect_names.append([project_names[-1]] * len(list_val))
+                project_col.append([new_targets[j]] * len(list_val))
                 project_res.append(final_value)
-                project_pval.append(pval)
             projects_tab.append(project_res)
-            project_pvalues.append(project_pval)
-    return projects_tab, project_pvalues, project_names, new_targets
+    for j in range(len(new_targets)):
+        if "_nt_" in new_targets[j]:
+            nt = new_targets[j].split("_")[0]
+            name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
+            mctrl = np.array(ctrl_full[name_col][nt], dtype=float)
+            mctrl = list(mctrl[~np.isnan(mctrl)])
+        else:
+            mctrl = np.array(ctrl_full[new_targets[j]], dtype=float)
+            mctrl = list(mctrl[~np.isnan(mctrl)])
+        project_abs.append(mctrl)
+        project_vect_names.append(["CCE"] * len(mctrl))
+        project_col.append([new_targets[j]] * len(mctrl))
+    df = pd.DataFrame({"values": list(np.hstack(project_abs)), "project": list(np.hstack(project_vect_names)),
+                       "features": list(np.hstack(project_col))})
+    return projects_tab, df, project_names, new_targets
 
 
 def project_t2_remove(cnx, sf_list):
@@ -506,13 +519,11 @@ def adjust_pvalues(df):
     return df_padjust
 
 
-def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contrast, name=""):
+def heatmap_gc_sorted(data_array, df_stat, labelsx, labelsy, output, contrast, name=""):
     """
     Create a GC sorted heatmap, sorted on gc content if they are presents in labels X
 
     :param data_array: (lif of list of float) the medians value for a project (line) for every characteristic of \
-    interests (number of value in one line corresponding to a project).
-    :param pvalues_array: (list of list of float) the p-values for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
     :param labelsy: (list of strings) list of projects name
     :param labelsx: (list of strings) list of characteristics of interest
@@ -521,7 +532,6 @@ def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contr
     :param name: (string) partial name of the file
     """
     df = pd.DataFrame(data_array, index=labelsy)
-    pdf = pd.DataFrame(pvalues_array, index=labelsy)
     if not order:
         index_g = []
         index_c = []
@@ -592,14 +602,14 @@ def heatmap_gc_sorted(data_array, pvalues_array, labelsx, labelsy, output, contr
                                       side="right"),
                            xaxis=dict(ticks=""))
         figure = go.Figure(data=heatmap, layout=layout)
-        plotly.offline.plot(figure, filename='%s%s_sorted.html' % (output, name),
+        filename = '%s%s_sorted.html' % (output, name)
+        plotly.offline.plot(figure, filename=filename,
                             auto_open=False)
+        df_stat.to_csv(filename.replace(".html", "_prelim_tab.txt"), sep="\t", index=False)
+        df_stat = heatmap_stats.handle_dataframe_statistics(df_stat, filename)
+        #df_stat = pd.merge(pd.DataFrame({"project": list(final_df.index)[::-1]}), df_stat)
+        df_stat.to_csv(filename.replace(".html", "_stat.txt"), sep="\t", index=False)
 
-        pdf.columns = labelsx
-        pdf = pdf.reindex(index=final_df.index[::-1])
-        pdf.to_csv('%s%s_sorted_stat.txt' % (output, name), sep="\t")
-        df2 = adjust_pvalues(pdf)
-        df2.to_csv('%s%s_sorted_stat_corrected.txt' % (output, name), sep="\t")
 
 
 def make_global(my_list):
@@ -632,14 +642,14 @@ def main(union, columns, name, sf_type, contrast, operation):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_pvalues, project_names, new_targets = \
+            projects_tab, df_stat, project_names, new_targets = \
                 create_matrix(cnx, id_projects, name_projects, target_columns,
                               ctrl_dic, ctrl_full, regulations, operation, None, sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues),
+            heatmap_gc_sorted(np.array(projects_tab), df_stat,
                               new_targets, project_names, output, contrast, name=name)
 
     else:
@@ -652,14 +662,14 @@ def main(union, columns, name, sf_type, contrast, operation):
             # Creating heatmap
             if sf_type is not None:
                 redundant_ag_at_and_u1_u2(cnx, regulations[0])
-            projects_tab, project_pvalues, project_names, new_targets = \
+            projects_tab, df_stat, project_names, new_targets = \
                 create_matrix(cnx, None, name_projects, target_columns,
                               ctrl_dic, ctrl_full, regulations, operation, "union", sf_type)
             if len(new_targets) > 1:
                 heatmap_creator(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             else:
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
-            heatmap_gc_sorted(np.array(projects_tab), np.array(project_pvalues), new_targets,
+            heatmap_gc_sorted(np.array(projects_tab), df_stat, new_targets,
                               project_names, output, contrast, name)
 
 

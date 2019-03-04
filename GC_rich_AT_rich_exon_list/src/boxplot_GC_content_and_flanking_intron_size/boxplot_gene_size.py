@@ -62,8 +62,7 @@ def extract_gene_size_from_list(cnx, gene_list):
     list_gc = []
     for gene in gene_list:
         val = calculate_gene_size(cnx, gene)
-        if val:
-            list_gc.append(val)
+        list_gc.append(val)
     return list_gc
 
 

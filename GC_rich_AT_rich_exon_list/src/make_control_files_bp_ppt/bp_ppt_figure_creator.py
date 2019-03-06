@@ -13,15 +13,16 @@ import plotly.graph_objs as go
 import plotly
 import sys
 import numpy as np
-# import math
-# from ncephes import cprob
+import matplotlib.pyplot as plt
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 from rpy2.robjects.packages import importr
 import warnings
 from rpy2.rinterface import RRuntimeWarning
+import seaborn as sns
 import exon_class
 import function
+import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("make_control_files_bp_ppt", ""))
 import group_factor
 import union_dataset_function
@@ -142,7 +143,7 @@ def web_logo_creator(sequence_list, sequence_name, output):
                   v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
 
 
-def create_figure(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
+def create_figure(list_values, list_name, output, regulation, name_fig, type_fig="exon", figure="violin"):
     """
     Create a figure showing the values of ``target_name`` for every exon list regulated by ``list_name`` factor
 
@@ -168,7 +169,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                 outfile.write("%s vs %s, p=%.2E\n" % (list_name[i], list_name[j], pval))
 
     for i in range(len(list_values)):
-        data.append({"y": list_values[i], "type": "violin",
+        data.append({"y": list_values[i], "type": figure,
                      "name": list_name[i], "visible": True, "fillcolor": color_b_dic[list_name[i]], "opacity": 1,
                      "line": {"color": "black"},
                      "box": {"visible": True, "fillcolor": color_dic[list_name[i]]}, "meanline": {"visible": False}})
@@ -179,7 +180,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             title=name_fig,
             gridcolor='white',
             gridwidth=1,
@@ -243,7 +244,7 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             title=name_fig,
             gridcolor='white',
             gridwidth=1,
@@ -377,7 +378,7 @@ def create_barplot(list_values, list_name, output, regulation, name_fig, type_fi
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
+            # autotick=True,
             title="proportion",
             gridcolor='white',
             gridwidth=1,
@@ -479,6 +480,37 @@ def initiate_list_of_factor(file_dir, exon_type, type_analysis):
     return name_list, list_file
 
 
+def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
+    """
+    Create a pandas dataframe.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
+    :param name_df: (string) the type of values displayed in ``list_values``
+    :param output: (string) folder where the result will be created
+    :param regulation: (string) up or down
+    :param type_fig: (string) the type of graphic build
+    :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
+    """
+    new_values = np.hstack(list_values)
+    new_names = np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))])
+    new_values = new_values.astype(np.float)
+    new_names = list(new_names[~np.isnan(new_values)])
+    new_values = list(new_values[~np.isnan(new_values)])
+    df = pd.DataFrame({"values": new_values, "project": new_names})
+    sns.set()
+    sns.set_context("poster")
+    g = sns.FacetGrid(data=df, row="project", height=7)
+    g.map(sns.distplot, "values")
+    filename = "%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig)
+    g.savefig(filename.replace("table.txt", "displot.pdf"), format="pdf")
+    plt.clf()
+    plt.close()
+    df.to_csv(filename, index=False, sep="\t")
+    new_df = stat_bp.glm_poisson_stats(df, filename)
+    new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
+
+
 def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation="down"):
     """
 
@@ -533,73 +565,79 @@ def main():
         dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [],
                               "nb_good_bp_list": [], "ag_count": [], "hbound": [], "uaa_count": [],
                               "una_count": []} for k in [100, 50, 35, 25]}
-        list_force_acceptor = []
-        list_force_donor = []
+        # list_force_acceptor = []
+        # list_force_donor = []
         for i in range(len(name_file)):
             if name_file[i] != exon_type:
                 exon_list = extract_data(cnx, cnx_sed, list_file, name_file, i, regulation)
-                list_force_acceptor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_acceptor"))
-                list_force_donor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_donor"))
+                # list_force_acceptor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_acceptor"))
+                # list_force_donor.append(get_redundant_list_of_value(cnx_sed, exon_list, "force_donor"))
                 for size in dict_score_3ss.keys():
                     bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list,\
                         hbound_list, uaa_list, una_list = \
                         get_bp_ppt_score_list(ctrl_output, exon_list, name_file[i], size, regulation)
-                    dict_score_3ss[size]["bp_score_list"].append(bp_score_list)
-                    dict_score_3ss[size]["ppt_score_list"].append(ppt_score_list)
-                    dict_score_3ss[size]["nb_bp_list"].append(nb_bp_list)
+                    # dict_score_3ss[size]["bp_score_list"].append(bp_score_list)
+                    # dict_score_3ss[size]["ppt_score_list"].append(ppt_score_list)
+                    # dict_score_3ss[size]["nb_bp_list"].append(nb_bp_list)
                     dict_score_3ss[size]["nb_good_bp_list"].append(nb_good_bp_list)
                     web_logo_creator(bp_seq_list, "%s_%s_exons_%s_nt" % (name_file[i], regulation, size), output)
-                    dict_score_3ss[size]["ag_count"].append(ag_count_list)
+                    # dict_score_3ss[size]["ag_count"].append(ag_count_list)
                     dict_score_3ss[size]["hbound"].append(hbound_list)
-                    dict_score_3ss[size]["uaa_count"].append(uaa_list)
+                    # dict_score_3ss[size]["uaa_count"].append(uaa_list)
                     dict_score_3ss[size]["una_count"].append(una_list)
 
             else:
                 for size in dict_score_3ss.keys():
                     mod = __import__("%s_%s_bp_ppt_score" % (exon_type, size))
-                    dict_score_3ss[size]["bp_score_list"].append(mod.bp_score)
-                    dict_score_3ss[size]["ppt_score_list"].append(mod.ppt_score)
-                    dict_score_3ss[size]["nb_bp_list"].append(mod.nb_bp)
+                    # dict_score_3ss[size]["bp_score_list"].append(mod.bp_score)
+                    # dict_score_3ss[size]["ppt_score_list"].append(mod.ppt_score)
+                    # dict_score_3ss[size]["nb_bp_list"].append(mod.nb_bp)
                     dict_score_3ss[size]["nb_good_bp_list"].append(mod.nb_good_bp)
                     web_logo_creator(mod.bp_seq, "%s_%s_exons_%s_nt" % (name_file[i], regulation, size), output)
-                    dict_score_3ss[size]["ag_count"].append(mod.ag_count)
+                    # dict_score_3ss[size]["ag_count"].append(mod.ag_count)
                     dict_score_3ss[size]["hbound"].append(mod.hbound)
-                    dict_score_3ss[size]["uaa_count"].append(mod.uaa_count)
+                    # dict_score_3ss[size]["uaa_count"].append(mod.uaa_count)
                     dict_score_3ss[size]["una_count"].append(mod.una_count)
-                list_force_acceptor.append(get_control_exon_information(cnx_sed, exon_type, "force_acceptor"))
-                list_force_donor.append(get_control_exon_information(cnx_sed, exon_type, "force_donor"))
+                # list_force_acceptor.append(get_control_exon_information(cnx_sed, exon_type, "force_acceptor"))
+                # list_force_donor.append(get_control_exon_information(cnx_sed, exon_type, "force_donor"))
 
         for size in dict_score_3ss.keys():
             print("------------> %s nt " % size)
-            create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
-                           "prop_nb_branch_point_(%snt)" % size, type_analysis)
-            create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            # create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
+            #                "prop_nb_branch_point_(%snt)" % size, type_analysis)
+            create_figure(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis, "box")
+            # write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            #                          "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
                                      "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
-                           "AG_count_downstream_bp(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
-                                     "AG_count_downstream_bp(%snt)" % size, type_analysis)
+            # create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
+            #                "AG_count_downstream_bp(%snt)" % size, type_analysis)
+            # write_proportion_pvalues(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
+            #                          "AG_count_downstream_bp(%snt)" % size, type_analysis)
 
-            create_barplot(dict_score_3ss[size]["uaa_count"], name_file, output, regulation,
-                           "UAA_count(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["uaa_count"], name_file, output, regulation,
-                                     "UAA_count(%snt)" % size, type_analysis)
-            create_barplot(dict_score_3ss[size]["una_count"], name_file, output, regulation,
+            # create_barplot(dict_score_3ss[size]["uaa_count"], name_file, output, regulation,
+            #                "UAA_count(%snt)" % size, type_analysis)
+            # write_proportion_pvalues(dict_score_3ss[size]["uaa_count"], name_file, output, regulation,
+            #                          "UAA_count(%snt)" % size, type_analysis)
+            create_figure(dict_score_3ss[size]["una_count"], name_file, output, regulation,
+                           "UNA_count(%snt)" % size, type_analysis, "box")
+            dataframe_creator(dict_score_3ss[size]["una_count"], name_file, output, regulation,
                            "UNA_count(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["una_count"], name_file, output, regulation,
-                                     "UNA_count(%snt)" % size, type_analysis)
+            # write_proportion_pvalues(dict_score_3ss[size]["una_count"], name_file, output, regulation,
+            #                          "UNA_count(%snt)" % size, type_analysis)
             create_figure(dict_score_3ss[size]["hbound"], name_file, output, regulation,
+                          "nb_h_bound_%s_nt" % size, type_analysis, "violin")
+            dataframe_creator(dict_score_3ss[size]["hbound"], name_file, output, regulation,
                           "nb_h_bound_%s_nt" % size, type_analysis)
-            create_barplot_with_error_bar(dict_score_3ss[size]["hbound"], name_file, output,
-                                          regulation, "nb_h_bound_%s_nt" % size,
-                                          type_analysis)
-        create_figure(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
-        create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation,
-                                      "force_acceptor", type_analysis)
-        create_figure(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
-        create_barplot_with_error_bar(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
+            # create_barplot_with_error_bar(dict_score_3ss[size]["hbound"], name_file, output,
+            #                               regulation, "nb_h_bound_%s_nt" % size,
+            #                               type_analysis)
+        # create_figure(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
+        # create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation,
+        #                               "force_acceptor", type_analysis)
+        # create_figure(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
+        # create_barplot_with_error_bar(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
 
 
 if __name__ == "__main__":

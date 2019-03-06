@@ -12,9 +12,12 @@ import os
 import sqlite3
 import exon_class
 import function
+import sys
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)).replace("/make_control_files_bp_ppt", ""))
+import union_dataset_function
 
 
-def get_control_exon_information(cnx, exon_type):
+def get_control_exon_information(cnx, exon_type, exon2remove):
     """
     Get the gene symbol, the gene id and the position of every ``exon_type`` exons in fasterDB.
 
@@ -38,9 +41,9 @@ def get_control_exon_information(cnx, exon_type):
     cursor.execute(query)
     result = cursor.fetchall()
     # turn tuple into list
-    nresult = []
-    for exon in result:
-        nresult.append(list(exon))
+    print("number of control exon before removing bad ones : %s" % len(result))
+    nresult = [list(exon) for exon in result if [exon[1], exon[2]] not in exon2remove]
+    print("number of control exon after removing bad ones : %s" % len(nresult))
     return nresult
 
 
@@ -52,14 +55,17 @@ def control_dictionaries_creator():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fasterdb = os.path.dirname(os.path.realpath(__file__)).replace("src/make_control_files_bp_ppt",
                                                                    "data/fasterDB_lite.db")
+    seddb = os.path.dirname(os.path.realpath(__file__)).replace("src/make_control_files_bp_ppt", "data/sed.db")
     ctrl_dir = dir_path + "/control_dictionaries/"
     cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+    exon2remove = union_dataset_function.get_exon_regulated_by_sf(cnx_sed, "down")
     if not os.path.isdir(ctrl_dir):
         os.mkdir(ctrl_dir)
     exon_type = ["CCE"]
     sizes = [100, 50, 35, 25]
     for cur_exon_type in exon_type:
-        ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type)
+        ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type, exon2remove)
         print("retrieving upstream intron sequence")
         list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
         for size in sizes:

@@ -5,6 +5,7 @@
 from rpy2.robjects import r, pandas2ri
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
+import figS3C_stat
 
 pandas2ri.activate()
 
@@ -68,6 +69,38 @@ def nb_glm_stats(dataframe, filename):
     function(data, name){
         factors <- levels(as.factor(as.vector(data$project)))
         mlm <- glm.nb(values ~ project, data=data)
+        simulationOutput <- simulateResiduals(fittedModel = mlm, n = 250)
+        png(paste(name, "_dignostics.png", sep=""), height=1080, width=1920)
+        par(mfrow=c(2, 2))
+        plot(simulationOutput)
+        dev.off()
+
+        return(as.data.frame(summary(mlm)$coefficients))
+    }
+               """)
+    name = filename.split(".")[0]
+    df_stats = pandas2ri.ri2py(stat_s(r_df, name))
+    df_stats["project"] = [val.replace("project", "") for val in df_stats.index.values]
+    print(df_stats)
+    df_stats = df_stats[df_stats["project"] != "(Intercept)"]  # removing the intercept line
+    # df_stats = df_stats[["project", "Pr(>|z|)"]]
+    return df_stats
+
+
+def poisson_glm_stats(dataframe, filename):
+    """
+    Perform a glm nb test on ``list_values1`` and ``list_values2``.
+
+    :param dataframe: (pandas DataFrame) a dataframe
+    :param filename: (string)  list of float
+    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
+    """
+    r_df = pandas2ri.py2ri(dataframe)
+    stat_s = r("""
+    require("DHARMa")
+    function(data, name){
+        factors <- levels(as.factor(as.vector(data$project)))
+        mlm <- glm(values ~ project, data=data, family="poisson")
         simulationOutput <- simulateResiduals(fittedModel = mlm, n = 250)
         png(paste(name, "_dignostics.png", sep=""), height=1080, width=1920)
         par(mfrow=c(2, 2))

@@ -4,7 +4,54 @@
 
 import numpy as np
 from rpy2.robjects import r, pandas2ri
+import rpy2.robjects as robj
+from rpy2.robjects.packages import importr
+import rpy2.robjects.vectors as v
+import pandas as pd
 pandas2ri.activate()
+
+
+def mann_withney_test_r(list_values1, list_values2):
+    """
+    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
+
+    :param list_values1: (list of float)  list of float
+    :param list_values2: (list of float)  list of float
+    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
+    """
+    wicox = robj.r("""
+
+    function(x, y){
+        test = wilcox.test(x,y, alternative='two.sided', correct=F)
+        return(test$p.value)
+    }
+
+                   """)
+    pval = float(wicox(v.FloatVector(list_values1), v.FloatVector(list_values2))[0])
+    return pval
+
+
+def perform_mann_withney_test(dataframe, sf_name, exon_type):
+    """
+    From a dataframe of value perform a Mann Withney Wilcoxon test.
+
+    :param dataframe: (pandas DataFrame)
+    :param sf_name: (string)
+    :param exon_type: (string)
+    :return: (pandas dataFrame)
+    """
+    rstats = importr('stats')
+    list_ctrl = np.array(dataframe[dataframe["project"] == exon_type].loc[:, "values"].values, dtype=float)
+    list_ctrl = list(list_ctrl[~np.isnan(list_ctrl)])
+    pval_list = []
+    for my_sf in sf_name:
+        test_list = np.array(dataframe[dataframe["project"] == my_sf].loc[:, "values"].values, dtype=float)
+        test_list = list(test_list[~np.isnan(test_list)])
+        pval_list.append(mann_withney_test_r(test_list, list_ctrl))
+    pcor = rstats.p_adjust(v.FloatVector(pval_list), method="BH")
+    df = pd.DataFrame({"SF": sf_name, "pval_MW": pval_list, "p_adj": pcor})
+    return df[["SF", "pval_MW", "p_adj"]]
+
 
 def handle_dataframe_statistics(dataframe, filename):
     """
@@ -18,12 +65,18 @@ def handle_dataframe_statistics(dataframe, filename):
     val = [n for n in features if "S_nt" in n]
     val2 = [n for n in features if "nt" in n]
     adj = [n for n in features if "adjacent1" in n]
-    if len(features) == 2 and len(val) == 1:
+    intron = [n for n in features if "intron" in n]
+    if len(features) == 2 and len(val) == 1 and len(intron) == 0:
         dataframe = dataframe[dataframe["features"].str.contains("S_nt")]
         dataframe = S_nt_stats(dataframe, filename)
         dataframe["project"] = [val.replace("project", "") for val in dataframe.index.values]
         dataframe = dataframe[dataframe["project"] != "(Intercept)"] # removing the intercept line
         dataframe = dataframe[["project", "Pr(>|t|)"]]
+    if len(features) == 2 and len(val) == 1 and len(intron) > 1:
+        dataframe = dataframe[dataframe["features"].str.contains("S_nt")]
+        exon_type =  [et for et in np.unique(dataframe["project"].values) if et in ["ACE", "CCE", "ALL"]][0]
+        sf_name =  [et for et in np.unique(dataframe["project"].values) if et != exon_type]
+        dataframe = perform_mann_withney_test(dataframe, sf_name, exon_type)
     if len(features) == 4 and len(val2) == 4 and len(adj) == 4:
         cor_feature = {f: f.split("_")[0] for f in features}
         dataframe["features"] = dataframe["features"].map(cor_feature)

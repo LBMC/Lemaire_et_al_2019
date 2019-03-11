@@ -100,7 +100,7 @@ def value_adapter(sub_dic):
         pos_reg = list_reg[0]
         neg_reg = list_reg[1]
     for key in sub_dic.keys():
-        list_values.append(math.log10(sub_dic[key][0] + 0.00001) * dic_reg[sub_dic[key][1]])
+        list_values.append(math.log10(sub_dic[key][0]) * dic_reg[sub_dic[key][1]])
         list_factor_name.append(key.split('-')[4])
     return list_values, list_factor_name, pos_reg, neg_reg
 
@@ -138,12 +138,15 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
     color = []
     for name in name_list:
         color.append(group_factor.color_dic[name])
-    data = [go.Bar(
+    data = [go.Scatter(
         x=name_list,
         y=value_list,
+        mode="markers",
         marker=dict(color=color,
-                    line=dict(color=color,
-                              width=2)))]
+                    line=dict(color="black",
+                              width=2),
+                    symbol="circle",
+                    size=30) )]
 
     title = """log10 pvalue of the frequency comparison test showing if %s and %s exons (%s set) 
                 are more often regulated by spliceosome factors (%s set)<br>Negative bar: %s exons 

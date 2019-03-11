@@ -35,7 +35,7 @@ def control_dictionaries_creator():
     print("retrieving upstream intron sequence")
     list_exon = [exon_class_mfe.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
     print("calculating mfe")
-    mfe_list_3ss,  mfe_list_5ss= function_mfe.mfe_calculator(list_exon)
+    mfe_list_3ss, mfe_list_5ss = function_mfe.mfe_calculator(list_exon)
     cur_file = open(ctrl_dir + exon_type + "_mfe.py", "w")
     cur_file.write("mfe_3ss=" + str(mfe_list_3ss) + "\n")
     cur_file.write("mfe_5ss=" + str(mfe_list_5ss) + "\n")

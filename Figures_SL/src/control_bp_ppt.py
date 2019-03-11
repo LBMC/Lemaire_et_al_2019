@@ -74,7 +74,8 @@ def control_dictionaries_creator():
         print("retrieving upstream intron sequence")
         list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
         print("calculating bp and ppt score")
-        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, sequence_list, ag_count_list, hbound_list = function.bp_ppt_calculator(list_exon, size)
+        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, \
+            sequence_list, ag_count_list, hbound_list = function.bp_ppt_calculator(list_exon, size)
         cur_file = open(ctrl_dir + exon_type + "_" + str(size) + "_bp_ppt_score.py", "w")
         cur_file.write("bp_score=" + str(bp_score_list) + "\n")
         cur_file.write("ppt_score=" + str(ppt_score_list) + "\n")

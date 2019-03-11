@@ -70,7 +70,7 @@ class ExonClass(ExonClassMain):
         if self.start - 25 >= 0 and self.start + 25 < len(self.gene.sequence):
             self.seq_3ss = self.gene.sequence[self.start - 25: self.start + 25]
         if self.stop - 25 >= 0 and self.stop + 25 < len(self.gene.sequence):
-            self.seq_5ss = self.gene.sequence[self.stop -25: self.stop + 25]
+            self.seq_5ss = self.gene.sequence[self.stop - 25: self.stop + 25]
         # once the exon is fully created we delete the gene sequence for memory efficiency
         printd("3' ss sequence")
         printd(self.seq_3ss)
@@ -150,4 +150,3 @@ def full_defined(sequence):
     if seq_defined / len(sequence) >= 0.95:
         return True
     return False
-

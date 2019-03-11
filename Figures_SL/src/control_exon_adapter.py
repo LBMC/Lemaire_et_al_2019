@@ -17,6 +17,7 @@ def get_control_exon_size_information(cnx, exon_type, exon2remove):
 
     :param cnx: (sqlite3 object) allow connection to sed database
     :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (lists of list of 2 int) list of exons to remove.
     :return:
         * result: (list of tuple) every information about control exons
         * names: (list of string) the name of every column in sed table
@@ -33,7 +34,7 @@ def get_control_exon_size_information(cnx, exon_type, exon2remove):
                    FROM sed
                 """
     cursor.execute(query)
-    names = [description[0] for description in cursor.description]
+    #  names = [description[0] for description in cursor.description]
     result = cursor.fetchall()
     # turn tuple into list
     print("in function get_control_exon_size_information, CCE exon before removing bad ones : %s" % len(result))

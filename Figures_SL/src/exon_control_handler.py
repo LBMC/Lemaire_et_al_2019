@@ -152,7 +152,8 @@ def get_summary_dictionaries(names, exons_dictionary):
             if "iupac" in key:
                 nt_dnt_list = ["A", "C", "G", "T", "S", "W", "R", "Y", "K", "M"]
             else:
-                nt_dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT", "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
+                nt_dnt_list = ["AA", "AC", "AG", "AT", "CA", "CC", "CG", "CT",
+                               "GA", "GC", "GG", "GT", "TA", "TC", "TG", "TT"]
             for nt in nt_dnt_list:
                 if exons_dictionary[key][nt]:
                     cur_list = np.array(exons_dictionary[key][nt], dtype=float)
@@ -173,6 +174,8 @@ def write_control_file(exon_type, control_file, str2write, name=True):
     :param exon_type: (string) the type of control exon we want to use
     :param control_file: (string) the file were we want to write the control data results
     :param str2write:  (string) the result we want to write in the file
+    :param name: (boolean) True to write "``exon_type``_dic = ``str2write``" in `` control_file`` \
+    false to write only ``str2write``
     """
     with open(control_file, "a") as ctrl_file:
         if name:

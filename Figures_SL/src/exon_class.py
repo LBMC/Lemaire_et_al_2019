@@ -9,20 +9,15 @@ Description:
 """
 
 
-import math
-import numpy as np
-
-
 class ExonClassMain:
     """
     A class corresponding to an exon. This class allows to \
     extract easily information about an exons.
     """
-    def __init__(self, cnx, gene_name, gene_id, exon_position):
+    def __init__(self, gene_name, gene_id, exon_position):
         """
         Initiate the creation of an exon
 
-        :param cnx: (sqlite3 object) connection to fasterDB Lite
         :param gene_name: (string) official symbol for an exons
         :param gene_id: (int) the id of a gene
         :param exon_position:  (int) the position of the exon on the gene
@@ -45,7 +40,7 @@ class ExonClass(ExonClassMain):
         :param exon_position:  (int) the position of the exon on the gen
         """
         printd("Exon " + str(gene_name) + "_" + str(exon_position))
-        ExonClassMain.__init__(self, cnx, gene_name, gene_id, exon_position)
+        ExonClassMain.__init__(self, gene_name, gene_id, exon_position)
         self.gene.gene_filler(cnx)
         self.upstream_intron = Intron(cnx, gene_id, self.position - 1, "upstream", self.gene.sequence)
         # once the exon is fully created we delete the gene sequence for memory efficiency
@@ -183,4 +178,3 @@ def full_defined(sequence):
     if seq_defined / len(sequence) >= 0.95:
         return True
     return False
-

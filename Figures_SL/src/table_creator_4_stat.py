@@ -48,6 +48,7 @@ def get_ase_events(cnx, id_project, regulation):
             res = cursor.fetchall()
     return res
 
+
 def get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
     """
     Get the individual values of nt ``nt`` in ``target_column`` of every exon in ``exon_list``.
@@ -88,6 +89,7 @@ def get_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt_dnt):
                     res.append(None)
                 redundancy_gene_dic[exon[0]] = 1
     return res
+
 
 def get_list_of_value(cnx, exon_list, target_column):
     """
@@ -134,15 +136,14 @@ def get_values_for_many_projects_iupac_dnt(cnx, id_projects_sf_names, target_col
     :param cnx: (sqlite3 connection object) connexion to sed database
     :param id_projects_sf_names: (list of str or  int) list project id if union is none. List of sf_name \
     else
-    :param target_column: (string) the column for which we want to get information on exons.
+    :param target_columns: (list of string) the list of target columns of interest
     :param regulation: (string) up or down
-    :param nt_dnt: (string) a nucleotide or a di-nucleotide
-    :param union: (None or string) None if we want to work project by project, anything else to work \
-    with exons regulation by a particular splicing factor.
+    :param ctrl_full: (dictionary of list of float) the list of float for every exons for each features of interest.
+    :param exon_type: (string)  the control exon type used
     :return: (list of list of float) each sublist of float corresponds to the values of ``target_column`` \
     for every regulated exon in a given project.
     """
-    print(target_columns)
+    my_len = None
     results = {target_column: [] for target_column in target_columns}
     results["project"] = []
     for sf_name in id_projects_sf_names:
@@ -183,7 +184,6 @@ def get_values_for_many_projects_iupac_dnt(cnx, id_projects_sf_names, target_col
     return df
 
 
-
 def main(target_columns, nt_list, output_folder, seddb, exon_type, size_bp_up_seq, regulation, name_tab):
     if seddb is None:
         seddb = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/sed.db")
@@ -192,7 +192,7 @@ def main(target_columns, nt_list, output_folder, seddb, exon_type, size_bp_up_se
     sf_names = group_factor.get_wanted_sf_name(cnx)
     target_columns_new = [target_columns[i].replace("iupac", "%s_nt" % nt_list[i]) for i in range(len(target_columns))]
     df = get_values_for_many_projects_iupac_dnt(cnx, sf_names, target_columns_new, regulation, ctrl_full,
-                                           exon_type)
+                                                exon_type)
     if output_folder:
         df.to_csv("%s/%s" % (output_folder, name_tab), sep="\t", index=False)
     return df
@@ -211,17 +211,20 @@ def launcher():
     # Arguments for the parser
     required_args = parser.add_argument_group("required argument")
 
-
     required_args.add_argument('--columns', dest='columns',
                                help="The columns (in sed database) you want to analyze, they must be coma separated",
                                required=True)
     required_args.add_argument('--nt_list', dest='nt_list',
-                               help="The list of nucleotide you want to analyse, the length of the list must be equal to the length of columns argument. nt must be coma separated",
+                               help="The list of nucleotide you want to analyse, "
+                                    "the length of the list must be equal to the length of columns argument. "
+                                    "nt must be coma separated",
                                required=True)
 
     parser.add_argument("--output", dest="output", help="folder_were_ the result will be created", default=".")
     parser.add_argument("--exon_type", dest="exon_type", help="The type of control exons", default="CCE")
-    parser.add_argument("--size", dest="size", help="The size of upstream exon selected to find some features such as nb_branch_point", default=100)
+    parser.add_argument("--size", dest="size",
+                        help="The size of upstream exon selected to find some features such as nb_branch_point",
+                        default=100)
     parser.add_argument("--regulation", dest="regulation",
                         help="The regulation wanted (up or down)",
                         default="down")
@@ -231,7 +234,6 @@ def launcher():
     required_args.add_argument("--seddb", dest="seddb", help="file corresponding to sed database", required=True)
 
     args = parser.parse_args()  # parsing arguments
-
 
     args.columns = args.columns.split(",")
     args.nt_list = args.nt_list.split(",")
@@ -243,7 +245,7 @@ def launcher():
         parser.error("ERROR: argument exon_type must equals to CCE, ACE or ALL")
     try:
         args.size = int(args.size)
-        if args.size not in [25, 50 ,35, 100]:
+        if args.size not in [25, 50, 35, 100]:
             parser.error("ERROR : the size must be equals to 25, 50, 35 or 100")
     except ValueError:
         parser.error("ERROR : the size must be an integer in 25, 50, 35 or 100")
@@ -251,7 +253,9 @@ def launcher():
     if args.regulation not in ["down", "up"]:
         parser.error("ERROR : wrong argument regulation : it must be up or down")
 
-    main(args.columns, args.nt_list, args.output, args.seddb, args.exon_type, args.size, args.regulation, args.name)  # executing the program
+    main(args.columns, args.nt_list, args.output,
+         args.seddb, args.exon_type, args.size,
+         args.regulation, args.name)  # executing the program
 
 
 if __name__ == "__main__":

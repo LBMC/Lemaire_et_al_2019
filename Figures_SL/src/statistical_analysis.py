@@ -5,7 +5,6 @@
 from rpy2.robjects import r, pandas2ri
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
-import figS3C_stat
 
 pandas2ri.activate()
 

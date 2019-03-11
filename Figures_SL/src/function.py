@@ -21,6 +21,7 @@ output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_f
 sequence_u2 = "GTGTAGTA"
 bound = {"A": 2, "T": 2, "G": 3, "C": 3}
 
+
 def fasta_writer(exon, output_folder, size):
     """
     Write a file named input.fa in the directory ``output``
@@ -186,7 +187,8 @@ def bp_ppt_calculator(exon_list, size=100):
         sys.stdout.write("%s / %s      \r" % (count, exon_len))
         if exon.upstream_intron.sequence_proxi is not None:
             input_file = fasta_writer(exon, output, size)
-            bp_score, ppt_score, nb_bp, nb_good_bp, sequence, ag_count, hbound = svm_bp_finder_launcher(svm_launcher, input_file, exon, size)
+            bp_score, ppt_score, nb_bp, nb_good_bp, sequence, \
+                ag_count, hbound = svm_bp_finder_launcher(svm_launcher, input_file, exon, size)
             if bp_score is not None:
                 bp_score_list.append(bp_score)
             if ppt_score is not None:

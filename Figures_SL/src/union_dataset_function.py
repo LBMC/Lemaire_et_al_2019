@@ -5,6 +5,7 @@
 import group_factor
 import numpy as np
 
+
 def get_gene_name(cnx, gene_id):
     """
     Give the gene name thanks to a sedDB gene id.
@@ -145,7 +146,6 @@ def get_every_events_4_a_sl(cnx, sf_name, regulation):
         if exon[0] == regulation:
             reg_exon_list.append(exon[1:])
     return reg_exon_list
-
 
 
 def get_events_4_a_sl(cnx, sf_name, regulation):

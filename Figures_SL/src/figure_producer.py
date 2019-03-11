@@ -34,7 +34,8 @@ nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5, "R": 6, "Y": 7}
 dnt_dic = {"AA": 0, "AC": 1, "AG": 2, "AT": 3, "CA": 4, "CC": 5,
            "CG": 6, "CT": 7, "GA": 8, "GC": 9, "GG": 10, "GT": 11,
            "TA": 12, "TC": 13, "TG": 14, "TT": 15}
-log_columns = ["nb_intron_gene", "downstream_intron_size", "upstream_intron_size", "median_flanking_intron_size", "min_flanking_intron_size"]
+log_columns = ["nb_intron_gene", "downstream_intron_size", "upstream_intron_size",
+               "median_flanking_intron_size", "min_flanking_intron_size"]
 exon_class.set_debug(0)
 exon_class_mfe.set_debug(0)
 size_bp_up_seq = 100
@@ -253,7 +254,8 @@ def handle_nb_bp_recovering(cnx, exon_list, output, sf_name, regulation, target)
     output_file = "%s%s_%s_%s_nt.py" % (output, sf_name, regulation, size_bp_up_seq)
     if not os.path.isfile(output_file):
         new_exon_list = [exon_class.ExonClass(cnx, str(exon[0]), int(exon[0]), int(exon[1])) for exon in exon_list]
-        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, sequence_list, ag_count_list, hbound_list = function.bp_ppt_calculator(new_exon_list, size_bp_up_seq)
+        bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, \
+            sequence_list, ag_count_list, hbound_list = function.bp_ppt_calculator(new_exon_list, size_bp_up_seq)
         with open(output_file, "w") as bp_file:
             bp_file.write("bp_score=%s\n" % str(bp_score_list))
             bp_file.write("ppt_score=%s\n" % str(ppt_score_list))
@@ -305,7 +307,8 @@ def handle_mfe_recovering(cnx, exon_list, output, sf_name, regulation, target):
         return mfe_5ss
 
 
-def get_values_for_many_projects(cnx, cnx_fasterdb, id_projects_sf_names, target_column, regulation, output_bp_file, union):
+def get_values_for_many_projects(cnx, cnx_fasterdb, id_projects_sf_names, target_column,
+                                 regulation, output_bp_file, union):
     """
     Return the value of ``target_column`` for each ``regulation`` exons for projects in ``id_projects``.
 
@@ -327,14 +330,16 @@ def get_values_for_many_projects(cnx, cnx_fasterdb, id_projects_sf_names, target
             exon_list = get_ase_events(cnx, id_project, regulation)
             if target_column == "median_flanking_intron_size":
                 values1 = np.array(get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),dtype=float)
+                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
                 values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
                 results.append(values)
             elif target_column in ["nb_good_bp", "hbound", "ag_count"]:
-                results.append(handle_nb_bp_recovering(cnx_fasterdb, exon_list, output_bp_file, str(id_project), regulation,
+                results.append(handle_nb_bp_recovering(cnx_fasterdb, exon_list,
+                                                       output_bp_file, str(id_project), regulation,
                                                        target_column))
             elif "mfe" in target_column:
-                results.append(handle_mfe_recovering(cnx_fasterdb, exon_list, output_bp_file, str(id_project), regulation, target_column))
+                results.append(handle_mfe_recovering(cnx_fasterdb, exon_list, output_bp_file,
+                                                     str(id_project), regulation, target_column))
             else:
                 results.append(get_list_of_value(cnx, exon_list, target_column))
 
@@ -343,7 +348,7 @@ def get_values_for_many_projects(cnx, cnx_fasterdb, id_projects_sf_names, target
             exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
             if target_column == "median_flanking_intron_size":
                 values1 = np.array(get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"), dtype=float)
-                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),dtype=float)
+                values2 = np.array(get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"), dtype=float)
                 values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
                 results.append(values)
             elif target_column == "min_flanking_intron_size":
@@ -353,9 +358,11 @@ def get_values_for_many_projects(cnx, cnx_fasterdb, id_projects_sf_names, target
                 values = np.array([np.nanmin([values1[i], values2[i]]) for i in range(len(values1))])
                 results.append(values)
             elif target_column in ["nb_good_bp", "hbound", "ag_count"]:
-                results.append(handle_nb_bp_recovering(cnx_fasterdb, exon_list, output_bp_file, sf_name, regulation, target_column))
+                results.append(handle_nb_bp_recovering(cnx_fasterdb, exon_list, output_bp_file, sf_name,
+                                                       regulation, target_column))
             elif "mfe" in target_column:
-                results.append(handle_mfe_recovering(cnx_fasterdb, exon_list, output_bp_file, sf_name, regulation, target_column))
+                results.append(handle_mfe_recovering(cnx_fasterdb, exon_list, output_bp_file, sf_name,
+                                                     regulation, target_column))
             else:
                 results.append(get_list_of_value(cnx, exon_list, target_column))
     return results
@@ -398,7 +405,8 @@ def create_statistical_report(list_values, list_name, ctrl_full, filename, nt):
     :param list_values: (list of list of floats) the list of value that we want to compare to a control list
     :param list_name: (list of string) the name of each sublist of float in ``list_values``
     :param ctrl_full: (list of float) the control list of values
-    :param output: (string) the file where the report will be created
+    :param filename: (string) the name of the figure associated with those stat
+    :param nt: (string) the nucleotide studied
     """
     if not nt:
         cur_ctrl = np.array(ctrl_full, dtype=float)
@@ -426,6 +434,8 @@ def handle_dataframe_statistics(dataframe, filename, feature, list_name):
 
     :param dataframe: (pandas DataFrame) a dataframe
     :param filename: (string) the name of the output file
+    :param feature: (string) the feature of interest
+    :param list_name: (list of string) the name of the factors
     :return: (pandas DataFrame) the statistical analyzes
     """
     stat = None
@@ -479,6 +489,7 @@ def make_statistical_analysis(list_values, list_name, ctrl_dic, feature, nt, fil
     :param ctrl_dic: (dictionary of list of float) dictionary  of control values
     :param feature: (string) the feature of interest
     :param nt: (string) the nucleotide of interest
+    :param filename: (string) the name of the figure associated with those stat
     """
     d = create_dataframe(list_values, list_name, ctrl_dic, feature, nt)
     d.to_csv(filename.replace(".html", "_tab.csv"), sep="\t", index=False)
@@ -488,8 +499,8 @@ def make_statistical_analysis(list_values, list_name, ctrl_dic, feature, nt, fil
         create_statistical_report(list_values, list_name, ctrl_dic[feature], filename, nt)
 
 
-
-def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, regulation, output, ctrl_dic, output_bp_file, ctrl_full, union=None):
+def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, regulation, output, ctrl_dic,
+                  output_bp_file, ctrl_full, union=None):
     """
     Create a figure for every column in sed database whose name does not contain "iupac".
 
@@ -508,9 +519,11 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     """
     filename = "%s%s_%s_exons_figure.html" % (output, target_column, regulation)
     if not union:
-        result = get_values_for_many_projects(cnx, cnx_fasterdb, id_projects, target_column, regulation, output_bp_file, union)
+        result = get_values_for_many_projects(cnx, cnx_fasterdb, id_projects, target_column,
+                                              regulation, output_bp_file, union)
     else:
-        result = get_values_for_many_projects(cnx, cnx_fasterdb, name_projects, target_column, regulation, output_bp_file, union)
+        result = get_values_for_many_projects(cnx, cnx_fasterdb, name_projects, target_column,
+                                              regulation, output_bp_file, union)
     d = {name_projects[i]: result[i] for i in range(len(result))}
     e = sorted(d.items(), key=lambda x: np.median(x[1]), reverse=True)
     new_name = [x[0] for x in e]
@@ -527,13 +540,13 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     my_ctrl = list(my_ctrl[~np.isnan(my_ctrl)])
     new_result_tmp += [my_ctrl]
     if not log:
-        new_result = [(np.array(val) - ctrl_dic[target_column]) / ctrl_dic[target_column] * 100 for val in new_result_tmp]
+        new_result = [(np.array(val) - ctrl_dic[target_column]) / ctrl_dic[target_column] * 100
+                      for val in new_result_tmp]
     else:
         new_result = [list(map(math.log10, x)) for x in new_result_tmp]
         print("min : %s" % min(np.hstack(new_result)))
         print("max : %s" % max(np.hstack(new_result)))
     title = '%s of %s exons for every projects' % (target_column, regulation)
-
 
     cb = ['hsl(' + str(h) + ',50%' + ',60%)' for h in np.linspace(0, 360, len(new_result))]
     cv = ['hsl(' + str(h) + ',50%' + ',80%)' for h in np.linspace(0, 360, len(new_result))]
@@ -541,7 +554,7 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
     for i in range(len(new_result)):
         data.append({"y": new_result[i], "type": "violin",
                      "name": new_name[i], "visible": True, "fillcolor": cv[i], "opacity": 1, "line": {"color": "black"},
-                     "box": {"visible": True, "fillcolor" : cb[i]}, "meanline": {"visible": False}})
+                     "box": {"visible": True, "fillcolor": cb[i]}, "meanline": {"visible": False}})
     layout = go.Layout(
         title=title,
         yaxis=dict(
@@ -574,18 +587,19 @@ def create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, 
         ctrl_median = np.median(list(map(math.log10, my_ctrl[~np.isnan(my_ctrl)])))
         fig.update(dict(layout=dict(yaxis=dict(title="log10 %s" % target_column, zerolinecolor='rgb(200, 200, 200)'),
                                     shapes=[dict(type="line", x0=0, y0=ctrl_median, layer="below",
-                                                 x1=len(new_result), y1=ctrl_median, line=dict(width=2,
-                                                                                            color='rgb(200, 0, 0)')),
+                                                 x1=len(new_result),
+                                                 y1=ctrl_median, line=dict(width=2,
+                                                                           color='rgb(200, 0, 0)')),
                                             # dict(type="line", x0=0, y0=ctrl_mean, layer="below",
                                             #      x1=len(new_result), y1=ctrl_mean, line=dict(width=2,
-                                            #                                                    color='rgb(0, 0, 200)'))
+                                            #      color='rgb(0, 0, 200)'))
                                             ])))
     plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
 
 
-
-def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, nt_dnt, ctrl_dic, ctrl_full, union=None):
+def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation,
+                            output, nt_dnt, ctrl_dic, ctrl_full, union=None):
     """
     Create a figure for every column in sed database whose name contains "iupac".
 
@@ -620,16 +634,17 @@ def create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regu
     my_ctrl = np.array(ctrl_full[target_column][nt_dnt], dtype=float)
     my_ctrl = list(my_ctrl[~np.isnan(my_ctrl)])
     new_result_tmp += [my_ctrl]
-    #mean_val = np.nanmean(ctrl_full[target_column][nt_dnt])
-    #new_result = [(np.array(val) - mean_val) / mean_val * 100 for val in new_result]
-    new_result = [(np.array(val) - ctrl_dic[target_column][nt_dnt]) / ctrl_dic[target_column][nt_dnt] * 100 for val in new_result_tmp]
+    # mean_val = np.nanmean(ctrl_full[target_column][nt_dnt])
+    # new_result = [(np.array(val) - mean_val) / mean_val * 100 for val in new_result]
+    new_result = [(np.array(val) - ctrl_dic[target_column][nt_dnt]) / ctrl_dic[target_column][nt_dnt] * 100
+                  for val in new_result_tmp]
     cb = ['hsl(' + str(h) + ',50%' + ',60%)' for h in np.linspace(0, 360, len(new_result))]
     cv = ['hsl(' + str(h) + ',50%' + ',80%)' for h in np.linspace(0, 360, len(new_result))]
     data = []
     for i in range(len(new_result)):
         data.append({"y": new_result[i], "type": "violin",
                      "name": new_name[i], "visible": True, "fillcolor": cv[i], "opacity": 1, "line": {"color": "black"},
-                     "box": {"visible": True, "fillcolor" : cb[i]}, "meanline": {"visible": False}})
+                     "box": {"visible": True, "fillcolor": cb[i]}, "meanline": {"visible": False}})
     layout = go.Layout(
         title='%s of %s exons for every projects' % (target_column_new, regulation),
         yaxis=dict(
@@ -673,10 +688,12 @@ def main():
     regs = ["down"]
     cnx = connexion(seddb)
     cnx_fasterdb = connexion(fasterdb)
-    #columns = ["iupac_exon", "exon_size", "upstream_intron_size", "downstream_intron_size", "gene_size", "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1", "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss", "iupac_upstream_intron_ppt_area"]
-    #columns = ["force_donor", "force_acceptor", "upstream_intron_size", "downstream_intron_size","iupac_exon", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi", "min_flanking_intron_size"]
-    # columns = ["min_flanking_intron_size", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi", "downstream_intron_size", "upstream_intron_size", "force_donor", "force_acceptor", "iupac_exon"]
-    columns = ["upstream_intron_size", "downstream_intron_size"]
+    # columns = ["iupac_exon", "exon_size", "upstream_intron_size", "downstream_intron_size", "gene_size",
+    # "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1",
+    # "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss",
+    # "iupac_upstream_intron_ppt_area"]
+    columns = ["min_flanking_intron_size", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi",
+               "force_donor", "force_acceptor", "iupac_exon"]
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, size_bp_up_seq)
     if len(sys.argv) < 2:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_new/"
@@ -693,12 +710,15 @@ def main():
                 print("   %s" % target_column)
                 if "iupac" in target_column:
                     for nt in nt_dic.keys():
-                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, nt, ctrl_dic, ctrl_full)
+                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output,
+                                                nt, ctrl_dic, ctrl_full)
                 elif "dnt" in target_column:
                     for dnt in dnt_dic.keys():
-                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation, output, dnt, ctrl_dic, ctrl_full)
+                        create_figure_iupac_dnt(cnx, id_projects, name_projects, target_column, regulation,
+                                                output, dnt, ctrl_dic, ctrl_full)
                 else:
-                    create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, regulation, output, ctrl_dic, output_bp, ctrl_full)
+                    create_figure(cnx, cnx_fasterdb, id_projects, name_projects, target_column, regulation, output,
+                                  ctrl_dic, output_bp, ctrl_full)
     elif sys.argv[1] == "union":
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_union_new/"
         # If the output directory does not exist, then we create it !
@@ -714,18 +734,22 @@ def main():
                 print("   %s" % target_column)
                 if "iupac" in target_column:
                     for nt in nt_dic.keys():
-                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, nt, ctrl_dic, ctrl_full,
+                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, nt,
+                                                ctrl_dic, ctrl_full,
                                                 "union")
                 elif "dnt" in target_column:
                     for dnt in dnt_dic.keys():
-                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, dnt, ctrl_dic, ctrl_full,
+                        create_figure_iupac_dnt(cnx, None, name_projects, target_column, regulation, output, dnt,
+                                                ctrl_dic, ctrl_full,
                                                 "union")
                 else:
-                    create_figure(cnx, cnx_fasterdb, None, name_projects, target_column, regulation, output, ctrl_dic, output_bp, ctrl_full, "union")
+                    create_figure(cnx, cnx_fasterdb, None, name_projects, target_column, regulation, output, ctrl_dic,
+                                  output_bp, ctrl_full, "union")
     else:
         print("wrong arg !")
     cnx.close()
     cnx_fasterdb.close()
+
 
 if __name__ == "__main__":
     main()

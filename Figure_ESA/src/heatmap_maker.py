@@ -110,7 +110,6 @@ def create_columns_names(target_columns):
     return new_targets
 
 
-
 def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, operation, union=None,
                   sf_type=None):
     """
@@ -491,6 +490,7 @@ def heatmap_gc_sorted(data_array, df_stat, labelsx, labelsy, output, contrast, n
 
     :param data_array: (lif of list of float) the medians value for a project (line) for every characteristic of \
     interests (number of value in one line corresponding to a project).
+    :param df_stat: (pandas DataFrame) a dataframe that contains alwas 3 columns suited for R statistical analysis.
     :param labelsy: (list of strings) list of projects name
     :param labelsx: (list of strings) list of characteristics of interest
     :param output: (string)  path where the results will be created
@@ -573,9 +573,8 @@ def heatmap_gc_sorted(data_array, df_stat, labelsx, labelsy, output, contrast, n
                             auto_open=False)
         df_stat.to_csv(filename.replace(".html", "_prelim_tab.txt"), sep="\t", index=False)
         df_stat = heatmap_stats.handle_dataframe_statistics(df_stat, filename)
-        #df_stat = pd.merge(pd.DataFrame({"project": list(final_df.index)[::-1]}), df_stat)
+        #  df_stat = pd.merge(pd.DataFrame({"project": list(final_df.index)[::-1]}), df_stat)
         df_stat.to_csv(filename.replace(".html", "_stat.txt"), sep="\t", index=False)
-
 
 
 def make_global(my_list):

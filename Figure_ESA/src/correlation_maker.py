@@ -210,7 +210,8 @@ def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
     values1 = get_interest_values(cnx, exon_list, target_column1, nt1)
     values2 = get_interest_values(cnx, exon_list, target_column2, nt2)
     if len(exon_name) * 2 == len(values1):
-        exon_name = ["%s_upstream" % a for a in exon_name ] + ["%s_downstream" % a for a in exon_name ]
+        exon_name = ["%s_upstream" % a for a in exon_name] + \
+                    ["%s_downstream" % a for a in exon_name]
     return values1, values2, exon_name
 
 
@@ -332,6 +333,7 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
     :param output: (string) path where the results will be created
     :param name_fig: (string) the name of the figure
     :param representation: (string) relative or absolute
+    :param ctrl_dic: (dictionary of float) dictionary thta contains the median for each features of interest
     """
     nt1 = ""
     nt2 = ""
@@ -420,7 +422,7 @@ def figure_creator(values_xaxis, values_yaxis, projects_names, regulation, name_
     if representation == "absolute":
         fig.update(dict(layout=dict(shapes=[dict(type="line", x0=min(values_xaxis), y0=ymedian, layer="below",
                                                  x1=max(values_xaxis), y1=ymedian, line=dict(width=2,
-                                                                                               color='rgb(200, 0, 0)')),
+                                                                                             color='rgb(200, 0, 0)')),
                                             dict(type="line", x0=xmedian, y0=min(values_yaxis), layer="below",
                                                  x1=xmedian, y1=max(values_yaxis), line=dict(width=2,
                                                                                              color='rgb(200, 0, 0)'))
@@ -446,10 +448,6 @@ def get_relative_values(list_values, ctrl_dic, name_list, representation):
                 list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[target_column][nt])) /
                                 math.log10(ctrl_dic[target_column][nt]) * 100 for val in list_values]
             else:
-                # for i in range(len(exon_name)):
-                #     if exon_name[i] == "CDC25C_6_downstream":
-                #         print(exon_name[i], name_list)
-                #         print("float(%s - %s) / %s  * 100 " % (list_values[i], ctrl_dic[name_list], ctrl_dic[name_list]))
                 list_values2 = [float(math.log10(val) - math.log10(ctrl_dic[name_list])) /
                                 math.log10(ctrl_dic[name_list]) * 100 for val in list_values]
 
@@ -644,8 +642,10 @@ def density_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, nam
             title=y_title.replace("absolute", ""),
             showgrid=False),
         showlegend=True,
-        shapes=[dict(type='line', x0=0, y0=min(min(values_yaxis), 0), x1=0, y1=max(values_yaxis) * 1.4, line=dict(color="black")),
-                dict(type='line', x0=min(min(values_xaxis), 0), y0=0, x1=max(values_xaxis) * 1.4, y1=0, line=dict(color="black"))]
+        shapes=[dict(type='line', x0=0, y0=min(min(values_yaxis), 0),
+                     x1=0, y1=max(values_yaxis) * 1.4, line=dict(color="black")),
+                dict(type='line', x0=min(min(values_xaxis), 0), y0=0,
+                     x1=max(values_xaxis) * 1.4, y1=0, line=dict(color="black"))]
     )
     fig = go.Figure(data=data, layout=layout)
     plotly.offline.plot(fig, filename=figname, auto_open=False)
@@ -933,7 +933,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
         if not os.path.isdir(output):
             os.mkdir(output)
         gene_columns = ["median_intron_size", "iupac_gene", "gene_size"]
-        if xaxis in  gene_columns and yaxis in gene_columns:
+        if xaxis in gene_columns and yaxis in gene_columns:
             for i in range(len(couple_targets)):
                 if exon_class is None:
                     value_xaxis, value_yaxis, exon_name = get_gene_values(cnx, list_sf, couple_targets[i][0],
@@ -965,9 +965,8 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
                     print("Warning the list of value do'nt have the same length")
                 value_xaxis, name_x = get_relative_values(value_xaxis, ctrl_dic, couple_targets[i][0], representation)
                 value_yaxis, name_y = get_relative_values(value_yaxis, ctrl_dic, couple_targets[i][1], representation)
-                #if exon_class in ["GC", "AT", "GC-AT"]:
                 figure_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type,
-                                        exon_name, output, name_fig, representation)
+                                    exon_name, output, name_fig, representation)
                 density_creator_exon(value_xaxis, value_yaxis, regulation, name_x, name_y, exon_type, output, name_fig,
                                      representation)
     else:

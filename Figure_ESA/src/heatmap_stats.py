@@ -68,14 +68,14 @@ def handle_dataframe_statistics(dataframe, filename):
     intron = [n for n in features if "intron" in n]
     if len(features) == 2 and len(val) == 1 and len(intron) == 0:
         dataframe = dataframe[dataframe["features"].str.contains("S_nt")]
-        dataframe = S_nt_stats(dataframe, filename)
+        dataframe = s_nt_stats(dataframe, filename)
         dataframe["project"] = [val.replace("project", "") for val in dataframe.index.values]
-        dataframe = dataframe[dataframe["project"] != "(Intercept)"] # removing the intercept line
+        dataframe = dataframe[dataframe["project"] != "(Intercept)"]  # removing the intercept line
         dataframe = dataframe[["project", "Pr(>|t|)"]]
     if len(features) == 2 and len(val) == 1 and len(intron) > 1:
         dataframe = dataframe[dataframe["features"].str.contains("S_nt")]
-        exon_type =  [et for et in np.unique(dataframe["project"].values) if et in ["ACE", "CCE", "ALL"]][0]
-        sf_name =  [et for et in np.unique(dataframe["project"].values) if et != exon_type]
+        exon_type = [et for et in np.unique(dataframe["project"].values) if et in ["ACE", "CCE", "ALL"]][0]
+        sf_name = [et for et in np.unique(dataframe["project"].values) if et != exon_type]
         dataframe = perform_mann_withney_test(dataframe, sf_name, exon_type)
     if len(features) == 4 and len(val2) == 4 and len(adj) == 4:
         cor_feature = {f: f.split("_")[0] for f in features}
@@ -102,7 +102,9 @@ def nt_count_stats(dataframe, filename):
         png(paste(name, "_hist.png", sep=""), height=2160, width=1920)
         par(mfrow = c(2, 2))
         for (f in factors){
-            hist(data$values[data$features == f],  breaks=sqrt(length(data$values[data$features == f])), main=paste("hist for", f))
+            hist(data$values[data$features == f],  
+                 breaks=sqrt(length(data$values[data$features == f])), 
+                 main=paste("hist for", f))
         }
         dev.off()
         final <- NULL
@@ -126,7 +128,7 @@ def nt_count_stats(dataframe, filename):
     return df_stats
 
 
-def S_nt_stats(dataframe, filename):
+def s_nt_stats(dataframe, filename):
     """
     Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
 

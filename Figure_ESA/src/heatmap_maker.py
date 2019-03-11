@@ -110,25 +110,6 @@ def create_columns_names(target_columns):
     return new_targets
 
 
-def mann_withney_test_r(list_values1, list_values2):
-    """
-    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
-
-    :param list_values1: (list of float)  list of float
-    :param list_values2: (list of float)  list of float
-    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
-    """
-    wicox = robj.r("""
-
-    function(x, y){
-        test = wilcox.test(x,y, alternative='two.sided', correct=F)
-        return(test$p.value)
-    }
-
-                   """)
-    pval = float(wicox(v.FloatVector(list_values1), v.FloatVector(list_values2))[0])
-    return pval
-
 
 def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_full, regulations, operation, union=None,
                   sf_type=None):
@@ -502,21 +483,6 @@ def load_order_file(order_file):
             list_sf_name.append(line.replace("\n", ""))
     df = pd.DataFrame({"sf": list_sf_name, "val": [i for i in range(len(list_sf_name))]})
     return df
-
-
-def adjust_pvalues(df):
-    """
-    A dataframe corresponding to p-value
-    :param df: (pandas DataFrame) a dataframe containing pvalue
-    :return: (pandas DataFrame) the same dataframe with the pvalues adjusted
-    """
-    pvalues = df.values.flatten()
-    rstats = robj.packages.importr('stats')
-    pcor = np.array(rstats.p_adjust(v.FloatVector(pvalues), method="BH"))
-    pcor = pcor.reshape(-1, len(df.columns))
-    df_padjust = pd.DataFrame(pcor, index=df.index)
-    df_padjust.columns = df.columns
-    return df_padjust
 
 
 def heatmap_gc_sorted(data_array, df_stat, labelsx, labelsy, output, contrast, name=""):

@@ -391,7 +391,7 @@ def get_values_for_many_projects_iupac_dnt(cnx, id_projects_sf_names, target_col
     return results
 
 
-def create_statistical_report(list_values, list_name, ctrl_full, filename):
+def create_statistical_report(list_values, list_name, ctrl_full, filename, nt):
     """
     Create a statistical report.
 
@@ -400,7 +400,10 @@ def create_statistical_report(list_values, list_name, ctrl_full, filename):
     :param ctrl_full: (list of float) the control list of values
     :param output: (string) the file where the report will be created
     """
-    cur_ctrl = np.array(ctrl_full, dtype=float)
+    if not nt:
+        cur_ctrl = np.array(ctrl_full, dtype=float)
+    else:
+        cur_ctrl = np.array(ctrl_full[nt], dtype=float)
     cur_ctrl = list(cur_ctrl[~np.isnan(cur_ctrl)])
     dic_res = {"Factor": [], "P-value": []}
     for i in range(len(list_values)):
@@ -426,12 +429,18 @@ def handle_dataframe_statistics(dataframe, filename, feature, list_name):
     :return: (pandas DataFrame) the statistical analyzes
     """
     stat = None
-    if "iupac" in feature:
+    # if "iupac" in feature and "proxi" in feature:
+    #     dataframe = statistical_analysis.anova_nt_stats(dataframe, filename)
+    #     stat = "poisson"
+    if "iupac" in feature and "proxi" not in feature:
         dataframe = statistical_analysis.anova_nt_stats(dataframe, filename)
         stat = "ANOVA"
-    elif "size" in feature:
-        dataframe = statistical_analysis.nb_glm_stats(dataframe, filename)
-        stat = "GLM_nb_"
+    # elif "intron_size" in feature:
+    #     dataframe = statistical_analysis.anova_intron_size_stats(filename, feature)
+    #     stat = "ANOVA_with_GCaccount_"
+    # elif "size" in feature:
+    #     dataframe = statistical_analysis.nb_glm_stats(dataframe, filename)
+    #     stat = "GLM_nb_"
     df = pd.DataFrame({"project": list_name})
     dataframe = pd.merge(df, dataframe)
     dataframe.to_csv(filename.replace(".html", "%s_stat.txt" % stat), sep="\t", index=False)
@@ -471,12 +480,12 @@ def make_statistical_analysis(list_values, list_name, ctrl_dic, feature, nt, fil
     :param feature: (string) the feature of interest
     :param nt: (string) the nucleotide of interest
     """
+    d = create_dataframe(list_values, list_name, ctrl_dic, feature, nt)
+    d.to_csv(filename.replace(".html", "_tab.csv"), sep="\t", index=False)
     if nt is not None:
-        d = create_dataframe(list_values, list_name, ctrl_dic, feature, nt)
-        d.to_csv(filename.replace(".html", "_tab.csv"), sep="\t", index=False)
         handle_dataframe_statistics(d, filename, feature, list_name)
     else:
-        create_statistical_report(list_values, list_name, ctrl_dic[feature], filename)
+        create_statistical_report(list_values, list_name, ctrl_dic[feature], filename, nt)
 
 
 
@@ -666,7 +675,8 @@ def main():
     cnx_fasterdb = connexion(fasterdb)
     #columns = ["iupac_exon", "exon_size", "upstream_intron_size", "downstream_intron_size", "gene_size", "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1", "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss", "iupac_upstream_intron_ppt_area"]
     #columns = ["force_donor", "force_acceptor", "upstream_intron_size", "downstream_intron_size","iupac_exon", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi", "min_flanking_intron_size"]
-    columns = ["downstream_intron_size", "upstream_intron_size", "force_donor", "force_acceptor", "iupac_exon", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi"]
+    # columns = ["min_flanking_intron_size", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi", "downstream_intron_size", "upstream_intron_size", "force_donor", "force_acceptor", "iupac_exon"]
+    columns = ["upstream_intron_size", "downstream_intron_size"]
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, size_bp_up_seq)
     if len(sys.argv) < 2:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_new/"

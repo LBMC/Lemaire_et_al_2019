@@ -515,13 +515,6 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
     slope, intercept, r_value, p_value, std_err = stats.linregress(values_xaxis, values_yaxis)
     line = slope * np.array(values_xaxis) + intercept
     cor, pval = stats.pearsonr(values_xaxis, values_yaxis)
-    data.append(go.Scatter(x=values_xaxis,
-                           y=line,
-                           mode='lines',
-                           line=dict(width=3,
-                                     color="red"),
-                           name="Fit : p=%.2E, c=%.2f" % (pval, cor)
-                           ))
     data.append(go.Scatter(
         x=values_xaxis,
         y=values_yaxis,
@@ -533,6 +526,13 @@ def figure_creator_exon(values_xaxis, values_yaxis, regulation, name_xaxis, name
             color="navy"
             )
     ))
+    data.append(go.Scatter(x=values_xaxis,
+                           y=line,
+                           mode='lines',
+                           line=dict(width=3,
+                                     color="red"),
+                           name="Fit : p=%.2E, c=%.2f" % (pval, cor)
+                           ))
 
     main_title = 'Correlation between %s and %s frequency in genes containing %s-regulated exons ' \
                  'in every splicing lore project<br> (relative value against %s control) - cor : %s - pval : %.2E' \

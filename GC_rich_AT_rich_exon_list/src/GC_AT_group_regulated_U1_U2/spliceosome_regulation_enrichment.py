@@ -214,6 +214,7 @@ def analysis_maker(gc_exon_list, at_exon_list, gc_pure_exon_list, at_pure_exon_l
                     at_intersect = len(exon_intersection(new_at_list, cur_ctrl))
                     list_at_intersect.append(at_intersect)
                 pval, reg = calculate_index(gc_intersect, list_at_intersect)
+                pval = max(pval, float(1 / nb_iteration))
                 analysis_dic["GC-AT-%s-vs-%s-%s" % (gc_at_set, key, ctrl_set)] = \
                     [pval, adapt_reg(pval, reg)]
                 super_dic["GC-AT-%s-vs-%s-%s" % (gc_at_set, key, ctrl_set)] = \

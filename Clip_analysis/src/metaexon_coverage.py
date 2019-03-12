@@ -172,34 +172,6 @@ def get_gene_id(cnx, coord, gene_symbol):
     return result[0][0]
 
 
-def get_retained_exon(cnx, cell_line):
-    """
-    Get retained exons (high psi) in a particular cell line.
-
-    :param cnx: (pymysql connect instance) connection to splicing lore database
-    :param cell_line: (string) the name of a particular cell line.
-    :return: (list of 2 int) gene_id and exon_pos
-    """
-    cursor = cnx.cursor()
-    query = """SELECT t1.coordonnees, t1.gene_symbole, t1.exon
-               FROM PSI_lignees_Controle t1, Cell_line t2
-               WHERE t1.id_cell_line = t2.id_cell_line
-               AND t2.name_CL = '%s'
-               AND t1.PSI >= %s
-               AND t1.PSI <= %s""" % (cell_line, conf.psi_interval[0], conf.psi_interval[1])
-    cursor.execute(query)
-    result = cursor.fetchall()
-    new_result = []
-    count = 0
-    for exon in result:
-        count += 1
-        exon = list(exon)
-        gene_id = get_gene_id(cnx, exon[0], exon[1])
-        sys.stdout.write("getting retained exon : %s/%s          \r" % (count, len(result)))
-        new_result.append([gene_id, exon[2]])
-    return new_result
-
-
 def get_exon_list(cnx, annotation_name, regulation):
     """
     Get the exon_list wanted.
@@ -214,9 +186,13 @@ def get_exon_list(cnx, annotation_name, regulation):
         folder = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/")
         my_file = "%s%s_rich_exons" % (folder, annotation_name)
         exon_list = extract_exon_list(my_file)
-    elif "retained" in annotation_name:
-        cnx_sl = pymysql.connect(user=conf.user, password=conf.password, host=conf.host, database=conf.fasterDB)
-        exon_list = get_retained_exon(cnx_sl, annotation_name.split("_")[1])
+    elif "U1-FACTORS" in annotation_name or "U2-FACTORS" in annotation_name:
+        annotation_name = annotation_name.split("_")[0]
+        dic_name = {"U1-FACTORS": ["SNRPC", "SNRNP70", "DDX5_DDX17"], "U2-FACTORS": ["U2AF2", "SF1", "SF3A3", "SF3B4"]}
+        exon_list = []
+        for sf_name in dic_name[annotation_name]:
+            exon_list += union_dataset_function.get_every_events_4_a_sl(cnx, sf_name, regulation)
+        exon_list = union_dataset_function.washing_events_all(exon_list)
     else:
         annotation_name = annotation_name.split("_")[0]
         sf_name = annotation_name.upper()
@@ -225,7 +201,7 @@ def get_exon_list(cnx, annotation_name, regulation):
     return exon_list
 
 
-def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chrom_size_file, regulation, cell_line):
+def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chrom_size_file, regulation):
     """
     Get the name of the annotation file.
 
@@ -235,20 +211,18 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
     :param template_fodler: (string) a folder containing template bed file.
     :param chrom_size_file: (string) a file containing the length of hg19 chromosomes.
     :param regulation: (string) up or down
-    :param cell_line: (string) the name of the cell line where the clip experiments was performed
     :return:
     """
-    print("cell %s" % cell_line)
     final_template_start = []
     final_template_stop = []
     if annotation_name == "GC-AT":
-        names = ["GC_group", "AT_group", "retained_%s" % cell_line]
+        names = ["GC_group", "AT_group"]
     else:
         sf_list = annotation_name.split(",")
         for i in range(len(sf_list)):
             sf_list[i] = sf_list[i].upper()
             sf_list[i] = sf_list[i].replace("SFRS", "SRSF").replace("TRA2A", "TRA2A_B")
-        names = ["%s_%s" % (sf_name, regulation) for sf_name in sf_list] + ["retained_%s" % cell_line]
+        names = ["%s_%s" % (sf_name, regulation) for sf_name in sf_list]
     for i in range(len(names)):
         if not os.path.isfile("%s%s_%s_add_i50_o200.bed" % (template_fodler, names[i], "start")):
             exon_list = get_exon_list(cnx, names[i], regulation)
@@ -256,7 +230,7 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
         else:
             start = "%s%s_%s_add_i50_o200.bed" % (template_fodler, names[i], "start")
             templates_bed = [start, start.replace("start", "stop")]
-            print("recovering template files")
+            print("recovering template files : %s" % start)
         final_template_start.append(templates_bed[0])
         final_template_stop.append(templates_bed[1])
     finale_names_start = []
@@ -355,7 +329,7 @@ def bed_creator(cnx_fasterdb, exon_list, dest_folder, name_bed, chrom_size_file)
     return final_names
 
 
-def main(input_bed, refsize, output, metagene_script, cond, annotation, color, outname, regulation, cell_line):
+def main(input_bed, refsize, output, metagene_script, cond, annotation, color, outname, regulation):
     """
 
     :param input_bed: (string) a bed file
@@ -367,7 +341,6 @@ def main(input_bed, refsize, output, metagene_script, cond, annotation, color, o
     :param color: (string) colors chosen
     :param outname: (string) path of the output file
     :param regulation: (string) up or down
-    :param cell_line: (string) the name of the cell line
     """
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/sed.db")
     fasterdb = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/fasterDB_lite.db")
@@ -377,7 +350,7 @@ def main(input_bed, refsize, output, metagene_script, cond, annotation, color, o
     cnx = sqlite3.connect(seddb)
     cnx_fasterdb = sqlite3.connect(fasterdb)
     tplt_start, tplt_stop, n_start, n_stop = handle_bed_creator(cnx, cnx_fasterdb, annotation,
-                                                                template_fodler, refsize, regulation, cell_line)
+                                                                template_fodler, refsize, regulation)
     output_bw = output + "bigwig/"
     output_graph = output + "figure/"
     if not os.path.isdir(output_bw):
@@ -431,14 +404,12 @@ def launcher():
     parser.add_argument('--color', dest='color', help="color of the annotation", default=None)
     parser.add_argument('--outname', dest='outname', help="the name of the figure", default=None)
     parser.add_argument('--regulation', dest='regulation', help="regulation", default="down")
-    parser.add_argument('--cell_line', dest='cell_line', help="cell_line name", default=None)
     args = parser.parse_args()
 
     if os.path.isdir(args.input):
         list_files = os.listdir(args.input)
         for my_file in list_files:
-            cell_line = os.path.basename(my_file).split("_")[1].replace("HEK293", "293T")
-            print("Working on %s, cell line %s" % (my_file, cell_line))
+            print("Working on %s" % my_file)
             if not os.path.isdir(args.output):
                 os.mkdir(args.output)
             output = args.output + my_file.replace(".bed.gz", "") + "/"
@@ -449,13 +420,13 @@ def launcher():
             #  args.color, args.outname, args.regulation)
             # annot = "SNRPC,SNRNP70,U2AF2,SF1"
             main(args.input + my_file, args.refsize, output, args.metagene_script, args.title, args.annotation,
-                 args.color, args.outname, "down", cell_line)
+                 args.color, args.outname, "down")
             # main(args.input + my_file, args.refsize, output, args.metagene_script, args.title,
             #      args.annotation,
             #      args.color, args.outname, "up")
     else:
         main(args.input, args.refsize, args.output, args.metagene_script, args.title, args.annotation,
-             args.color, args.outname, args.regulation, args.cell_line)
+             args.color, args.outname, args.regulation)
 
 
 if __name__ == "__main__":

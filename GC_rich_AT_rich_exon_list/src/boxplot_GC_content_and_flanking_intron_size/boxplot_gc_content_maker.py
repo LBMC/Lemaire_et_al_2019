@@ -119,11 +119,12 @@ def extract_exon_gc_content_from_file(cnx, filename):
     return list_gc
 
 
-def extract_gene_gc_content_from_file(cnx, filename):
+def extract_gene_gc_content_from_file(cnx, filename, gene2remove):
     """
     Extract the gc content of genes of a list of exon within a file ``filename``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the name of the file containing  exons
+    :param gene2remove: (list of string) list of gene 2 remove
     :return: (list of float) the list of the gc content of the gene in ``filename``
     """
     list_gene = []
@@ -134,6 +135,9 @@ def extract_gene_gc_content_from_file(cnx, filename):
             list_gene.append(line[0])
             line = in_file.readline()
     list_gene = list(np.unique(list_gene))
+    print("list gene : %s" % len(list_gene))
+    list_gene = [g for g in list_gene if g not in gene2remove]
+    print("number of gc gene after removing common with at and GC exons : %s" % len(list_gene))
     list_gc = extract_gene_gc_content_from_list(cnx, list_gene)
     return list_gc
 

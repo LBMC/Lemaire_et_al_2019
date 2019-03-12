@@ -25,11 +25,12 @@ u2_factors = ("SF1", "SF3A3", "SF3B1", "SF3B4", "U2AF1", "U2AF2")
 chromatin_factors = ("DNMT3A", "EZH2", "KMT2A", "KMT2D", "MBD2", "MBD3", "SETD2", "SUV39H1",
                      "SUV39H2", "TDG", "TET2", "EED")
 
-color_dic = {"GC": "#0000FF", "AT":"#00aa00" , "GC_all": "#0394d9",
+color_dic = {"GC": "#0000FF", "AT": "#00aa00", "GC_all": "#0394d9",
              "AT_all": "#03d994", "CCE": "#FF0000", "ALL": "#FF0000", "ACE": "#FF0000",
-             "DDX5-17": "#AA00FF", "DDX5_DDX17": "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#000080", "SNRPC": "#00FFFF",
+             "U1-FACTORS": "#7777F0", "U2-FACTORS": "#33EE33", "DDX5-17": "#AA00FF", "DDX5_DDX17":
+             "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#000080", "SNRPC": "#00FFFF",
              "U2AF1": "#006400", "U2AF2": "#808000", "SF1": "#55FF55", "SF3A3": "#D8EF48", "SF3B4": "#8FBC8F",
-            }
+             }
 
 # The id project we have to delete
 bad_id_projects = [139, 13, 164]

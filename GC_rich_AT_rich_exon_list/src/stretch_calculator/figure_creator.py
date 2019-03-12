@@ -13,8 +13,8 @@ import plotly.graph_objs as go
 import plotly
 import sys
 import numpy as np
-# import math
-# from ncephes import cprob
+import matplotlib.pyplot as plt
+import seaborn as sns
 from rpy2.robjects.packages import importr
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
@@ -23,6 +23,7 @@ import config
 import stretch_calculator
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", "make_control_files_bp_ppt/"))
 import exon_class
+import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", ""))
 import group_factor
 import union_dataset_function
@@ -154,31 +155,30 @@ def write_proportion_pvalues(list_values, list_name, output, regulation, name_fi
     df.to_csv(filename, sep="\t", index=False)
 
 
-def create_barplot(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
+def create_figure(list_values, list_name, output, regulation, name_fig, type_fig="exon", figure="box"):
     """
-    Create a barplot showing the values of ``name_fig`` for every exon list regulated by ``list_name`` factor
+    Create a figure showing the values of ``target_name`` for every exon list regulated by ``list_name`` factor
 
     :param list_values: (list of list of float) each sublist corresponds to the value of  ``target_name`` \
     for every factor in ``list_name``
     :param list_name: (list of string) list of name of different factor studied
     :param output: (string) path where the output_file will be created
     :param regulation: (string) up or down
-    :param name_fig: (string) the name of the figure
-    :param type_fig: (string) the type of graphics created
+    :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
+    :param type_fig: (string) the type of figure group or U1
     """
+    filename = "%s%s_%s_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
     list_name = [name.replace("_exons", "") for name in list_name]
+    list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
-    if type_fig == "factors":
-        list_color = ['hsl(' + str(h) + ',50%' + ',50%)' for h in np.linspace(0, 360, len(list_values))]
+    color_b_dic = group_factor.color_dic_bright
     data = []
-    abscissa = [val.replace("==", "=") for val in config.abscissa]
-    for i in range(len(list_values)):
-        ordinate = []
-        for val in config.abscissa:
-            eval("ordinate.append(sum(np.array(list_values[i]) %s) / len(list_values[i]))" % val)
-        data.append(go.Bar(x=abscissa, y=ordinate, name=list_name[i], marker=dict(color=color_dic[list_name[i]])))
-
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
+
+    for i in range(len(list_values)):
+        data.append({"y": list_values[i], "type": figure,
+                     "name": list_name[i], "visible": True, "fillcolor": color_dic[list_name[i]], "opacity": 1,
+                     "line": {"color": "black"}})
 
     layout = go.Layout(
         title=title,
@@ -186,14 +186,13 @@ def create_barplot(list_values, list_name, output, regulation, name_fig, type_fi
             autorange=True,
             showgrid=True,
             zeroline=True,
-            autotick=True,
-            title="proportion",
+            # autotick=True,
+            title=name_fig,
             gridcolor='white',
             gridwidth=1,
             zerolinecolor='white',
             zerolinewidth=2,
         ),
-        xaxis=dict(title=name_fig),
         margin=dict(
             l=40,
             r=30,
@@ -202,12 +201,15 @@ def create_barplot(list_values, list_name, output, regulation, name_fig, type_fi
         ),
         paper_bgcolor='white',
         plot_bgcolor='white',
-        showlegend=True
+        showlegend=True,
+        # shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+        #              y1=np.median(list_values[-1]),
+        #              line=dict(color=color_dic[list_name[-1]]))]
     )
 
     fig = {"data": data, "layout": layout}
-    plotly.offline.plot(fig, filename="%s%s_%s_exons_lvl_%s_barplot.html" % (output, name_fig, regulation, type_fig),
-                    auto_open=False, validate=False)
+    plotly.offline.plot(fig, filename=filename,
+                        auto_open=False, validate=False)
 
 
 def get_stretch_score_list(exon_list, stretch_data):
@@ -271,6 +273,41 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation):
     return exon_list
 
 
+def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
+    """
+    Create a pandas dataframe.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
+    :param name_df: (string) the type of values displayed in ``list_values``
+    :param output: (string) folder where the result will be created
+    :param regulation: (string) up or down
+    :param type_fig: (string) the type of graphic build
+    :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
+    """
+    new_values = np.hstack(list_values)
+    new_names = np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))])
+    new_values = new_values.astype(np.float)
+    new_names = list(new_names[~np.isnan(new_values)])
+    new_values = list(new_values[~np.isnan(new_values)])
+    df = pd.DataFrame({"values": new_values, "project": new_names})
+    sns.set()
+    sns.set_context("poster")
+    g = sns.FacetGrid(data=df, row="project", height=7)
+    g.map(sns.distplot, "values")
+    filename = "%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig)
+    g.savefig(filename.replace("table.txt", "displot.pdf"), format="pdf")
+    plt.clf()
+    plt.close()
+    df.to_csv(filename, index=False, sep="\t")
+    if type_fig == "exon":
+        new_df = stat_bp.glm_nb_stats(df, filename)
+    else:
+        new_df = stat_bp.glm_nb_stats_spliceosome(df, filename)
+    new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
+
+
+
 def main():
     exon_class.set_debug(0)
     exon_type = "CCE"
@@ -310,8 +347,9 @@ def main():
         for stretch_data in config.stretches:
             st_name = "X".join(map(str, stretch_data))
             for nt in config.nt_list:
-                create_barplot(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
-                write_proportion_pvalues(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                create_figure(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                dataframe_creator(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                # write_proportion_pvalues(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
 
 
 if __name__ == "__main__":

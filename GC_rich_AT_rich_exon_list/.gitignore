@@ -4,8 +4,6 @@ src/make_control_files_bp_ppt/*.pyc
 src/make_control_files_bp_ppt/__pycache__/*
 src/make_control_files_bp_ppt/control_dictionaries/*
 src/*/*.pyc
-src/pyrimidine_content/exon_class.py
-src/pyrimidine_content/weblogo_upstream_sequence_creator.py
 conf.py
 src/__pycache__/*
 src/*/__pycache__/*

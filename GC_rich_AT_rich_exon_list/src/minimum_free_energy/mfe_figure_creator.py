@@ -14,7 +14,8 @@ import plotly
 import sys
 import numpy as np
 import math
-from ncephes import cprob
+import stat_mfe
+import seaborn as sns
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
 from rpy2.robjects.packages import importr
@@ -150,9 +151,9 @@ def create_figure(list_values, list_name, output, regulation, splicing_site, typ
         paper_bgcolor='white',
         plot_bgcolor='white',
         showlegend=True,
-        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
-                     y1=np.median(list_values[-1]),
-                     line=dict(color=color_dic[list_name[-1]]))]
+        # shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+        #              y1=np.median(list_values[-1]),
+        #              line=dict(color=color_dic[list_name[-1]]))]
     )
 
     fig = {"data": data, "layout": layout}
@@ -332,6 +333,41 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos):
     print("%s : %s exons" % (list_names[pos], len(exon_list)))
     return exon_list
 
+
+def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
+    """
+    Create a pandas dataframe.
+
+    :param list_values: (list of list of float) list of values
+    :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
+    :param name_df: (string) the type of values displayed in ``list_values``
+    :param output: (string) folder where the result will be created
+    :param regulation: (string) up or down
+    :param type_fig: (string) the type of graphic build
+    :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
+    """
+    sns.set()
+    sns.set_context("poster")
+    new_values = np.hstack(list_values)
+    new_names = np.hstack([[list_name[i]] * len(list_values[i]) for i in range(len(list_values))])
+    new_values = new_values.astype(np.float)
+    new_names = list(new_names[~np.isnan(new_values)])
+    new_values = list(new_values[~np.isnan(new_values)])
+    df = pd.DataFrame({"values": new_values, "project": new_names})
+    df["values"] = list(map(math.sqrt, (df["values"].values * -1) + 3/8)) # transformation of anscomb (turn a poisson distribtion into a
+    g = sns.FacetGrid(data=df, row="project", height=20)
+    g.map(sns.distplot, "values")
+    filename = "%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig)
+    g.savefig(filename.replace("table.txt", "displot.pdf"), format="pdf")
+    df.to_csv(filename, index=False, sep="\t")
+    if type_fig =="exon":
+        new_df = stat_mfe.anova_nt_stats(df, filename)
+    else:
+        new_df = stat_mfe.anova_nt_stats_spliceosome(df, filename)
+    new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
+
+
+
 def main():
     exon_class.set_debug(0)
     exon_type = "CCE"
@@ -366,11 +402,13 @@ def main():
                 mfe_5ss_score.append(mod.mfe_5ss)
 
         create_figure(mfe_3ss_score, name_file, output, "down", "3SS", type_analysis)
-        create_figure_error_bar(mfe_3ss_score, name_file, output, "down", "3SS", type_analysis)
-        write_proportion_pvalues(mfe_3ss_score, name_file, output, "3SS", type_analysis)
+        dataframe_creator(mfe_3ss_score, name_file, output, "down", "3SS", type_analysis)
+        # create_figure_error_bar(mfe_3ss_score, name_file, output, "down", "3SS", type_analysis)
+        # write_proportion_pvalues(mfe_3ss_score, name_file, output, "3SS", type_analysis)
         create_figure(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
-        create_figure_error_bar(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
-        write_proportion_pvalues(mfe_5ss_score, name_file, output, "5SS", type_analysis)
+        dataframe_creator(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
+        # create_figure_error_bar(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
+        # write_proportion_pvalues(mfe_5ss_score, name_file, output, "5SS", type_analysis)
 
 
 

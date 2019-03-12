@@ -11,6 +11,7 @@ import os
 import sqlite3
 import plotly.graph_objs as go
 import plotly
+import plotly.figure_factory as ff
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -169,10 +170,15 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                 outfile.write("%s vs %s, p=%.2E\n" % (list_name[i], list_name[j], pval))
 
     for i in range(len(list_values)):
+        fill2 = color_dic[list_name[i]]
+        if figure == "violin":
+            fill1 = color_b_dic[list_name[i]]
+        else:
+            fill1 = fill2
         data.append({"y": list_values[i], "type": figure,
-                     "name": list_name[i], "visible": True, "fillcolor": color_b_dic[list_name[i]], "opacity": 1,
+                     "name": list_name[i], "visible": True, "fillcolor": fill1, "opacity": 1,
                      "line": {"color": "black"},
-                     "box": {"visible": True, "fillcolor": color_dic[list_name[i]]}, "meanline": {"visible": False}})
+                     "box": {"visible": True, "fillcolor": fill2}, "meanline": {"visible": False}})
 
     layout = go.Layout(
         title=title,
@@ -196,9 +202,9 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
         paper_bgcolor='white',
         plot_bgcolor='white',
         showlegend=True,
-        shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
-                     y1=np.median(list_values[-1]),
-                     line=dict(color=color_dic[list_name[-1]]))]
+        # shapes=[dict(type="line", x0=-0.5, y0=np.median(list_values[-1]), x1=len(list_values) - 0.5,
+        #              y1=np.median(list_values[-1]),
+        #              line=dict(color=color_dic[list_name[-1]]))]
     )
 
     fig = {"data": data, "layout": layout}
@@ -206,9 +212,9 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                         auto_open=False, validate=False)
 
 
-def create_barplot_with_error_bar(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
+def create_barplot_bp(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
     """
-    Create a figure showing the values of ``target_name`` for every exon list regulated by ``list_name`` factor
+    Create a figure showing the number of branch point
 
     :param list_values: (list of list of float) each sublist corresponds to the value of  ``target_name`` \
     for every factor in ``list_name``
@@ -218,26 +224,18 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
     :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
     :param type_fig: (string) the type of figure group or U1
     """
+    filename = "%s%s_%s_braplot_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
     list_name = [name.replace("_exons", "") for name in list_name]
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
+    data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
-    for i in range(len(list_values) - 1):
-        pval = mann_withney_test_r(list_values[i], list_values[-1])
-        title += "<br> %s vs %s, p=%.2E" % (list_name[i], list_name[-1], pval)
-    if len(list_values) == 3:
-        pval = mann_withney_test_r(list_values[0], list_values[1])
-        title += "<br> %s vs %s, p=%.2E" % (list_name[0], list_name[1], pval)
 
-    mean_values = [np.nanmean(values) for values in list_values]
-    sd_values = [np.nanstd(values) for values in list_values]
-    color_list = [color_dic[my_name] for my_name in list_name]
-    trace = go.Bar(x=list_name,
-                   y=mean_values,
-                   marker=dict(color=color_list),
-                   error_y=dict(type="data",
-                                array=sd_values,
-                                visible=True))
+    for i in range(len(list_values)):
+        unique, counts = np.unique(list_values[i], return_counts=True)
+        counts = counts / sum(counts) * 100
+        data.append(go.Bar(x=unique, y=counts, name=list_name[i], marker=dict(color=color_dic[list_name[i]])))
+
     layout = go.Layout(
         title=title,
         yaxis=dict(
@@ -245,7 +243,7 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
             showgrid=True,
             zeroline=True,
             # autotick=True,
-            title=name_fig,
+            title="frequency " + name_fig,
             gridcolor='white',
             gridwidth=1,
             zerolinecolor='white',
@@ -258,13 +256,73 @@ def create_barplot_with_error_bar(list_values, list_name, output, regulation, na
             t=100,
         ),
         paper_bgcolor='white',
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        showlegend=True,
     )
 
-    fig = {"data": [trace], "layout": layout}
-    plotly.offline.plot(fig, filename="%s%s_%s_exons_lvl_%s_error_bar.html" % (output, name_fig, regulation, type_fig),
+    fig = {"data": data, "layout": layout}
+    plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
 
+
+def create_distplot_bp(list_values, list_name, output, regulation, name_fig, type_fig="exon"):
+    """
+    Create a figure showing the number of branch point
+
+    :param list_values: (list of list of float) each sublist corresponds to the value of  ``target_name`` \
+    for every factor in ``list_name``
+    :param list_name: (list of string) list of name of different factor studied
+    :param output: (string) path where the output_file will be created
+    :param regulation: (string) up or down
+    :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
+    :param type_fig: (string) the type of figure group or U1
+    """
+    filename = "%s%s_%s_braplot_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
+    list_name = [name.replace("_exons", "") for name in list_name]
+    list_values[-1] = list(map(float, list_values[-1]))
+    color_dic = group_factor.color_dic
+    title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
+
+    new_list_val = []
+    for i in range(len(list_values)):
+        print(max(list_values[i]))
+        unique, counts = np.unique(list_values[i], return_counts=True)
+        counts = counts / sum(counts) * 100
+        new_list_val.append(counts)
+    fig = ff.create_distplot(list_values, list_name, bin_size=0.99, show_hist=False, show_rug=False, curve_type='normal',
+                             colors = [color_dic[my_name] for my_name in list_name])
+    fig['layout'].update(title=title)
+    fig['layout'].update(xaxis=dict(title=name_fig))
+    fig['layout'].update(yaxis=dict(title="exons proportion"))
+
+    #
+    # layout = go.Layout(
+    #     title=title,
+    #     yaxis=dict(
+    #         autorange=True,
+    #         showgrid=True,
+    #         zeroline=True,
+    #         # autotick=True,
+    #         title="frequency " + name_fig,
+    #         gridcolor='white',
+    #         gridwidth=1,
+    #         zerolinecolor='white',
+    #         zerolinewidth=2,
+    #     ),
+    #     margin=dict(
+    #         l=40,
+    #         r=30,
+    #         b=150,
+    #         t=100,
+    #     ),
+    #     paper_bgcolor='white',
+    #     plot_bgcolor='white',
+    #     showlegend=True,
+    # )
+    #
+    # fig = {"data": data, "layout": layout}
+    plotly.offline.plot(fig, filename=filename,
+                        auto_open=False, validate=False)
 
 def frequency_test(obs1, tot1, obs2, tot2):
     """
@@ -507,8 +565,25 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     plt.clf()
     plt.close()
     df.to_csv(filename, index=False, sep="\t")
-    new_df = stat_bp.glm_poisson_stats(df, filename)
+    if type_fig == "exon":
+        new_df = stat_bp.glm_poisson_stats(df, filename)
+    else:
+        new_df = stat_bp.glm_poisson_stats_spliceosome(df, filename)
     new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
+
+
+def get_weblogo_gc_count(list_seq):
+    """
+    From a list of sequence ``list_seq`` return the count of gc present in each one of them
+    :param list_seq: (tuple of strings) list of nt sequence
+    :return: (list of int) for each sequences get the number of GC.
+    """
+    list_gc_count = []
+    for my_seq in list_seq:
+        nb_c = my_seq.count("C")
+        nb_g = my_seq.count("G")
+        list_gc_count.append(nb_c + nb_g)
+    return list_gc_count
 
 
 def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation="down"):
@@ -562,7 +637,7 @@ def main():
         type_analysis = type_factors[j]
         regulation = regulations[j]
         name_file, list_file = initiate_list_of_factor(file_dir, exon_type, type_analysis)
-        dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [],
+        dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [], "gc_weblogo": [],
                               "nb_good_bp_list": [], "ag_count": [], "hbound": [], "uaa_count": [],
                               "una_count": []} for k in [100, 50, 35, 25]}
         # list_force_acceptor = []
@@ -581,6 +656,7 @@ def main():
                     # dict_score_3ss[size]["nb_bp_list"].append(nb_bp_list)
                     dict_score_3ss[size]["nb_good_bp_list"].append(nb_good_bp_list)
                     web_logo_creator(bp_seq_list, "%s_%s_exons_%s_nt" % (name_file[i], regulation, size), output)
+                    dict_score_3ss[size]["gc_weblogo"].append(get_weblogo_gc_count(bp_seq_list))
                     # dict_score_3ss[size]["ag_count"].append(ag_count_list)
                     dict_score_3ss[size]["hbound"].append(hbound_list)
                     # dict_score_3ss[size]["uaa_count"].append(uaa_list)
@@ -594,6 +670,7 @@ def main():
                     # dict_score_3ss[size]["nb_bp_list"].append(mod.nb_bp)
                     dict_score_3ss[size]["nb_good_bp_list"].append(mod.nb_good_bp)
                     web_logo_creator(mod.bp_seq, "%s_%s_exons_%s_nt" % (name_file[i], regulation, size), output)
+                    dict_score_3ss[size]["gc_weblogo"].append(get_weblogo_gc_count(mod.bp_seq))
                     # dict_score_3ss[size]["ag_count"].append(mod.ag_count)
                     dict_score_3ss[size]["hbound"].append(mod.hbound)
                     # dict_score_3ss[size]["uaa_count"].append(mod.uaa_count)
@@ -605,10 +682,10 @@ def main():
             print("------------> %s nt " % size)
             # create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
             #                "prop_nb_branch_point_(%snt)" % size, type_analysis)
-            create_figure(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis, "box")
-            # write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-            #                          "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            create_distplot_bp(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                                     "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
                                      "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             # create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
@@ -630,9 +707,12 @@ def main():
                           "nb_h_bound_%s_nt" % size, type_analysis, "violin")
             dataframe_creator(dict_score_3ss[size]["hbound"], name_file, output, regulation,
                           "nb_h_bound_%s_nt" % size, type_analysis)
-            # create_barplot_with_error_bar(dict_score_3ss[size]["hbound"], name_file, output,
-            #                               regulation, "nb_h_bound_%s_nt" % size,
-            #                               type_analysis)
+
+            create_figure(dict_score_3ss[size]["gc_weblogo"], name_file, output, regulation,
+                          "gc_weblogo_%s_nt" % size, type_analysis, "box")
+            dataframe_creator(dict_score_3ss[size]["gc_weblogo"], name_file, output, regulation,
+                          "gc_weblogo_%s_nt" % size, type_analysis)
+
         # create_figure(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
         # create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation,
         #                               "force_acceptor", type_analysis)

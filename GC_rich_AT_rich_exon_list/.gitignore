@@ -7,7 +7,6 @@ src/*/*.pyc
 src/pyrimidine_content/exon_class.py
 src/pyrimidine_content/weblogo_upstream_sequence_creator.py
 conf.py
-src/U1_U2_AT_GC_rich_exon.py
 src/create_psi_delta_psi_graphics.py
 src/create_boxplot_cg_content.py
 src/__pycache__/*

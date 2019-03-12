@@ -136,11 +136,12 @@ def extract_exon_min_flanking_intron_size_from_file(cnx, filename):
     return median_intron_size
 
 
-def extract_gene_median_intron_size_from_file(cnx, filename):
+def extract_gene_median_intron_size_from_file(cnx, filename, gene2remove):
     """
     Get the median intron size of the gene in ``filename``
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the file where the gene are stored
+    :param gene2remove: (lits of string) list of gene we want 2 remove
     :return: (list of float) list of median intron size of the exon in ``filename``
     """
     list_gene = []
@@ -151,6 +152,9 @@ def extract_gene_median_intron_size_from_file(cnx, filename):
             list_gene.append(line[0])
             line = in_file.readline()
     list_gene = list(np.unique(list_gene))
+    print("list gene : %s" % len(list_gene))
+    list_gene = [g for g in list_gene if g not in gene2remove]
+    print("number of flanking gene after removing common with at and GC exons : %s" % len(list_gene))
     list_gc = extract_gene_median_intron_size_from_list(cnx, list_gene)
     return list_gc
 

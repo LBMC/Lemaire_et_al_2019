@@ -3,7 +3,6 @@ src/*.pyc
 src/make_control_files_bp_ppt/*.pyc
 src/make_control_files_bp_ppt/__pycache__/*
 src/make_control_files_bp_ppt/control_dictionaries/*
-src/GC_AT_group_regulated_U1_U2/spliceosome_exon_list_dpsi_comparison.py
 src/*/*.pyc
 src/pyrimidine_content/exon_class.py
 src/pyrimidine_content/weblogo_upstream_sequence_creator.py

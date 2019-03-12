@@ -15,16 +15,18 @@ import sys
 import config
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", "make_control_files_bp_ppt/"))
 import exon_class
+sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/stretch_calculator", ""))
+import union_dataset_function
 
 
 
-
-def get_control_exon_information(cnx, exon_type):
+def get_control_exon_information(cnx, exon_type, exon2remove):
     """
     Get the gene symbol, the gene id and the position of every ``exon_type`` exons in fasterDB.
 
     :param cnx: (sqlite3 object) allow connection to sed database
     :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (list of list of 2 int) list of exon we want to remove
     :return:
         * result: (list of tuple) every information about control exons
         * names: (list of string) the name of every column in sed table
@@ -43,9 +45,9 @@ def get_control_exon_information(cnx, exon_type):
     cursor.execute(query)
     result = cursor.fetchall()
     # turn tuple into list
-    nresult = []
-    for exon in result:
-        nresult.append(list(exon))
+    print("Number of control exons before removing the one regulated by a splicing factors : %s" % len(result))
+    nresult = [list(exon) for exon in result if [exon[1], exon[2]] not in exon2remove]
+    print("Number of control exons after removing the one regulated by a splicing factors : %s" % len(nresult))
     return nresult
 
 
@@ -56,8 +58,11 @@ def control_dictionaries_creator():
     exon_class.set_debug(0)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fasterdb = os.path.dirname(os.path.realpath(__file__)).replace("src/stretch_calculator", "data/fasterDB_lite.db")
+    seddb = os.path.dirname(os.path.realpath(__file__)).replace("src/stretch_calculator", "data/sed.db")
     ctrl_dir = dir_path + "/control_dictionaries/"
     cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+    exon2remove = union_dataset_function.get_exon_regulated_by_sf(cnx_sed, "down")
     if not os.path.isdir(ctrl_dir):
         os.mkdir(ctrl_dir)
     exon_type = config.exon_type
@@ -65,7 +70,7 @@ def control_dictionaries_creator():
     sequence_boundaries = config.sequence_boundaries
     for cur_exon_type in exon_type:
         print("Working on %s exons ..." % cur_exon_type)
-        ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type)
+        ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type, exon2remove)
         print("\t--> Getting upstream intron sequence")
         list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
         cur_file = open(ctrl_dir + cur_exon_type + "_stretches.py", "w")

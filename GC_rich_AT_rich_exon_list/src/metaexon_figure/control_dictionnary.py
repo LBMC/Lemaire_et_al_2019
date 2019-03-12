@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)).replace("/metaexon_figure", ""))
 import union_dataset_function
 
+
 def get_control_exon_information(cnx, exon_type, exon2remove):
     """
     Get the gene symbol, the gene id and the position of every ``exon_type`` exons in fasterDB.

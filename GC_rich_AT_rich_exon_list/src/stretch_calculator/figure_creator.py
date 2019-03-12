@@ -21,7 +21,8 @@ import rpy2.robjects.vectors as v
 import pandas as pd
 import config
 import stretch_calculator
-sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", "make_control_files_bp_ppt/"))
+sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator",
+                                                                       "make_control_files_bp_ppt/"))
 import exon_class
 import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", ""))
@@ -127,7 +128,7 @@ def write_proportion_pvalues(list_values, list_name, output, regulation, name_fi
     :param type_fig: (string) the type of graphics created
     """
     list_col = ["stretch", "factor1", "factor2", "nb_bp1", "tot1",
-            "nb_bp2",  "tot2", "pval"]
+                "nb_bp2",  "tot2", "pval"]
     data = {my_name: [] for my_name in list_col}
     filename = "%s%s_%s_exons_lvl_%s_barplot_pvalue.txt" % (output, name_fig, regulation, type_fig)
     for i in range(len(list_values) - 1):
@@ -166,12 +167,12 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     :param regulation: (string) up or down
     :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
     :param type_fig: (string) the type of figure group or U1
+    :param figure: (string) the type of figure we want to create
     """
     filename = "%s%s_%s_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
     list_name = [name.replace("_exons", "") for name in list_name]
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
-    color_b_dic = group_factor.color_dic_bright
     data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
 
@@ -307,12 +308,11 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
 
 
-
 def main():
     exon_class.set_debug(0)
     exon_type = "CCE"
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/stretch_calculator",
-                                                                      "result/stretch_calculator/")
+                                                                 "result/stretch_calculator/")
     file_dir = os.path.realpath(os.path.dirname(__file__)).replace("src/stretch_calculator", "result/")
     if not os.path.isdir(output):
         os.mkdir(output)
@@ -328,10 +328,11 @@ def main():
         type_analysis = type_factors[i]
         regulation = regulations[i]
         name_file, list_file = initiate_list_of_factor(file_dir, exon_type, type_analysis)
-        dict_stretch_3ss = {"X".join(map(str, stretch_data)): {nt: [] for nt in config.nt_list} for stretch_data in config.stretches}
-        for i in range(len(name_file)):
-            if name_file[i] != exon_type:
-                exon_list = extract_data(cnx, cnx_sed, list_file, name_file, i, regulation)
+        dict_stretch_3ss = {"X".join(map(str, stretch_data)): {nt: [] for nt in config.nt_list}
+                            for stretch_data in config.stretches}
+        for j in range(len(name_file)):
+            if name_file[j] != exon_type:
+                exon_list = extract_data(cnx, cnx_sed, list_file, name_file, j, regulation)
                 for stretch_data in config.stretches:
                     stretch_dic = get_stretch_score_list(exon_list, stretch_data)
                     for nt in config.nt_list:
@@ -347,9 +348,12 @@ def main():
         for stretch_data in config.stretches:
             st_name = "X".join(map(str, stretch_data))
             for nt in config.nt_list:
-                create_figure(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
-                dataframe_creator(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
-                # write_proportion_pvalues(dict_stretch_3ss[st_name][nt], name_file, output, regulation, "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                create_figure(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
+                              "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                dataframe_creator(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
+                                  "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+                # write_proportion_pvalues(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
+                # "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
 
 
 if __name__ == "__main__":

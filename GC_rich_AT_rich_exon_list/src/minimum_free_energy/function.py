@@ -29,16 +29,19 @@ def fasta_writer(exon_list, filename, splicing_site):
                     out_file.write(">seq_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position))
                     out_file.write(exon.seq_3ss + "\n")
                 else:
-                    print("WARNING : exons %s_%s with %s start_on_gene can't be written : gene_len : %s" % (exon.gene.name, exon.position, exon.start, exon.gene.length))
+                    print("WARNING : exons %s_%s with %s start_on_gene can't be written : gene_len : %s" %
+                          (exon.gene.name, exon.position, exon.start, exon.gene.length))
                     count += 1
             else:
                 if exon.seq_5ss is not None:
                     out_file.write(">seq_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position))
                     out_file.write(exon.seq_5ss + "\n")
                 else:
-                    print("WARNING : exons %s_%s with %s stop_on_gene can't be written : gene_len : %s" % (exon.gene.name, exon.position, exon.stop, exon.gene.length))
+                    print("WARNING : exons %s_%s with %s stop_on_gene can't be written : gene_len : %s" %
+                          (exon.gene.name, exon.position, exon.stop, exon.gene.length))
                     count += 1
     print("total missed %s : %s" % (splicing_site, count))
+
 
 def rnafold_launcher(rnafold_launcher, input_file, output_file):
     """
@@ -76,7 +79,7 @@ def mfe_calculator(exon_list):
     """
     output = os.path.realpath(os.path.dirname(__file__)) + "/control_dictionaries/"
     rnafold = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy", "data/RNAfold/")
-    if  not os.path.isdir(output):
+    if not os.path.isdir(output):
         os.mkdir(output)
     file_3ss = "%sinput_rnafold_3ss.fa" % output
     out_3ss = "%sout_rnafold_3ss.fa" % output

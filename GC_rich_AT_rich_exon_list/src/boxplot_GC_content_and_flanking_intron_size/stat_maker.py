@@ -9,7 +9,7 @@ pandas2ri.activate()
 
 def anova_nt_stats(dataframe, filename):
     """
-    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
+    Perform an anova test on ``dataframe``
 
     :param dataframe: (pandas DataFrame) a dataframe
     :param filename: (string)  list of float
@@ -30,7 +30,8 @@ def anova_nt_stats(dataframe, filename):
                             sd=sd(data$values[data$project == f]))
             pvalues[i] <- test$p.value
             qqnorm(data$values[data$project == f], main=paste("normal QQ-PLOT for", f, "ks-test :", test$p.value))
-            hist(data$values[data$project == f],  breaks = sqrt(length(data$values[data$project == f])),  main=paste("hist for", f))
+            hist(data$values[data$project == f],  breaks = sqrt(length(data$values[data$project == f])),  
+                 main=paste("hist for", f))
         }
         dev.off()
 
@@ -52,7 +53,7 @@ def anova_nt_stats(dataframe, filename):
 
 def nb_glm_stats(dataframe, filename):
     """
-    Perform a glm nb test on ``list_values1`` and ``list_values2``.
+    Perform a glm nb test on ``dataframe``.
 
     :param dataframe: (pandas DataFrame) a dataframe
     :param filename: (string)  list of float
@@ -68,7 +69,8 @@ def nb_glm_stats(dataframe, filename):
         png(paste(name, "_distrib.png", sep=""), height=2160, width=1920)
         par(mfrow = c(2, 2))
         for (f in factors){
-            hist(log10(data$values[data$project == f]),  breaks = sqrt(length(data$values[data$project == f])),  main=paste("hist for", f))
+            hist(log10(data$values[data$project == f]),  breaks = sqrt(length(data$values[data$project == f])),  
+            main=paste("hist for", f))
         }
         dev.off()
         mlm <- glm.nb(values ~ project, data=data)
@@ -92,10 +94,12 @@ def nb_glm_stats(dataframe, filename):
 
 def anova_gene_stats(dataframe, filename, name1, name2):
     """
-    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
+    Perform an anova test on ``dataframe``.
 
     :param dataframe: (pandas DataFrame) a dataframe
     :param filename: (string)  list of float
+    :param name1: (string) the name of a column in dataframe
+    :param name2: (string) the
     :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
     """
     for colnames in dataframe.columns:

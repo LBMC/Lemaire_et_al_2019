@@ -23,6 +23,7 @@ def get_control_exon_information(cnx, exon_type, exon2remove):
 
     :param cnx: (sqlite3 object) allow connection to sed database
     :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (list of list of 2int) list of exon to remove frome the control list of exons
     :return:
         * result: (list of tuple) every information about control exons
         * names: (list of string) the name of every column in sed table

@@ -2,8 +2,6 @@
 
 # -*- coding: utf-8 -*-
 
-
-
 import boxplot_gc_content_maker
 import boxplot_flanking_intron_size
 import boxplot_gene_size
@@ -27,13 +25,13 @@ import group_factor
 import union_dataset_function
 
 
-
 def mann_withney_test_r(list_values1, list_values2, alt="less"):
     """
     Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
 
     :param list_values1: (list of float)  list of float
     :param list_values2: (list of float)  list of float
+    :param alt: (string) the alternative hypothesis selected
     :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
     """
     wicox = robj.r("""
@@ -62,8 +60,8 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     """
     list_values2 = copy.deepcopy(list_values)
     for i in range(len(list_values2)):
-        v = np.array(list_values2[i], dtype=float)
-        list_values2[i] = list(v[~np.isnan(v)])
+        vect = np.array(list_values2[i], dtype=float)
+        list_values2[i] = list(vect[~np.isnan(vect)])
     color_dic = group_factor.color_dic
     color_bright = group_factor.color_dic_bright
     data = []
@@ -91,7 +89,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                          "box": {"visible": True,  "fillcolor": cur_color}, "meanline": {"visible": False}})
         else:
             data.append({"y": list_values2[i], "type": "box",
-                         "name": list_name[i], "visible": True, "fillcolor":cur_color , "opacity": 1,
+                         "name": list_name[i], "visible": True, "fillcolor": cur_color, "opacity": 1,
                          "line": {"color": "black"}})
 
     layout = go.Layout(
@@ -146,7 +144,8 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     filename = "%s%s_%s_dataframe_%s_stat.txt" % (output, name_df, regulation, type_fig)
     # if name_df == "GC_content" and type_fig == "genes":
     #     new_df = stat_maker.nb_glm_stats(df, filename)
-    #     new_df.to_csv("%s%s_%s_dataframe_%s_stat.txt" % (output, name_df, regulation, type_fig), index=False, sep="\t")
+    #     new_df.to_csv("%s%s_%s_dataframe_%s_stat.txt" % (output, name_df, regulation, type_fig),
+    #     index=False, sep="\t")
     if name_df == "gene_size":
         df["values"] = np.log10(df["values"].values)
         new_df = stat_maker.anova_nt_stats(df, filename)
@@ -154,14 +153,15 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     df.to_csv("%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig), index=False, sep="\t")
 
 
-
 def dataframe_creator2(list_values, list_values2, list_name, output, regulation, name_df, name_df2, type_fig):
     """
     Create a pandas dataframe.
 
     :param list_values: (list of list of float) list of values
+    :param list_values2: (list of list of float) list of values
     :param list_name: (list of string) the names of the exon list used to get each sublist on ``list_values`` objects.
     :param name_df: (string) the type of values displayed in ``list_values``
+    :param name_df2: (string) the type of values displayed in ``list_values2``
     :param output: (string) folder where the result will be created
     :param regulation: (string) up or down
     :param type_fig: (string) the type of graphic build
@@ -206,7 +206,7 @@ def venn_diagram_creator(list1, name1, list2, name2, output):
     :return:
     """
     # plt.figure(figsize=(48. / 2.54, 27 / 2.54))
-    venn2([set(list1), set(list2)], set_labels = (name1, name2))
+    venn2([set(list1), set(list2)], set_labels=(name1, name2))
     plt.savefig("%sVenn_%s_vs_%s.pdf" % (output, name1, name2))
     plt.clf()
     plt.cla()
@@ -218,13 +218,13 @@ def get_common_genes(filename1, filename2, output):
     From 2 files containing list of exons : return the common genes between those 2 lists
     :param filename1: (string) a file containing a list of exons
     :param filename2: (string) a file containing a list of exons
+    :param output: (string) path where the venn diagram will be created
     :return: (list of string) the list genes common between ``filename1``, ``filename2``
     """
     genes1 = extract_gene(filename1)
     genes2 = extract_gene(filename2)
     venn_diagram_creator(genes1, "AT_genes", genes2, "GC_genes", output)
     return [g for g in genes1 if g in genes2]
-
 
 
 def main():
@@ -244,7 +244,7 @@ def main():
     at_file_pure = "%sAT_rich_exons" % path
     gc_file_pure = "%sGC_rich_exons" % path
     gene2remove_at_gc = get_common_genes(at_file_pure, gc_file_pure, output)
-    #levels = ["exons", "genes"]
+    # levels = ["exons", "genes"]
     levels = ["genes"]
     for my_level in levels:
         name_file = ["GC_pure_%s" % my_level, "AT_pure_%s" % my_level, "%s_%s" % (exon_type, my_level)]
@@ -261,9 +261,11 @@ def main():
                         boxplot_flanking_intron_size.extract_exon_min_flanking_intron_size_from_file(cnx, list_file[i])
                     )
                 else:
-                    list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type, exon2remove))
+                    list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type,
+                                                                                                exon2remove))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type, exon2remove)
+                        boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type,
+                                                                                               exon2remove)
                     )
             if "genes" in name_file[i]:
                 print(name_file[i])
@@ -271,13 +273,17 @@ def main():
                     list_gc_content.append(boxplot_gc_content_maker.extract_gene_gc_content_from_file(
                         cnx, list_file[i], gene2remove_at_gc))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.extract_gene_median_intron_size_from_file(cnx, list_file[i], gene2remove_at_gc)
+                        boxplot_flanking_intron_size.extract_gene_median_intron_size_from_file(cnx, list_file[i],
+                                                                                               gene2remove_at_gc)
                     )
-                    list_gene_size.append(boxplot_gene_size.extract_gene_size_from_file(cnx, list_file[i], gene2remove_at_gc))
+                    list_gene_size.append(boxplot_gene_size.extract_gene_size_from_file(cnx, list_file[i],
+                                                                                        gene2remove_at_gc))
                 else:
-                    list_gc_content.append(boxplot_gc_content_maker.get_gene_control_gc_content(cnx, exon_type, gene2remove))
+                    list_gc_content.append(boxplot_gc_content_maker.get_gene_control_gc_content(cnx, exon_type,
+                                                                                                gene2remove))
                     list_intron_size.append(
-                        boxplot_flanking_intron_size.get_gene_control_median_flanking_intron_size(cnx, exon_type, gene2remove)
+                        boxplot_flanking_intron_size.get_gene_control_median_flanking_intron_size(cnx, exon_type,
+                                                                                                  gene2remove)
                     )
                     list_gene_size.append(boxplot_gene_size.get_control_gene_size(cnx, exon_type, gene2remove))
         if my_level == "exons":
@@ -291,7 +297,8 @@ def main():
             # create_figure(list_gene_size, name_file, output, regulation, "gene_size", my_level)
             # dataframe_creator(list_gene_size, name_file, output, regulation, "gene_size", my_level)
             # create_figure(list_gc_content, name_file, output, regulation, "GC_content", my_level)
-            dataframe_creator2(list_gc_content, list_gene_size, name_file, output, regulation, "GC_content", "gene_size", my_level)
+            dataframe_creator2(list_gc_content, list_gene_size, name_file, output, regulation, "GC_content",
+                               "gene_size", my_level)
             dataframe_creator2(list_intron_size, list_gc_content, name_file, output, regulation,
                                "median_intron_size", "GC_content", my_level)
 

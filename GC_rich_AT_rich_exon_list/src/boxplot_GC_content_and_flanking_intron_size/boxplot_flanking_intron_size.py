@@ -33,7 +33,8 @@ def get_exon_control_min_flanking_intron_size(cnx, exon_type, exon2remove):
     tuple_list = cursor.fetchall()
     median_intron_size = [np.nanmin(np.array([size[2], size[3]], dtype=float)) for size in tuple_list
                           if [size[0], size[1]] not in exon2remove]
-    print("Control exons after removing those regulated (down or up) by a splicing factor : %s" % len(median_intron_size))
+    print("Control exons after removing those regulated (down or up) by a splicing factor : %s" %
+          len(median_intron_size))
     # turn tuple into list
     return median_intron_size
 
@@ -157,4 +158,3 @@ def extract_gene_median_intron_size_from_file(cnx, filename, gene2remove):
     print("number of flanking gene after removing common with at and GC exons : %s" % len(list_gene))
     list_gc = extract_gene_median_intron_size_from_list(cnx, list_gene)
     return list_gc
-

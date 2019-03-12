@@ -29,6 +29,7 @@ import group_factor
 import union_dataset_function
 import pandas as pd
 
+
 abscissa = ["<=2", ">=3"]
 
 
@@ -155,6 +156,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     :param regulation: (string) up or down
     :param name_fig: (string) the name of figure (corresponding the the feature analyzed)
     :param type_fig: (string) the type of figure group or U1
+    :param figure: (string) the type of figure you want to create
     """
     filename = "%s%s_%s_exons_lvl_%s.html" % (output, name_fig, regulation, type_fig)
     list_name = [name.replace("_exons", "") for name in list_name]
@@ -289,8 +291,9 @@ def create_distplot_bp(list_values, list_name, output, regulation, name_fig, typ
         unique, counts = np.unique(list_values[i], return_counts=True)
         counts = counts / sum(counts) * 100
         new_list_val.append(counts)
-    fig = ff.create_distplot(list_values, list_name, bin_size=0.99, show_hist=False, show_rug=False, curve_type='normal',
-                             colors = [color_dic[my_name] for my_name in list_name])
+    fig = ff.create_distplot(list_values, list_name, bin_size=0.99,
+                             show_hist=False, show_rug=False, curve_type='normal',
+                             colors=[color_dic[my_name] for my_name in list_name])
     fig['layout'].update(title=title)
     fig['layout'].update(xaxis=dict(title=name_fig))
     fig['layout'].update(yaxis=dict(title="exons proportion"))
@@ -323,6 +326,7 @@ def create_distplot_bp(list_values, list_name, output, regulation, name_fig, typ
     # fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
+
 
 def frequency_test(obs1, tot1, obs2, tot2):
     """
@@ -683,11 +687,11 @@ def main():
             # create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
             #                "prop_nb_branch_point_(%snt)" % size, type_analysis)
             create_distplot_bp(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                           "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+                               "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
                                      "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                                     "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+                              "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             # create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
             #                "AG_count_downstream_bp(%snt)" % size, type_analysis)
             # write_proportion_pvalues(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
@@ -698,20 +702,20 @@ def main():
             # write_proportion_pvalues(dict_score_3ss[size]["uaa_count"], name_file, output, regulation,
             #                          "UAA_count(%snt)" % size, type_analysis)
             create_figure(dict_score_3ss[size]["una_count"], name_file, output, regulation,
-                           "UNA_count(%snt)" % size, type_analysis, "box")
+                          "UNA_count(%snt)" % size, type_analysis, "box")
             dataframe_creator(dict_score_3ss[size]["una_count"], name_file, output, regulation,
-                           "UNA_count(%snt)" % size, type_analysis)
+                              "UNA_count(%snt)" % size, type_analysis)
             # write_proportion_pvalues(dict_score_3ss[size]["una_count"], name_file, output, regulation,
             #                          "UNA_count(%snt)" % size, type_analysis)
             create_figure(dict_score_3ss[size]["hbound"], name_file, output, regulation,
                           "nb_h_bound_%s_nt" % size, type_analysis, "violin")
             dataframe_creator(dict_score_3ss[size]["hbound"], name_file, output, regulation,
-                          "nb_h_bound_%s_nt" % size, type_analysis)
+                              "nb_h_bound_%s_nt" % size, type_analysis)
 
             create_figure(dict_score_3ss[size]["gc_weblogo"], name_file, output, regulation,
                           "gc_weblogo_%s_nt" % size, type_analysis, "box")
             dataframe_creator(dict_score_3ss[size]["gc_weblogo"], name_file, output, regulation,
-                          "gc_weblogo_%s_nt" % size, type_analysis)
+                              "gc_weblogo_%s_nt" % size, type_analysis)
 
         # create_figure(list_force_acceptor, name_file, output, regulation, "force_acceptor", type_analysis)
         # create_barplot_with_error_bar(list_force_acceptor, name_file, output, regulation,

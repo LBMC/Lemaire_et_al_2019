@@ -146,7 +146,7 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
                     line=dict(color="black",
                               width=2),
                     symbol="circle",
-                    size=30) )]
+                    size=30))]
 
     title = """log10 pvalue of the frequency comparison test showing if %s and %s exons (%s set) 
                 are more often regulated by spliceosome factors (%s set)<br>Negative bar: %s exons 
@@ -185,7 +185,7 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%s%s_VS_%s_exon_%s_spliceosome_%s.html" %
                                       (output, pos_reg, neg_reg, group_exon, group_factor_content),
-                                      auto_open=False) # , validate=False)
+                                      auto_open=False)  # , validate=False)
 
 
 def main(filename):

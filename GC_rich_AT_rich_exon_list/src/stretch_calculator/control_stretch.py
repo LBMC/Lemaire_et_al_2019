@@ -13,11 +13,11 @@ import sqlite3
 import stretch_calculator
 import sys
 import config
-sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", "make_control_files_bp_ppt/"))
+sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator",
+                                                                       "make_control_files_bp_ppt/"))
 import exon_class
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/stretch_calculator", ""))
 import union_dataset_function
-
 
 
 def get_control_exon_information(cnx, exon_type, exon2remove):

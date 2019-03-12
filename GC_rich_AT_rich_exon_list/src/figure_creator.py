@@ -51,7 +51,7 @@ def venn_diagram_creator(list1, name1, list2, name2, output):
     flat_list1 = ["%s_%s" % (exon[0], exon[1]) for exon in list1]
     flat_list2 = ["%s_%s" % (exon[0], exon[1]) for exon in list2]
     # plt.figure(figsize=(48. / 2.54, 27 / 2.54))
-    venn2([set(flat_list1), set(flat_list2)], set_labels = (name1, name2))
+    venn2([set(flat_list1), set(flat_list2)], set_labels=(name1, name2))
     plt.savefig("%sVenn_%s_vs_%s.pdf" % (output, name1, name2))
     plt.clf()
     plt.cla()
@@ -79,7 +79,8 @@ def file_writer(list_exon, name_list, output):
     """
     Write a file containing exons (on per line) identified by their gene_id and their position within the hosting gene.
 
-    :param list_exon: (list of 2 int) list of exons identified by their gene_id and exon_position within the hosting gene
+    :param list_exon: (list of 2 int) list of exons identified by their gene_id and exon_position
+    within the hosting gene
     :param name_list: (string) the name of the list of exons named `list_exon`
     :param output: (string) path where the file will be created
     :return:
@@ -97,7 +98,7 @@ def main():
     div_group = {"AT_rich": group_factor.at_rich_down, "GC_rich": group_factor.gc_rich_down,
                  "AT_rich_U2": list(group_factor.at_rich_down) + list(group_factor.u2_factors),
                  "GC_rich_U1": list(group_factor.gc_rich_down) + list(group_factor.u1_factors),
-                 "U1" : group_factor.u1_factors, "U2": group_factor.u2_factors}
+                 "U1": group_factor.u1_factors, "U2": group_factor.u2_factors}
     dic_exon = {}
     for name_group in div_group.keys():
         print("Getting all exon regulated by %s factor" % name_group)

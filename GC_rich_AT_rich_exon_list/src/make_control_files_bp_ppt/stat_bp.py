@@ -30,7 +30,8 @@ def glm_poisson_stats(dataframe, filename):
         plot(simulationOutput)
         dev.off()
         s <- summary(glht(mlm, mcp(project = "Tukey")))
-        tab <- as.data.frame(cbind(names(s$test$coefficients), s$test$coefficients, s$test$sigma,  s$test$tstat, s$test$pvalues))
+        tab <- as.data.frame(cbind(names(s$test$coefficients), s$test$coefficients, s$test$sigma,  
+                             s$test$tstat, s$test$pvalues))
         colnames(tab) <- c("Comparison", "Estimate", "Std.Error", "z.value", "Pr(>|z|)")
         return(tab)
     }
@@ -94,7 +95,8 @@ def glm_nb_stats(dataframe, filename):
         plot(simulationOutput)
         dev.off()
         s <- summary(glht(mlm, mcp(project = "Tukey")))
-        tab <- as.data.frame(cbind(names(s$test$coefficients), s$test$coefficients, s$test$sigma,  s$test$tstat, s$test$pvalues))
+        tab <- as.data.frame(cbind(names(s$test$coefficients), s$test$coefficients, s$test$sigma,  
+                             s$test$tstat, s$test$pvalues))
         colnames(tab) <- c("Comparison", "Estimate", "Std.Error", "z.value", "Pr(>|z|)")
         return(tab)
     }

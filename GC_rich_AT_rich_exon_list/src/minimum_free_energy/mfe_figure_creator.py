@@ -29,7 +29,6 @@ import group_factor
 import union_dataset_function
 
 
-
 def extract_exon_files(cnx, filename):
     """
     :param cnx: (sqlite3 connect object) connection to fasterDB lite
@@ -88,21 +87,32 @@ def web_logo_creator(sequence_list, sequence_name, output):
 
     function(mys_seq, name_file, mytitle, size){
         s1 = 15
-        cs1 = make_col_scheme(chars=c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M'), groups=c('g1','g2','g3','g4','g5', 'g6', 'g7', 'g8', 'g9', 'g10'),cols=c('limegreen','brown1','gold','dodgerblue3','darkorange', "brown1", "limegreen", "dodgerblue3", "darkorchid3", "dodgerblue3"), name='custom1')
+        cs1 = make_col_scheme(chars=c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M'), 
+                              groups=c('g1','g2','g3','g4','g5', 'g6', 'g7', 'g8', 'g9', 'g10'),
+                              cols=c('limegreen','brown1','gold','dodgerblue3','darkorange', "brown1", 
+                                     "limegreen", "dodgerblue3", "darkorchid3", "dodgerblue3"), 
+                              name='custom1')
 
-        p1 = ggseqlogo(mys_seq,  method = "bit", col_scheme=cs1, namespace = c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M')) + theme_logo() + scale_x_discrete(limits = as.character(seq(1,size, by=1)), labels = as.character(seq(1,size, by=2)), breaks = as.character(seq(1, size, by=2))) + theme(axis.title.y=element_text(size=s1+25), legend.position="none")
+        p1 = ggseqlogo(mys_seq,  method = "bit", col_scheme=cs1, 
+                       namespace = c('A','T','G','C', 'R', 'Y', 'W', 'S', 'K', 'M')) + 
+                       theme_logo() + 
+                       scale_x_discrete(limits = as.character(seq(1,size, by=1)), 
+                       labels = as.character(seq(1,size, by=2)), breaks = as.character(seq(1, size, by=2))) + 
+                       theme(axis.title.y=element_text(size=s1+25), legend.position="none")
         p1 = p1 + ggtitle(mytitle) +  theme(plot.title = element_text(hjust = 0.5))
 
 
         p1 = p1 + theme(axis.text=element_text(size=s1 + 25), plot.title = element_text(size=s1 + 30))
-        p1 = p1 + scale_y_discrete(limits = c(0, 0.5, 1), labels = as.character(seq(0,1, length=3)), breaks = as.character(seq(0,1, length=3)), expand = c(0,0.05))
+        p1 = p1 + scale_y_discrete(limits = c(0, 0.5, 1), labels = as.character(seq(0,1, length=3)), 
+                                   breaks = as.character(seq(0,1, length=3)), expand = c(0,0.05))
         #p1 = p1 + ylim(0,1)
         png(file=paste(name_file,"_weblogo.png"),height=149 * 2,width=52 * size * 2 )
         print(p1)
         dev.off()
     }
     """)
-    weblogo_maker(v.StrVector(sequence_list), v.StrVector([output + sequence_name]), v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
+    weblogo_maker(v.StrVector(sequence_list), v.StrVector([output + sequence_name]),
+                  v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
 
 
 def create_figure(list_values, list_name, output, regulation, splicing_site, type_fig):
@@ -158,7 +168,7 @@ def create_figure(list_values, list_name, output, regulation, splicing_site, typ
 
     fig = {"data": data, "layout": layout}
     plotly.offline.plot(fig, filename="%sMFE_%s_%s.html" % (output, splicing_site, type_fig),
-                    auto_open=False, validate=False)
+                        auto_open=False, validate=False)
 
 
 def create_figure_error_bar(list_values, list_name, output, regulation, splicing_site, type_fig):
@@ -286,7 +296,7 @@ def get_mfe_score_list(output, exon_list, name_list):
     else:
         print("recovering mfe score already stored in %s" % name_store_file)
         sys.path.insert(0, output)
-        stored = __import__("%s_mfe_score" % (name_list))
+        stored = __import__("%s_mfe_score" % name_list)
         mfe_3ss = stored.mfe_3ss
         mfe_5ss = stored.mfe_5ss
     return mfe_3ss, mfe_5ss
@@ -354,26 +364,27 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     new_names = list(new_names[~np.isnan(new_values)])
     new_values = list(new_values[~np.isnan(new_values)])
     df = pd.DataFrame({"values": new_values, "project": new_names})
-    df["values"] = list(map(math.sqrt, (df["values"].values * -1) + 3/8)) # transformation of anscomb (turn a poisson distribtion into a
+    # Transformation of Anscombe
+    df["values"] = list(map(math.sqrt, (df["values"].values * -1) + 3/8))
     g = sns.FacetGrid(data=df, row="project", height=20)
     g.map(sns.distplot, "values")
     filename = "%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig)
     g.savefig(filename.replace("table.txt", "displot.pdf"), format="pdf")
     df.to_csv(filename, index=False, sep="\t")
-    if type_fig =="exon":
+    if type_fig == "exon":
         new_df = stat_mfe.anova_nt_stats(df, filename)
     else:
         new_df = stat_mfe.anova_nt_stats_spliceosome(df, filename)
     new_df.to_csv(filename.replace("table.txt", "stat.txt"), index=False, sep="\t")
 
 
-
 def main():
     exon_class.set_debug(0)
     exon_type = "CCE"
-    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy", "result/minimum_free_energy/")
-    output = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy",
+    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy",
                                                                       "result/minimum_free_energy/")
+    output = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy",
+                                                                 "result/minimum_free_energy/")
     file_dir = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy", "result/")
     if not os.path.isdir(ctrl_output):
         os.mkdir(ctrl_output)
@@ -397,7 +408,7 @@ def main():
                 mfe_3ss_score.append(mfe_3ss)
                 mfe_5ss_score.append(mfe_5ss)
             else:
-                mod = __import__("%s_mfe" % (exon_type))
+                mod = __import__("%s_mfe" % exon_type)
                 mfe_3ss_score.append(mod.mfe_3ss)
                 mfe_5ss_score.append(mod.mfe_5ss)
 
@@ -409,7 +420,6 @@ def main():
         dataframe_creator(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
         # create_figure_error_bar(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
         # write_proportion_pvalues(mfe_5ss_score, name_file, output, "5SS", type_analysis)
-
 
 
 if __name__ == "__main__":

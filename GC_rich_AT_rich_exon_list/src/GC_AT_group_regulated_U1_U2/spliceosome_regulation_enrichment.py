@@ -155,6 +155,7 @@ def adapt_reg(pvalue, regulation, alpha=0.05):
     Return the adapted regulation
     :param pvalue: (float) the p-value
     :param regulation: (string) + for enrichment - for impoverishement = for nothing
+    :param alpha: (string)
     :return: (string) return + or - if the pvalue is significant
     """
     if pvalue <= alpha:
@@ -275,8 +276,8 @@ def main():
             dic_spliceosome[key] = dic_exon[key]
 
     analysis_dic, super_dict = analysis_maker(dic_exon["GC_rich"], dic_exon["AT_rich"],
-                                                  dic_exon["GC_pure"], dic_exon["AT_pure"],
-                                                  dic_spliceosome, u1_u2_intersection, nb_iteration)
+                                              dic_exon["GC_pure"], dic_exon["AT_pure"],
+                                              dic_spliceosome, u1_u2_intersection, nb_iteration)
     file_writer(output, analysis_dic, nb_iteration, "GC", "AT")
     with open("%ssuper_dict_%s.txt" % (output, nb_iteration), "w") as outfile:
         outfile.write("super_dict=%s\n" % str(super_dict))

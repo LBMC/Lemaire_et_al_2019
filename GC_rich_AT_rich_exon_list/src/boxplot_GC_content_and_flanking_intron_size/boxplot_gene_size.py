@@ -7,9 +7,7 @@ Description:
     The goal of this script is to find the gene size of every gene in a givene exon list
 """
 
-
 import numpy as np
-
 
 
 def get_control_gene_size(cnx, exon_type, gene2remove):
@@ -87,4 +85,3 @@ def extract_gene_size_from_file(cnx, filename, gene2remove):
     print("number of size gene after removing common with at and GC exons : %s" % len(list_gene))
     list_gc = extract_gene_size_from_list(cnx, list_gene)
     return list_gc
-

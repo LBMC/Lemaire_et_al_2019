@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # -*- coding: utf-8 -*-
-
+import numpy as np
 from rpy2.robjects import r, pandas2ri
 
 pandas2ri.activate()
@@ -36,7 +36,7 @@ def anova_nt_stats(dataframe, filename):
 
         mlm <- aov(values ~ project, data=data)
         png(paste(name, "_dignostics.png", sep=""), height=2160, width=870)
-        par(mfrow=c(4, 1))
+        par(mfrow=c(2, 2))
         plot(mlm)
         dev.off()
         return(as.data.frame(TukeyHSD(mlm)$project))
@@ -66,7 +66,7 @@ def nb_glm_stats(dataframe, filename):
     function(data, name){
         factors <- levels(as.factor(as.vector(data$project)))
         png(paste(name, "_distrib.png", sep=""), height=2160, width=1920)
-        par(mfrow = c(1, 2))
+        par(mfrow = c(2, 2))
         for (f in factors){
             hist(log10(data$values[data$project == f]),  breaks = sqrt(length(data$values[data$project == f])),  main=paste("hist for", f))
         }
@@ -87,4 +87,37 @@ def nb_glm_stats(dataframe, filename):
     # print(df_stats)
     # df_stats = df_stats[df_stats["project"] != "(Intercept)"]  # removing the intercept line
     # df_stats = df_stats[["project", "Pr(>|z|)"]]
+    return df_stats
+
+
+def anova_gene_stats(dataframe, filename, name1, name2):
+    """
+    Perform a mann withney wilcoxon test on ``list_values1`` and ``list_values2``.
+
+    :param dataframe: (pandas DataFrame) a dataframe
+    :param filename: (string)  list of float
+    :return: (float) the pvalue of the mann withney test done one `list_values1`` and ``list_values2``.
+    """
+    for colnames in dataframe.columns:
+        if "size" in colnames:
+            dataframe[colnames] = np.log10(dataframe[colnames].values)
+    r_df = pandas2ri.py2ri(dataframe)
+    stat_s = r("""
+
+    function(data, name){
+        factors <- levels(as.factor(as.vector(data$project)))
+        mlm <- lm(%s ~ %s + project, data=data)
+        png(paste(name, "_dignostics.png", sep=""), height=2160, width=870)
+        par(mfrow=c(2, 2))
+        plot(mlm)
+        dev.off()
+        mlm <- aov(%s ~ %s + project, data=data)
+        return(as.data.frame(TukeyHSD(mlm, which="project")$project))
+    }
+
+                   """ % (name1, name2, name1, name2))
+    name = filename.split(".")[0]
+    df_stats = pandas2ri.ri2py(stat_s(r_df, name))
+    df_stats["project"] = df_stats.index.values
+    df_stats = df_stats[["project", "diff", "lwr", "upr", "p adj"]]
     return df_stats

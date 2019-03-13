@@ -10,7 +10,7 @@ Description:
     regulated exons.
 """
 
-import figure_producer
+import functions
 import numpy as np
 import os
 import control_exon_adapter
@@ -40,31 +40,31 @@ def get_interest_values(cnx, exon_list, target_column, nt):
     if nt:
         if "mean_intron" in target_column:
             valuesa = np.array(
-                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
+                functions.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
                 dtype=float)
             valuesb = np.array(
-                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
+                functions.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
                 dtype=float)
             values = np.array([np.nanmedian([valuesa[i], valuesb[i]]) for i in range(len(valuesa))],
                               dtype=float)
         elif "introns" in target_column:
             valuesa = np.array(
-                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
+                functions.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt),
                 dtype=float)
             valuesb = np.array(
-                figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
+                functions.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt),
                 dtype=float)
             values = np.concatenate((valuesa, valuesb))
         else:
-            values = np.array(figure_producer.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt),
+            values = np.array(functions.get_redundant_list_of_value_iupac_dnt(cnx, exon_list, target_column, nt),
                               dtype=float)
     else:
         if target_column in ["median_flanking_intron_size", "min_flanking_intron_size", "introns_size"]:
             values_up = np.array(
-                figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                functions.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
                 dtype=float)
             values_down = np.array(
-                figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                functions.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
                 dtype=float)
             if target_column == "median_flanking_intron_size":
                 values = np.array([np.nanmedian([values_up[i], values_down[i]]) for i in range(len(values_up))],
@@ -75,7 +75,7 @@ def get_interest_values(cnx, exon_list, target_column, nt):
             else:
                 values = np.concatenate((values_up, values_down))
         else:
-            values = np.array(figure_producer.get_redundant_list_of_value(cnx, exon_list, target_column),
+            values = np.array(functions.get_redundant_list_of_value(cnx, exon_list, target_column),
                               dtype=float)
     return values
 
@@ -154,7 +154,7 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
         sf_type = "sf"
     if sf_type == "project":
         for i in range(len(id_projects_sf_name)):
-            exon_list = figure_producer.get_ase_events(cnx, id_projects_sf_name[i], regulation)
+            exon_list = functions.get_ase_events(cnx, id_projects_sf_name[i], regulation)
             final_value = get_relative_value_of_a_project_or_sf(cnx, exon_list, target_column, control_dic, nt,
                                                                 operation, representation)
             values_list.append(final_value)
@@ -260,12 +260,12 @@ def get_gene_values(cnx, sf_list, target_column1, target_column2, regulation):
     if nt1:
         values1 = get_list_of_value_iupac_dnt(cnx, exon_list, target_column1, nt1)
     else:
-        values1 = figure_producer.get_list_of_value(cnx, exon_list, target_column1)
+        values1 = functions.get_list_of_value(cnx, exon_list, target_column1)
 
     if nt2:
         values2 = get_list_of_value_iupac_dnt(cnx, exon_list, target_column2, nt2)
     else:
-        values2 = figure_producer.get_list_of_value(cnx, exon_list, target_column2)
+        values2 = functions.get_list_of_value(cnx, exon_list, target_column2)
 
     return values1, values2, gene_name
 
@@ -901,7 +901,7 @@ def main(level, xaxis, yaxis, name_fig, exon_type, nt_list, exon_class, operatio
     Create the correlation matrix (gene_size vs iupac)
     """
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
-    cnx = figure_producer.connexion(seddb)
+    cnx = functions.connexion(seddb)
     ctrl_dic, full_dic = control_exon_adapter.control_handler(cnx, exon_type, operation)
     nt_list = nt_list.split(",")
     regulation = "down"

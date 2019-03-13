@@ -9,7 +9,7 @@ Description:
 
 
 import numpy as np
-import figure_producer
+import functions
 import union_dataset_function
 import control_exon_adapter
 import argparse
@@ -20,10 +20,7 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import random
 import group_factor
-import rpy2.robjects as robj
-from rpy2.robjects.packages import importr
 import heatmap_stats
-import rpy2.robjects.vectors as v
 sch = __import__('scipy.cluster.hierarchy')
 iupac_nt = {"S": ["G", "C"], "W": ["A", "T"], "Y": ["C", "T"], "R": ["A", "G"], "K": ["T", "G"], "M": ["A", "C"]}
 
@@ -147,7 +144,7 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
             else:
                 project_names.append("%s_%s" % (names[i], regulation))
             if not union:
-                exon_list = figure_producer.get_ase_events(cnx, id_projects[i], regulation)
+                exon_list = functions.get_ase_events(cnx, id_projects[i], regulation)
                 print("Splicing factor : %s, project %s  - exons %s - reg %s" %
                       (names[i], id_projects[i], len(exon_list), regulation))
                 exon_list = difference(exon_list, names[i], sf_type)
@@ -161,14 +158,14 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                     name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
                     if "mean_intron" in new_targets[j]:
                         values1 = np.array(
-                            figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt)
+                            functions.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt)
                                   )
                         values2 = np.array(
-                            figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt)
+                            functions.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt)
                                   )
                         values = np.array([np.nanmean([values1[i], values2[i]]) for i in range(len(values1))])
                     else:
-                        values = np.array(figure_producer.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
+                        values = np.array(functions.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
                         if names[i] == "QKI" and nt == "G":
                             print(exon_list)
                             print(values)
@@ -180,23 +177,23 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                 else:
                     if new_targets[j] == "median_flanking_intron_size":
                         values1 = np.array(
-                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                            functions.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
                             dtype=float)
                         values2 = np.array(
-                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                            functions.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
                             dtype=float)
                         values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
                     elif new_targets[j] == "min_flanking_intron_size":
                         values1 = np.array(
-                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                            functions.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
                             dtype=float)
                         values2 = np.array(
-                            figure_producer.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                            functions.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
                             dtype=float)
                         values = np.array([np.nanmin([values1[i], values2[i]]) for i in range(len(values1))])
                     else:
 
-                        values = np.array(figure_producer.get_list_of_value(cnx, exon_list, new_targets[j]))
+                        values = np.array(functions.get_list_of_value(cnx, exon_list, new_targets[j]))
                     list_val = values[~np.isnan(values)]
                     val_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
                     final_value = float(val_obs - control_dic[new_targets[j]]) / \
@@ -592,7 +589,7 @@ def main(union, columns, name, sf_type, contrast, operation):
     target_columns = columns.split(",")
     exon_type = "CCE"
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
-    cnx = figure_producer.connexion(seddb)
+    cnx = functions.connexion(seddb)
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, operation)
     print("test")
     if union != "union":

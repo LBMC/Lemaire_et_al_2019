@@ -4,7 +4,7 @@
 import os
 import exon_control_handler
 import numpy as np
-import figure_producer
+import functions
 import union_dataset_function
 import sys
 
@@ -69,8 +69,8 @@ def tmp_dic_creator(exon_info):
     """
     new_dic = {"rel_exon_intron_up": [], "rel_exon_intron_down": [], "rel_exon_introns": [],
                'median_flanking_intron_size': [],
-               "min_flanking_intron_size": [], "iupac_mean_intron": {nt: [] for nt in figure_producer.nt_dic},
-               "iupac_introns": {nt: [] for nt in figure_producer.nt_dic},
+               "min_flanking_intron_size": [], "iupac_mean_intron": {nt: [] for nt in functions.nt_dic},
+               "iupac_introns": {nt: [] for nt in functions.nt_dic},
                "introns_size": []}
     count = 0
     exon_info_len = len(exon_info)
@@ -87,9 +87,9 @@ def tmp_dic_creator(exon_info):
         else:
             downstream = [None] * 10
         for key in new_dic["iupac_mean_intron"].keys():
-            new_dic["iupac_mean_intron"][key].append(mean_intron_iupac[figure_producer.nt_dic[key]])
-            new_dic["iupac_introns"][key].append(upstream[figure_producer.nt_dic[key]])
-            new_dic["iupac_introns"][key].append(downstream[figure_producer.nt_dic[key]])
+            new_dic["iupac_mean_intron"][key].append(mean_intron_iupac[functions.nt_dic[key]])
+            new_dic["iupac_introns"][key].append(upstream[functions.nt_dic[key]])
+            new_dic["iupac_introns"][key].append(downstream[functions.nt_dic[key]])
 
         new_dic['median_flanking_intron_size'].append(np.nanmedian([exon[0], exon[2]]))
         new_dic["min_flanking_intron_size"].append(np.nanmin([exon[0], exon[2]]))
@@ -193,5 +193,5 @@ def control_handler(cnx, exon_type, summary, regulation="down"):
 
 if __name__ == "__main__":
     seddb = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/data/sed.db"
-    cnx_sed = figure_producer.connexion(seddb)
+    cnx_sed = functions.connexion(seddb)
     control_handler(cnx_sed, "CCE", "median")

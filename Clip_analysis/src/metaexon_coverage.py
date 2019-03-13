@@ -16,10 +16,7 @@ import union_dataset_function
 import sqlite3
 import gzip
 import group_factor
-import pymysql
-import config_control_bed_creator as conf
 import re
-import sys
 
 
 def chrom_name_adapter(bed_file, new_name):
@@ -211,7 +208,14 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
     :param template_fodler: (string) a folder containing template bed file.
     :param chrom_size_file: (string) a file containing the length of hg19 chromosomes.
     :param regulation: (string) up or down
-    :return:
+    :return: 4 elements:
+
+        1. (string) the list of bed files (coma separated) corresponding to intron-exon junctions containing the 3'SS
+        2. (string) the list of bed files (coma separated) corresponding to intron-exon junctions containing the 5'SS
+        3. (string) the list of name (coma separated) for the bed files ) corresponding to intron-exon junctions \
+        containing the 3'SS
+        4. (string) the list of name (coma separated) for the bed files ) corresponding to intron-exon junctions \
+        containing the 5'SS
     """
     final_template_start = []
     final_template_stop = []

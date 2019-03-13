@@ -64,7 +64,8 @@ def get_projects_links_to_a_splicing_factor_list(cnx, sf_list):
 
 def get_id_and_name_project_wanted(cnx, sf_type):
     """
-    Get the list of project of interest and the name of the project wanted
+    Get the list of project of interest and the name of the project wanted.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param sf_type: (string) the type of sf we want to analyze
     :return: (2 lists):

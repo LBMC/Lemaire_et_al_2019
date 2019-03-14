@@ -93,7 +93,7 @@ def washing_events(exon_list):
     """
     Remove redundant exons or remove exons showing different regulation.
 
-    :param exon_list: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id +
+    :param exon_list: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id + \
     exon_position on gene + exon_regulation). \
     Every exon regulated by a splicing factor in different projects.
     :return: (list of tuple of 2 int ans 1 str) each sublist corresponds to an exon (gene_id + exon_position on gene + \

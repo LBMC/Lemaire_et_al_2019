@@ -47,10 +47,10 @@ def get_median_iupac_introns(upstream, downstream):
     """
     Get the median value for every iupac nucleotide frequencies in upstream and downstream intron of an exon.
 
-    :param upstream: (string) frequency of each nucleotides/dnt in full upstream intron separated by a ';',
-    the last value corresponds to the size of the upstream sequence
-    :param downstream: (string) frequency of each nucleotides/dnt in full downstream intron separated by a ';',
-    the last value corresponds to the size of the downstream sequence
+    :param upstream: (string) frequency of each nucleotides/dnt in full upstream intron separated by a ';' \
+    the last value corresponds to the size of the upstream sequence.
+    :param downstream: (string) frequency of each nucleotides/dnt in full downstream intron separated by a ';' \
+    the last value corresponds to the size of the downstream sequence.
     :return: (list of float) the frequencies of nt and dnt in the introns
     """
     if upstream is not None and downstream is not None:

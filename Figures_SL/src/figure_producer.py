@@ -692,8 +692,7 @@ def main():
     # "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1",
     # "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss",
     # "iupac_upstream_intron_ppt_area"]
-    columns = ["min_flanking_intron_size", "iupac_upstream_intron_proxi", "iupac_downstream_intron_proxi",
-               "force_donor", "force_acceptor", "iupac_exon"]
+    columns = ["force_donor", "force_acceptor", "iupac_exon", "iupac_upstream_intron", "iupac_downstream_intron"]
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, size_bp_up_seq)
     if len(sys.argv) < 2:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_new/"

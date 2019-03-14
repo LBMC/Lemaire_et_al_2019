@@ -1,10 +1,10 @@
-.. SL Projects Figure Creator documentation master file, created by
+.. Correlation-Heatmap Figures Creator documentation master file, created by
    sphinx-quickstart on Thu May 31 11:17:08 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SL Projects Figure Creator's documentation!
-======================================================
+Welcome to Correlation-Heatmap Figures Creator's documentation!
+===============================================================
 
 .. warning::
 

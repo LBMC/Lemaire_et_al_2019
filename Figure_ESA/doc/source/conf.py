@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('../../src/'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'SL Projects Figure Creator'
+project = 'Correlation-Heatmap Figures Creator'
 copyright = '2018, Fontrodona Nicolas'
 author = 'Fontrodona Nicolas'
 

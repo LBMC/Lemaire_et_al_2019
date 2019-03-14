@@ -16,13 +16,7 @@ Welcome to SL Projects Figure Creator's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   README.rst
-   exon_project.rst
-   heatmap.rst
-   heatmap_force_splicing_site.rst
-   correlation_iupac_gene_size.rst
-   relative_exon_size.rst
-   correlation_iupac_exon_intron.rst
+   Readme.rst
    api.rst
 
 Indices and tables

@@ -170,16 +170,13 @@ def get_median_value(cnx, id_projects_sf_name, target_column, control_dic, regul
 
 def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
     """
-    Return the values of target_column in every`\
+    Return the values of target_column in every` \
     `regulation`` exons regulated by a splicing factor in (one or multiple) cell lines.
 
     :param cnx: (sqlite3 connexion object) allow connexion to sed database
     :param sf_list:  (list of string) the list of splicing factor studied
-    :param target_column1: (string) the value for which we want to get the median value for the ``regulation`` \
-    exon.
-    :param target_column2: (string) the value for which we want to get the median value for the ``regulation`` \
-    exon.
-    each feature in sed database.
+    :param target_column1: (string) the value for which we want to get the median value for the ``regulation`` exon.
+    :param target_column2: (string) the value for which we want to get the median value for the ``regulation`` exon.
     :param regulation: (list of string) up or down or up + down
     :return: 3 lists :
 
@@ -189,6 +186,7 @@ def get_exons_values(cnx, sf_list, target_column1, target_column2, regulation):
         every exons regulated by a splicing factor - the value in the sublist **i** position **j** \
          in the ``value`` and ``exon_name`` corresponds to the same exons
         * all_sf (list of string) list of each sf studied
+
     """
     if "$" in target_column1:
         target_column1, nt1 = target_column1.split("$")
@@ -226,7 +224,6 @@ def get_gene_values(cnx, sf_list, target_column1, target_column2, regulation):
     exon.
     :param target_column2: (string) the value for which we want to get the median value for the ``regulation`` \
     exon.
-    each feature in sed database.
     :param regulation: (list of string) up or down or up + down
     :return: 3 lists :
 
@@ -782,7 +779,7 @@ def remove_wrong_size_values(list_values1, name_value1, name_exon, list_values2,
     :param list_values1: (list of float) list of values for the feature ``name_values1``
     :param name_value1: (string) the name of the feature1
     :param name_exon: (list of string) the name of each exons for which we have the the values in list_values1 and 2
-    :param list_values2:(list of float) list of values for the feature ``name_values2``
+    :param list_values2: (list of float) list of values for the feature ``name_values2``
     :param name_value2: (string) the name of the feature2
     :return: the list of values without 0 and negative values
     """

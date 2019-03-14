@@ -172,10 +172,12 @@ def get_summary_dictionaries(names, exons_dictionary, summary):
 
 def write_control_file(exon_type, control_file, str2write, name=True):
     """
-    :param exon_type: (string) the type of control exon we want to use
-    :param control_file: (string) the file were we want to write the control data results
-    :param str2write:  (string) the result we want to write in the file
-    :param name: (boolean) True to write the name `exon_type`_dic in the control file, False else.
+    Create a control file.
+
+    :param exon_type: (string) the type of control exon we want to use.
+    :param control_file: (string) the file were we want to write the control data results.
+    :param str2write:  (string) the result we want to write in the file.
+    :param name: (boolean) True to write the name `exon_type` dic in the control file, False else.
     """
     with open(control_file, "a") as ctrl_file:
         if name:

@@ -644,8 +644,7 @@ def launcher():
                                      description="""
     Create a heatmap with  the wanted parameters
 
-    """,
-                                     usage='%(prog)s --union union --columns columns --name [--sf_type --nt]')
+    """)
     # Arguments for the parser
     required_args = parser.add_argument_group("required argument")
 

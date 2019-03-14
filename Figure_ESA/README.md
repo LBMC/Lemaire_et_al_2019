@@ -2,27 +2,20 @@
 
 ## Description
 
-This program aims to create a lots of figures that shows for each exons regulated in a project their distribution for many caracteristics described in sed database.
+This program aims to create Heatmpas and correlation figures that shows, for each group of exons activated by each studied splicing factors,  many caracteristics described in sed database.
 
-## Prerequisites
+## Building the documentation
 
-You must create Sed database.
-The  code to create sed database is detailled here: https://gitlab.biologie.ens-lyon.fr/Auboeuf/uniform_exons_features/database_creator.
-Then put the links of the sed database in the data directory of this project:
+To build the documentation for an unix system,  just go on``doc`` folder and type in a terminal :
 
 ```sh
-# Go to Figure_ESA folder
-# Make sure to create the result directory where the result will be created.
-mkdir result
-# Creation of the folder data were the sed database should be located.
-mkdir data/
-cd data/
-ln -s path_to_sed.db/sed.db .
 
+make html
 ```
 
+This wil create a folder `doc/build/html/`. Then launch the file `doc/build/html/index.html` to see the documentation.
 
-This program works with `python3.5` and uses the following modules:
-  * `sqlite3` : Connexion to sed database
-  * `plotly` : Creation of the plots
-  *  `os`
+You can also open the file `doc/source/Readme.rst` with a text editor to see the raw documentation.
+
+The documentation was build thanks to [Sphinx][http://www.sphinx-doc.org/en/master/] v1.7.
+

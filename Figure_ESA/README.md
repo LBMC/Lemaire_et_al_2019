@@ -17,5 +17,4 @@ This wil create a folder `doc/build/html/`. Then launch the file `doc/build/html
 
 You can also open the file `doc/source/Readme.rst` with a text editor to see the raw documentation.
 
-The documentation was build thanks to [Sphinx][http://www.sphinx-doc.org/en/master/] v1.7.
-
+The documentation was build thanks to [Sphinx](http://www.sphinx-doc.org/en/master/) v1.7.

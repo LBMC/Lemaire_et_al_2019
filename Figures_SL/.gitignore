@@ -1,0 +1,6 @@
+.idea/
+src/__pycache__/
+src/control/
+src/control_dictionaries/
+src/anova_test.R
+doc/build/

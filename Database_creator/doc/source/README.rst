@@ -30,6 +30,17 @@ This program uses `python <https://www.python.org>`_ version ``3.5`` and this fo
   * `pymysql v0.8.0 <http://pymysql.readthedocs.io/en/latest/user/examples.html>`_ : To connect to the real *FasterDB* database
 
 
+You have to create a file in the `src/` folder named `conf.py`. It must be like:
+
+```python
+host=<Auboeuf_team_server>
+sl_host=<splicing_lore_ip_server>
+password=<your_password>
+user=<your_username>
+fasterDB="fasterdb_humain"
+```
+
+
 Exectuted commands to create the *FasterDB_Lite* database
 ---------------------------------------------------------
 

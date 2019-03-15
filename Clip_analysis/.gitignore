@@ -1,0 +1,7 @@
+.idea/
+src/__pycache__/
+src/*.pyc
+src/control/
+src/config_control_bed_creator.py
+src/caculate_GC_at_content_clip.py
+doc/build/

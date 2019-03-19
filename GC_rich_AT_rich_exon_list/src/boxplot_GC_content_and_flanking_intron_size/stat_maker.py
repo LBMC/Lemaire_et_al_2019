@@ -9,7 +9,7 @@ pandas2ri.activate()
 
 def anova_nt_stats(dataframe, filename):
     """
-    Perform an anova test on ``dataframe``
+    Perform an anova test on ``dataframe``.
 
     :param dataframe: (pandas DataFrame) a dataframe
     :param filename: (string)  list of float
@@ -26,11 +26,11 @@ def anova_nt_stats(dataframe, filename):
         i = 0
         for (f in factors){
             i = i + 1
-            test <- ks.test(data$values[data$project == f], "pnorm", mean=mean(data$values[data$project == f]), 
+            test <- ks.test(data$values[data$project == f], "pnorm", mean=mean(data$values[data$project == f]),
                             sd=sd(data$values[data$project == f]))
             pvalues[i] <- test$p.value
             qqnorm(data$values[data$project == f], main=paste("normal QQ-PLOT for", f, "ks-test :", test$p.value))
-            hist(data$values[data$project == f],  breaks = sqrt(length(data$values[data$project == f])),  
+            hist(data$values[data$project == f],  breaks = sqrt(length(data$values[data$project == f])),
                  main=paste("hist for", f))
         }
         dev.off()
@@ -69,7 +69,7 @@ def nb_glm_stats(dataframe, filename):
         png(paste(name, "_distrib.png", sep=""), height=2160, width=1920)
         par(mfrow = c(2, 2))
         for (f in factors){
-            hist(log10(data$values[data$project == f]),  breaks = sqrt(length(data$values[data$project == f])),  
+            hist(log10(data$values[data$project == f]),  breaks = sqrt(length(data$values[data$project == f])),
             main=paste("hist for", f))
         }
         dev.off()

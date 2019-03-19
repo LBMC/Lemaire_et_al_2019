@@ -269,21 +269,22 @@ def get_metagene_vectors_windowsed(exon_list, window_size):
     """
 
     :param exon_list: (list of list of 2 ints) list of exons identified by their gene_id and exon position
-    :param window_size: (int) the size of the window we have choose for the metagene analysis
+    :param window_size: (int) the size of the window we have choose for the metagene analysis \
     :return: 4 variables:
-    final_res_5p : (dict of list of 150 floats) for each amino acid (keys of the dictionary) gives its mean
-    proportion in a windows of 'window_size' size in the sequence 5p
-    (100 nt before the exon and the 50 first nt of this exon) for every exon of interest. The the value of
-    this window is averaged with the values of every studied exons (same windows for the same sequence at the same
+
+    * final_res_5p : (dict of list of 150 floats) for each amino acid (keys of the dictionary) gives its mean \
+    proportion in a windows of 'window_size' size in the sequence 5p \
+    (100 nt before the exon and the 50 first nt of this exon) for every exon of interest. The the value of \
+    this window is averaged with the values of every studied exons (same windows for the same sequence at the same \
     position of this sequence).
-    final_res_3 : (dict of list of 150 floats) for each amino acid (keys of the dictionary) gives its mean
-    proportion in a windows of 'window_size' size in the sequence 3p
-    (50 last nt of a studied exon and the 100 nt after this exon)
-    for every exon of interest. The the value of
-    this window is averaged with the values of every studied exons (same windows for the same sequence at the same
+    * final_res_3 : (dict of list of 150 floats) for each amino acid (keys of the dictionary) gives its mean \
+    proportion in a windows of 'window_size' size in the sequence 3p \
+    (50 last nt of a studied exon and the 100 nt after this exon) \
+    for every exon of interest. The the value of \
+    this window is averaged with the values of every studied exons (same windows for the same sequence at the same \
     position of this sequence).
-    p5_analyzed (int) the number of sequences 5p analyzed
-    p3_analyzed (int) the number of sequences 3p analyzed
+    * p5_analyzed (int) the number of sequences 5p analyzed
+    * p3_analyzed (int) the number of sequences 3p analyzed
     """
     p5_analyzed = 0
     p3_analyzed = 0

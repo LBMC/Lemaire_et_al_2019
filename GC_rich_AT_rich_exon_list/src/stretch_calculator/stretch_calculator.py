@@ -11,11 +11,12 @@ import config
 
 def stretch_finder_nt(sequence, nt, stretch_len, stretch_content):
     """
-    :param sequence: (string) an amino acid sequences
+    :param sequence: (string) an amino acid sequences.
+
     :param nt: (string) the name of the nt to return
     :param stretch_len: (int) the length of the stretch of interest
-    :param stretch_content: (int) the number of amino acids participating to the feature
-    "feature" that needs to be present in the subsequence of length "stretch_len" to
+    :param stretch_content: (int) the number of amino acids participating to the feature \
+    "feature" that needs to be present in the subsequence of length "stretch_len" to \
     say that there ise a stretch in the sub-sequence
     :return: the number of stretch of the nucleotide "nt" here
     """
@@ -44,6 +45,7 @@ def stretch_finder_nt(sequence, nt, stretch_len, stretch_content):
 def stretch_counter(exon_list, stretch_data, sequence_boundaries):
     """
     Launch stretch_finder_nt  for every exon in the exon list.
+
     :param exon_list: (list of ExonClass object) list of exons
     :param stretch_data: (list of 2 int) list containing the total length and the size content of the strectch
     :param sequence_boundaries: (string) the indice of the upstream sequence wanted

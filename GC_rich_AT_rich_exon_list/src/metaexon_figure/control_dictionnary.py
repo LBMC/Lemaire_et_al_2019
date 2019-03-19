@@ -46,11 +46,10 @@ def get_control_exon_information(cnx, exon_type, exon2remove):
 def control_dictionaries_creator(window_size):
     """
     Create the control dictionary containing the vector of values of control exons. those vector will be use to \
-    display the frequencies of a given nucleotide in a meta-exon figures for the control exons.
-    Create control dictionary files that contain the values for the boxplot, metagene and metagene windowed figure for
-    coding CCE exons, CE exon, ACE exons and ASE exons
-
-    :param window_size: (int) the size of the window we want to use to create the control metagene windowsed
+    display the frequencies of a given nucleotide in a meta-exon figures for the control exons. \
+    Create control dictionary files that contain the values for the boxplot, metagene and metagene windowed figure for \
+    coding CCE exons, CE exon, ACE exons and ASE exons.
+    :param window_size: (int) the size of the window we want to use to create the control metagene windowsed \
     dictionaries
     """
     exon_class.set_debug(0)

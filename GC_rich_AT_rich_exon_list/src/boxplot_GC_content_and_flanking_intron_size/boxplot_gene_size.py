@@ -12,7 +12,8 @@ import numpy as np
 
 def get_control_gene_size(cnx, exon_type, gene2remove):
     """
-    Get thegene_size of every gene containing at least one exon type ``exon_type``
+    Get thegene_size of every gene containing at least one exon type ``exon_type``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param exon_type: (string) the type of exon for which we want to
     :param gene2remove: (string) the gene id we want to remove.
@@ -38,7 +39,8 @@ def get_control_gene_size(cnx, exon_type, gene2remove):
 
 def calculate_gene_size(cnx, gene_id):
     """
-    Get the gene size of the gene ``gene_id``
+    Get the gene size of the gene ``gene_id``.
+
     :param cnx: (sqlite3 connect object) connection to sed database.
     :param gene_id: (int) the id of the gene
     :return: (float) the median flanking intron size of the gene ``gene_id``
@@ -52,7 +54,8 @@ def calculate_gene_size(cnx, gene_id):
 
 def extract_gene_size_from_list(cnx, gene_list):
     """
-    Get the gene size of every exon located in exons list
+    Get the gene size of every exon located in exons list.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param gene_list: (list of int) list of gene_id
     :return: (list of float) the list of gene size of every gene in ``exon_list``
@@ -66,7 +69,8 @@ def extract_gene_size_from_list(cnx, gene_list):
 
 def extract_gene_size_from_file(cnx, filename, gene2remove):
     """
-    Get the gene size of the gene in ``filename``
+    Get the gene size of the gene in ``filename``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the file where the gene are stored
     :param gene2remove: (list of string) list of gene

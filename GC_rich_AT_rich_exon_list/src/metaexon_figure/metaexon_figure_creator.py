@@ -7,8 +7,8 @@ def sum_dic(vector_dic, nt):
     """
 
     :param vector_dic: (dic of list of 150 floats), a list (key of the dic) where each float gives the \
-    frequencies of a nucleotide. within a windows of x nucleotides in a particular position (center of the window)
-    in a sequence of interest. The position of the float value in the list corresponds to
+    frequencies of a nucleotide. within a windows of x nucleotides in a particular position (center of the window) \
+    in a sequence of interest. The position of the float value in the list corresponds to \
     the position of the sequence of interest where the frequencies of nucleotides is calculated
     :param nt: (string) a nucleotide in iupac code
     :return: (list of 150 float) the frequencies of the interest nucleotide nt within a window centered at each \
@@ -68,8 +68,8 @@ def make_metagene_graphics(output, p5_vector_list, p3_vector_list, nt,
      nucleotides in the 5p_sequence of the up-regulated exon set. The position of a dictionary in the list corresponds \
      to the position of 5p_sequence where the frequencies of nucleotides is calculated. Each list corresponds to a \
      different list of exons
-    :param p3_vector_list: (list dic of list of 150 floats), a dict where each list gives the frequencies of nucleotides
-    in the 3p_sequence of the up-regulated exon. The position of a dictionary in the list corresponds to the position
+    :param p3_vector_list: (list dic of list of 150 floats), a dict where each list gives the frequencies of nucleotides \
+    in the 3p_sequence of the up-regulated exon. The position of a dictionary in the list corresponds to the position \
     of 3p_sequence where the frequencies of nucleotides is calculated. Each list corresponds to a different list of \
     exons.
     :param nt: (string) the nt  for which me want to create the metaexon

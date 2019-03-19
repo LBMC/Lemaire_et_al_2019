@@ -79,11 +79,10 @@ def file_writer(list_exon, name_list, output):
     """
     Write a file containing exons (on per line) identified by their gene_id and their position within the hosting gene.
 
-    :param list_exon: (list of 2 int) list of exons identified by their gene_id and exon_position
+    :param list_exon: (list of 2 int) list of exons identified by their gene_id and exon_position \
     within the hosting gene
     :param name_list: (string) the name of the list of exons named `list_exon`
     :param output: (string) path where the file will be created
-    :return:
     """
     with open("%s%s_exons" % (output, name_list), "w") as my_file:
         for exon in list_exon:

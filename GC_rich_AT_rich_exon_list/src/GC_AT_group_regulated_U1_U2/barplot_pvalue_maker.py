@@ -122,12 +122,12 @@ def sort_values(value_list, name_list):
 
 def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_factor_content, output):
     """
-    Create a barplot from the result file produced by the script ``spliceosome_regulation_enrichment`.
+    Create a barplot from the result file produced by the script ``spliceosome_regulation_enrichment``.
 
     :param value_list: (list of float) list of value to display in the barplot
     :param name_list: (list of string) name of list associated to each value in ``value_list``
     :param pos_reg: (string) the positive regulation
-    :param neg_reg:(string) the negative regulation
+    :param neg_reg: (string) the negative regulation
     :param group_exon: (string) the type of exon sets regulated (pure or all)
     :param group_factor_content: (string) the type of exon sets regulated by a factor(pure or all)
     :param output: (string) path where te result will be created
@@ -148,9 +148,9 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
                     symbol="circle",
                     size=30))]
 
-    title = """log10 pvalue of the frequency comparison test showing if %s and %s exons (%s set) 
-                are more often regulated by spliceosome factors (%s set)<br>Negative bar: %s exons 
-                more often regulated by spliceosome factors<br>Positive bar : %s exons more often regulated 
+    title = """log10 pvalue of the frequency comparison test showing if %s and %s exons (%s set)
+                are more often regulated by spliceosome factors (%s set)<br>Negative bar: %s exons
+                more often regulated by spliceosome factors<br>Positive bar : %s exons more often regulated
                 by spliceosome factors""" % (pos_reg, neg_reg, group_exon, group_factor_content, neg_reg, pos_reg)
 
     layout = go.Layout(

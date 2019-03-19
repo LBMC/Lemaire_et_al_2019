@@ -12,7 +12,8 @@ import numpy as np
 
 def get_exon_control_gc_content(cnx, exon_type, exon2remove):
     """
-    Get the GC content of every exon with ``exon_type``
+    Get the GC content of every exon with ``exon_type``.
+
     :param cnx: (sqlite3 connect object) connection to sedb database
     :param exon_type: (string) the ``exon_type`` of interest
     :param exon2remove: (list of list of 2 int) list of exons 2 remove
@@ -38,7 +39,8 @@ def get_exon_control_gc_content(cnx, exon_type, exon2remove):
 
 def get_gene_control_gc_content(cnx, exon_type, gene2remove):
     """
-    Get the GC content of every gene containing exons with ``exon_type``
+    Get the GC content of every gene containing exons with ``exon_type``.
+
     :param cnx: (sqlite3 connect object) connection to sedb database
     :param exon_type: (string) the ``exon_type`` of interest
     :param gene2remove: (string) gene regulated by a splicing factor
@@ -70,7 +72,8 @@ def get_gene_control_gc_content(cnx, exon_type, gene2remove):
 
 def calculate_exon_gc_content(cnx, gene_id, exon_pos):
     """
-    Get the GC content of an exon having the following ``gene_id`` and ``exon_pos``
+    Get the GC content of an exon having the following ``gene_id`` and ``exon_pos``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param gene_id: (int) the fasterdb ``gene_id`` of a gene
     :param exon_pos: (int) the fasterDb position of an exon within the gene``gene_id``
@@ -85,7 +88,8 @@ def calculate_exon_gc_content(cnx, gene_id, exon_pos):
 
 def calculate_gene_gc_content(cnx, gene_id):
     """
-    Get the GC content of a gene containing with the following ``gene_id``
+    Get the GC content of a gene containing with the following ``gene_id``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param gene_id: (int) the fasterdb ``gene_id`` of a gene
     :return: (float) the gc content of the gene with the ``gene_id``
@@ -104,7 +108,8 @@ def calculate_gene_gc_content(cnx, gene_id):
 
 def extract_exon_gc_content_from_file(cnx, filename):
     """
-    Extract the gc_ content of a list of exon within a file ``filename``
+    Extract the gc_content of a list of exon within a file ``filename``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the name of the file containing  exons
     :return: (list of float) the list of the gc content of the exon in ``filename``
@@ -121,7 +126,8 @@ def extract_exon_gc_content_from_file(cnx, filename):
 
 def extract_gene_gc_content_from_file(cnx, filename, gene2remove):
     """
-    Extract the gc content of genes of a list of exon within a file ``filename``
+    Extract the gc content of genes of a list of exon within a file ``filename``.
+
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the name of the file containing  exons
     :param gene2remove: (list of string) list of gene 2 remove
@@ -144,7 +150,8 @@ def extract_gene_gc_content_from_file(cnx, filename, gene2remove):
 
 def extract_exon_gc_content_from_list(cnx, exon_list):
     """
-    Get the gc content from a list of exons
+    Get the gc content from a list of exons.
+
     :param cnx: (sqlite3 connection object) connection to sed database
     :param exon_list: (list of 2 int) list of exons identified by its gene_id and position wihtin this gene
     :return: (list of float) the list of gc content of every exons within
@@ -157,7 +164,8 @@ def extract_exon_gc_content_from_list(cnx, exon_list):
 
 def extract_gene_gc_content_from_list(cnx, gene_list):
     """
-    Get the gc content from a list of gene
+    Get the gc content from a list of gene.
+
     :param cnx: (sqlite3 connection object) connection to sed database
     :param gene_list: (list of 1 int) list of gene_id
     :return: (list of float) the list of gc content of every gene within ``gene_list``

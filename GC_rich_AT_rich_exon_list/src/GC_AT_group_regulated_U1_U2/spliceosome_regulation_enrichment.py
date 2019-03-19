@@ -22,7 +22,7 @@ from figure_creator import get_exons_list
 
 def exon_intersection(exon_list1, exon_list2):
     """
-    Return the intersection of 2 exon lists
+    Return the intersection of 2 exon lists.
 
     :param exon_list1: (list of 2 int) gene_id and exon_position
     :param exon_list2: (list of 2 int) gene_id and exon position
@@ -35,7 +35,7 @@ def exon_intersection(exon_list1, exon_list2):
 
 def exon_difference(exon_list1, exon_list2):
     """
-    Return the difference of 2 exon lists
+    Return the difference of 2 exon lists.
 
     :param exon_list1: (list of 2 int) gene_id and exon_position
     :param exon_list2: (list of 2 int) gene_id and exon position
@@ -48,7 +48,7 @@ def exon_difference(exon_list1, exon_list2):
 
 def frequency_test(obs1, tot1, obs2, tot2):
     """
-    Chiq test
+    Chiq test.
 
     :param obs1: (int) the count number of an amino acid X in the set of protein 1.
     :param tot1: (int) the total number of amino acids in the set of protein 1.
@@ -77,7 +77,8 @@ def frequency_test(obs1, tot1, obs2, tot2):
 
 def get_control_exon(cnx, exon_type):
     """
-    Get the wanted control exons
+    Get the wanted control exons.
+
     :param cnx: (sqlite3 object) allow connection to sed database
     :param exon_type: (string) the type of control exon we want to use
     :return:
@@ -102,7 +103,7 @@ def get_control_exon(cnx, exon_type):
 
 def subsample(my_list, nb):
     """
-    Make a subsampling of the data in ``my_list``
+    Make a subsampling of the data in ``my_list``.
 
     :param my_list: (list of list of 2 int) list of exons
     :param nb: (int) the number of value we want to subsample in ``my_list``
@@ -119,7 +120,7 @@ def calculate_index(value, list_of_values):
     """
     :param value: a value corresponding to a codon frequency
     :param list_of_values: a list of codon frequencies
-    :return: an empirical "p-value" calculated by the position of the value "value" in the list_of_value
+    :return: an empirical "p-value" calculated by the position of the value "value" in the list_of_value \
     sorted in the ascending order
     """
     list_of_values.sort()
@@ -152,7 +153,8 @@ def calculate_index(value, list_of_values):
 
 def adapt_reg(pvalue, regulation, alpha=0.05):
     """
-    Return the adapted regulation
+    Return the adapted regulation.
+
     :param pvalue: (float) the p-value
     :param regulation: (string) + for enrichment - for impoverishement = for nothing
     :param alpha: (string)
@@ -168,7 +170,8 @@ def analysis_maker(gc_exon_list, at_exon_list, gc_pure_exon_list, at_pure_exon_l
     """
     Make the comparison analysis of the frequencies of exons regulated by every spliceosome(U1) factors from \
     two exons list, one containing exons regulated by splicing factors regulating AT rich exons and the other \
-    containing exons regulated by splicing factors regulating GC rich exons
+    containing exons regulated by splicing factors regulating GC rich exons.
+
     :param gc_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating GC rich exons.
     :param at_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating AT rich exons.
     :param gc_pure_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating \

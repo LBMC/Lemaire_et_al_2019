@@ -181,7 +181,8 @@ def dataframe_creator2(list_values, list_values2, list_name, output, regulation,
 
 def extract_gene(filename):
     """
-    From a file with two columns, the id of a gene and the exon number, return
+    From a file with two columns, the id of a gene and the exon number, return the id of a gene.
+
     :param filename: (string ) a file of exons
     :return: (a list of string) the list of gene id
     """
@@ -215,7 +216,8 @@ def venn_diagram_creator(list1, name1, list2, name2, output):
 
 def get_common_genes(filename1, filename2, output):
     """
-    From 2 files containing list of exons : return the common genes between those 2 lists
+    From 2 files containing list of exons : return the common genes between those 2 lists.
+
     :param filename1: (string) a file containing a list of exons
     :param filename2: (string) a file containing a list of exons
     :param output: (string) path where the venn diagram will be created

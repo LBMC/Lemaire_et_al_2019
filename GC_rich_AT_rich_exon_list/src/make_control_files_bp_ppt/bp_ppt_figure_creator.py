@@ -71,7 +71,7 @@ def extract_exon_files(cnx, filename):
         while line:
             line = line.replace("\n", "")
             line = line.split("\t")
-            exon = exon_class.ExonClass(cnx, str(line[0]), int(line[0]), int(line[1]))
+            exon = exon_class_bp.ExonClass(cnx, str(line[0]), int(line[0]), int(line[1]))
             exon_list.append(exon)
             line = outfile.readline()
     return exon_list
@@ -610,13 +610,13 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos, regulation="down"):
         for sf_name in dic_name[list_names[pos]]:
             exon_list_tmp += union_dataset_function.get_every_events_4_a_sl(cnx_sed, sf_name, regulation)
         exon_list_tmp = union_dataset_function.washing_events_all(exon_list_tmp)
-        exon_list = [exon_class.ExonClass(cnx, str(exon[0]), int(exon[0]), int(exon[1])) for exon in exon_list_tmp]
+        exon_list = [exon_class_bp.ExonClass(cnx, str(exon[0]), int(exon[0]), int(exon[1])) for exon in exon_list_tmp]
     print("%s : %s %s exons" % (list_names[pos], len(exon_list), regulation))
     return exon_list
 
 
 def main():
-    exon_class.set_debug(0)
+    exon_class_bp.set_debug(0)
     exon_type = "CCE"
     ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt",
                                                                       "result/make_control_files_bp_ppt/")

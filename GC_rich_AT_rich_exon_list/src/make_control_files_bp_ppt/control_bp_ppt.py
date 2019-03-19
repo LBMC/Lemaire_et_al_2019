@@ -52,7 +52,7 @@ def control_dictionaries_creator():
     """
     Create the control dictionary containing the values corresponding to the score of bp and ppt for every control exons
     """
-    exon_class.set_debug(0)
+    exon_class_bp.set_debug(0)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fasterdb = os.path.dirname(os.path.realpath(__file__)).replace("src/make_control_files_bp_ppt",
                                                                    "data/fasterDB_lite.db")
@@ -68,7 +68,7 @@ def control_dictionaries_creator():
     for cur_exon_type in exon_type:
         ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type, exon2remove)
         print("retrieving upstream intron sequence")
-        list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
+        list_exon = [exon_class_bp.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
         for size in sizes:
             print("calculating bp and ppt score")
             bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, sequence_list, ag_count_list, \

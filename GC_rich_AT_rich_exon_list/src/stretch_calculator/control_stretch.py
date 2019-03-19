@@ -15,7 +15,7 @@ import sys
 import config
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator",
                                                                        "make_control_files_bp_ppt/"))
-import exon_class
+import exon_class_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/stretch_calculator", ""))
 import union_dataset_function
 
@@ -55,7 +55,7 @@ def control_dictionaries_creator():
     """
     Create the control dictionary containing the values corresponding to the score of bp and ppt for every control exons
     """
-    exon_class.set_debug(0)
+    exon_class_bp.set_debug(0)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fasterdb = os.path.dirname(os.path.realpath(__file__)).replace("src/stretch_calculator", "data/fasterDB_lite.db")
     seddb = os.path.dirname(os.path.realpath(__file__)).replace("src/stretch_calculator", "data/sed.db")
@@ -72,7 +72,7 @@ def control_dictionaries_creator():
         print("Working on %s exons ..." % cur_exon_type)
         ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type, exon2remove)
         print("\t--> Getting upstream intron sequence")
-        list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
+        list_exon = [exon_class_bp.ExonClass(cnx, exon[0], exon[1], exon[2]) for exon in ctrl_exon_list]
         cur_file = open(ctrl_dir + cur_exon_type + "_stretches.py", "w")
         for cur_stretch in stretches:
             print("\t--> Calculating stretches %s/%s" % (cur_stretch[1], cur_stretch[0]))

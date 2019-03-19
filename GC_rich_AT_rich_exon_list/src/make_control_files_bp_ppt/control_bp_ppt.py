@@ -10,7 +10,7 @@ Description:
 
 import os
 import sqlite3
-import exon_class
+import exon_class_bp
 import function
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)).replace("/make_control_files_bp_ppt", ""))

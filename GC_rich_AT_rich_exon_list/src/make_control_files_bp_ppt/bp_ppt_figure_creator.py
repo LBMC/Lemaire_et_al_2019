@@ -21,7 +21,7 @@ from rpy2.robjects.packages import importr
 import warnings
 from rpy2.rinterface import RRuntimeWarning
 import seaborn as sns
-import exon_class
+import exon_class_bp
 import function
 import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("make_control_files_bp_ppt", ""))

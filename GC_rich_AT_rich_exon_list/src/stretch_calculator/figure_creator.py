@@ -23,7 +23,7 @@ import config
 import stretch_calculator
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator",
                                                                        "make_control_files_bp_ppt/"))
-import exon_class
+import exon_class_bp
 import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("stretch_calculator", ""))
 import group_factor

@@ -2,7 +2,7 @@
 
 ## Description
 
-This program aims to create Heatmpas and correlation figures that shows, for each group of exons activated by each studied splicing factors,  many caracteristics described in sed database.
+This program aims to create Heatmaps and correlation figures that shows, for each group of exons activated by each studied splicing factors,  many caracteristics described in sed database.
 
 ## Building the documentation
 

@@ -5,7 +5,7 @@
 
 import os
 import sqlite3
-import exon_class
+import exon_class_metaexon
 import win_size
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)).replace("/metaexon_figure", ""))
@@ -52,7 +52,7 @@ def control_dictionaries_creator(window_size):
     :param window_size: (int) the size of the window we want to use to create the control metagene windowsed \
     dictionaries
     """
-    exon_class.set_debug(0)
+    exon_class_metaexon.set_debug(0)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     fasterdb = os.path.dirname(os.path.realpath(__file__)).replace("src/metaexon_figure", "data/fasterDB_lite.db")
     seddb = os.path.dirname(os.path.realpath(__file__)).replace("src/metaexon_figure", "data/sed.db")
@@ -66,10 +66,10 @@ def control_dictionaries_creator(window_size):
     for cur_exon_type in exon_type:
         ctrl_exon_list = get_control_exon_information(cnx, cur_exon_type, exon2remove)
         # ctrl_exon_list = ctrl_exon_list[0:2]
-        list_exon = [exon_class.ExonClass(cnx, exon[0], exon[1], exon[2], window_size) for exon in ctrl_exon_list]
+        list_exon = [exon_class_metaexon.ExonClass(cnx, exon[0], exon[1], exon[2], window_size) for exon in ctrl_exon_list]
         print("creating metagene windowsed")
         final_res_5p, final_res_3p, p5_analyzed, p3_analyzed = \
-            exon_class.get_metagene_vectors_windowsed(list_exon, window_size)
+            exon_class_metaexon.get_metagene_vectors_windowsed(list_exon, window_size)
         print(final_res_5p)
         cur_file = open(ctrl_dir + cur_exon_type + "_metagene_windowsed.py", "w")
         cur_file.write("final_res_5p=" + str(final_res_5p) + "\n")

@@ -5,7 +5,7 @@
 
 import sqlite3
 import os
-import exon_class
+import exon_class_metaexon
 import metaexon_figure_creator
 import argparse
 import win_size
@@ -40,7 +40,7 @@ def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend):
     :param color_list: (list of strings) the list of color we want to use
     :param legend: (boolean) True if you want to draw an exon + legend false else
     """
-    exon_class.set_debug(0)
+    exon_class_metaexon.set_debug(0)
     window_size = win_size.window_size
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "result/metaexon_figure/")
     if not os.path.isdir(output):
@@ -51,9 +51,9 @@ def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend):
     list_of_vector_3p = []
     for i in range(len(files)):
         exon_list = extract_exon_list(files[i])
-        new_exon_list = [exon_class.ExonClass(cnx, None, exon[0], exon[1], window_size) for exon in exon_list]
-        final_res_5p, final_res_3p, p5_analyzed, p3_analyzed = exon_class.get_metagene_vectors_windowsed(new_exon_list,
-                                                                                                         window_size)
+        new_exon_list = [exon_class_metaexon.ExonClass(cnx, None, exon[0], exon[1], window_size) for exon in exon_list]
+        final_res_5p, final_res_3p, p5_analyzed, p3_analyzed = \
+            exon_class_metaexon.get_metagene_vectors_windowsed(new_exon_list, window_size)
         list_of_vector_5p.append(final_res_5p)
         list_of_vector_3p.append(final_res_3p)
 

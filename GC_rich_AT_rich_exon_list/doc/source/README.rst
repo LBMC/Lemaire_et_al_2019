@@ -2,12 +2,22 @@ GC- AT- U1- U2-exons figures's documentation
 ============================================
 
 
-The following documentation only contains a brief description of what scripts inside the  `GC_rich_AT_rich_exon_list/src` folder does. For more details, read the *Materials and Methods* in the article of **Lemaire *et al***.
+The following documentation contains a brief description of what scripts inside the  `GC_rich_AT_rich_exon_list/src` folder does. For more details, read the *Materials and Methods* in the article of **Lemaire *et al***.
 
 
 .. note::
 
   All the following scripts use the SED and/or the fasterDB database. To see how to create those databases, you can read the documentation in the `Database_creator/doc` folder. Those databases must be present into the ``data`` folder.
+
+
+Root Folder
+-----------
+
+The script ``figure_creator`` will create a venn diagram showing the exons regulated by splicing factor regulating AT-rich exons (with long introns)(AT-exons) and the exons regulated by splicing factor regulating GC-rich exons (with short introns) (GC-exons).
+It also create files containing the GC and AT-exons. Those files contains 2 columns : the first one correspond to the id of a FasterDB [Mal14]_ gene and the second one corresponds to the id of a FasterDB exons.
+
+The script ``exon_set_input_creator`` create files containing the exons activated by DDX5_17, SNRP70, SNRPC, UAF1, U2AF2, SF3A3 and SF3B4. Those files contains 2 columns : the first one correspond to the id of a FasterDB gene and the second one corresponds to the id of a FasterDB exons.
+
 
 
 ``boxplot_GC_content_and_flanking_intron_size`` folder
@@ -103,8 +113,12 @@ To create the figures you can run the following commands (in the folder ``GC_ric
   # creation of the files containing GC and AT exons
   python3 src/figure_creator.py
 
+  # creation of the files containing the exons activayed by some splicerosome activated factors.
+  python3 src/exon_set_input_creator.py
+
   # Creation of the nucleotide frequency maps
   python3 src/metaexon_figure/launcher_metaexon.py --files result/GC_rich_exons,result/AT_rich_exons --name_files 'GC_pure,AT_pure' --nt C,S,A,T,G,W,Y,R --name_fig GC-ATgroup-legend --exon_type CCE --color '#0000FF,#00aa00' --legend True
+  python3 src/metaexon_figure/launcher_metaexon.py --files result/inputs_union/input_SNRPC-union.txt,result/inputs_union/input_SNRNP70-union.txt,result/inputs_union/input_DDX5_DDX17-union.txt,result/inputs_union/input_U2AF1-union.txt,result/inputs_union/input_U2AF2-union.txt,result/inputs_union/input_SF1-union.txt,result/inputs_union/input_SF3A3-union.txt,result/inputs_union/input_SF3B4-union.txt --name_files 'SNRPC,SNRNP70,DDX5_17,U2AF1,U2AF2,SF1,SF3A3,SF3B4' --nt T,S,A,G,C,W,Y,R --name_fig spliceosome_group-legend --exon_type CCE --color 'cyan,navy,#AA00FF,#006400,olive,#55FF55,#D8EF48,#8FBC8F' --legend True
 
   # Creation of the minimum free energy figures
   python3 src/minimum_free_energy/mfe_figure_creator.py
@@ -117,3 +131,4 @@ To create the figures you can run the following commands (in the folder ``GC_ric
 
 .. [Lor11] Lorenz, R. et al. ViennaRNA Package 2.0. Algorithms for Molecular Biology 6, (2011).
 .. [CHS10] Corvelo, A., Hallegger, M., Smith, C. W. & Eyras, E. Genome-wide association between branchpoint properties and alternative splicing. PLoS Comput Biol 6, e1001016, doi:10.1371/journal.pcbi.1001016 (2010).
+.. [Mal14] Mallinjoud, P. et al. Endothelial, epithelial, and fibroblast cells exhibit specific splicing programs independently of their tissue of origin. Genome Res 24, 511-521, doi:10.1101/gr.162933.113 (2014)

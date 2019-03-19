@@ -22,7 +22,7 @@ import warnings
 from rpy2.rinterface import RRuntimeWarning
 import seaborn as sns
 import exon_class_bp
-import function
+import function_bp
 import stat_bp
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("make_control_files_bp_ppt", ""))
 import group_factor
@@ -492,7 +492,7 @@ def get_bp_ppt_score_list(output, exon_list, name_list, size, regulation):
     if not os.path.isfile(name_store_file):
         print("Calculating ppt bp score using SVM BP FINDER")
         bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, \
-            ag_count_list, hbound_list, uaa_list, una_list = function.bp_ppt_calculator(exon_list, size)
+            ag_count_list, hbound_list, uaa_list, una_list = function_bp.bp_ppt_calculator(exon_list, size)
         with open(name_store_file, "w") as outfile:
             outfile.write("bp_score_list=%s\n" % str(bp_score_list))
             outfile.write("ppt_score_list=%s\n" % str(ppt_score_list))

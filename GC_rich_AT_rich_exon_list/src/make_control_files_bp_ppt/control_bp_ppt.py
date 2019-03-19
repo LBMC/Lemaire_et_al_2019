@@ -11,7 +11,7 @@ Description:
 import os
 import sqlite3
 import exon_class_bp
-import function
+import function_bp
 import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)).replace("/make_control_files_bp_ppt", ""))
 import union_dataset_function
@@ -72,7 +72,7 @@ def control_dictionaries_creator():
         for size in sizes:
             print("calculating bp and ppt score")
             bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, sequence_list, ag_count_list, \
-                hbound_list, uaa_list, una_list = function.bp_ppt_calculator(list_exon, size)
+                hbound_list, uaa_list, una_list = function_bp.bp_ppt_calculator(list_exon, size)
             cur_file = open(ctrl_dir + cur_exon_type + "_" + str(size) + "_bp_ppt_score.py", "w")
             cur_file.write("bp_score=" + str(bp_score_list) + "\n")
             cur_file.write("ppt_score=" + str(ppt_score_list) + "\n")

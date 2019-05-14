@@ -1,0 +1,21 @@
+#!/bin/bash
+
+unset FarLine_analysis_path_array; declare -A FarLine_analysis_path_array
+
+FarLine_analysis_path_array['MCF7_siDNMT3a']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siDNMT3a-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siDNMT3b']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siDNMT3b-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siEED']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siEED-siGL2seb_median_unpaired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siEZH2']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siEZH2-siGL2seb_median_unpaired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siKMT2A']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siKMT2A-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siKMT2D']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siKMT2D-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siMBD2']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siMBD2-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siMBD3']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siMBD3-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siPP']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siPP-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siSETD2']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siSETD2-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siSUV3H1']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siSUV39H1-siGL2_median_unpaired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siSUV3H2']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siSUV39H2-siGL2_median_unpaired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siTET2']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siTET2-siGL2_median_paired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siTDG']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_methChromRegulators-siPP-siGL2/RNA-Seq_results/analyse_stat/analyse_stat_siTDG-siGL2_median_paired_psi_corrigee'
+
+FarLine_analysis_path_array['MCF7_siBRD4_55922']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_epiTherapy_public/FarLine_GSE55922_analysis/analyse_stat_Control-BRD4_median_unpaired_psi_corrigee'
+FarLine_analysis_path_array['MCF7_siCTCF_85088']='/home/sebastien/analyses_SEBASTIEN/analyse_RNA-Seq_epiTherapy_public/FarLine_GSE85088_analysis/analyse_stat_siNT-siCTCF_median_unpaired_psi_corrigee'

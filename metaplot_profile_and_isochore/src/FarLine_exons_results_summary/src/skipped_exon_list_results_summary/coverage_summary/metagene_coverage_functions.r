@@ -1,0 +1,27 @@
+#!/usr/bin/Rscript
+
+
+require(bigWig, quietly=TRUE, warn.conflicts=FALSE )
+require(ggplot2, quietly=TRUE, warn.conflicts=FALSE )
+require(reshape, quietly=TRUE, warn.conflicts=FALSE )
+#~ require(gplots, quietly=TRUE, warn.conflicts=FALSE )
+
+metagene_coverage_functions_dir <- dirname(sys.frame(1)$ofile)
+scripts_dir <- paste( metagene_coverage_functions_dir, 'metagene_coverage_functions', sep='/' )
+source( paste( scripts_dir, 'seqDepth_loader.r', sep='/' ) )
+source( paste( scripts_dir, 'bedCheckCoords.r', sep='/' ) )
+source( paste( scripts_dir, 'bed_loader.r', sep='/' ) )
+source( paste( scripts_dir, 'check_ref_annotVsBw.r', sep='/' ) )
+source( paste( scripts_dir, 'stranded_coverages.r', sep='/' ) )
+source( paste( scripts_dir, 'stranded_coverages_varLen.r', sep='/' ) )
+source( paste( scripts_dir, 'stranded_diffCov.r', sep='/' ) )
+source( paste( scripts_dir, 'cov_extr_fc.r', sep='/' ) )
+source( paste( scripts_dir, 'summary_table.r', sep='/' ) )
+source( paste( scripts_dir, 'measure_extractor.r', sep='/' ) )
+source( paste( scripts_dir, 'repart_builder.r', sep='/' ) )
+source( paste( scripts_dir, 'heatmap_builder.r', sep='/' ) )
+source( paste( scripts_dir, 'coverage_repart_plot.r', sep='/' ) )
+source( paste( scripts_dir, 'metagene_summary_builder.r', sep='/' ) )
+source( paste( scripts_dir, 'metagene_measure_builder.r', sep='/' ) )
+source( paste( scripts_dir, 'out_dirs_creator.r', sep='/' ) )
+source( paste( scripts_dir, 'bw_seqDepth_retriever.r', sep='/' ) )

@@ -66,7 +66,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     color_bright = group_factor.color_dic_bright
     data = []
     title = """%s of %s %s containing those exons regulated by different factors""" % (name_fig, regulation, type_fig)
-    if "intron" in name_fig:
+    if "size" in name_fig:
         list_values2 = [list(map(math.log10, cur_list)) for cur_list in list_values2]
         name_fig = "log " + name_fig
         title += "<br/>(log min flanking intron size for exons and log median introns size for genes)"
@@ -247,13 +247,14 @@ def main():
     gc_file_pure = "%sGC_rich_exons" % path
     gene2remove_at_gc = get_common_genes(at_file_pure, gc_file_pure, output)
     # levels = ["exons", "genes"]
-    levels = ["genes"]
+    levels = ["exons"]
     for my_level in levels:
         name_file = ["GC_pure_%s" % my_level, "AT_pure_%s" % my_level, "%s_%s" % (exon_type, my_level)]
         list_file = [gc_file_pure, at_file_pure, None]
         list_gc_content = []
         list_intron_size = []
         list_gene_size = []
+        list_exon_size = []
         for i in range(len(name_file)):
             if "exons" in name_file[i]:
                 if exon_type not in name_file[i]:
@@ -262,12 +263,21 @@ def main():
                     list_intron_size.append(
                         boxplot_flanking_intron_size.extract_exon_min_flanking_intron_size_from_file(cnx, list_file[i])
                     )
+                    list_exon_size.append(
+                        boxplot_flanking_intron_size.extract_exon_size_from_file(
+                            cnx, list_file[i])
+                    )
                 else:
                     list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type,
                                                                                                 exon2remove))
                     list_intron_size.append(
                         boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type,
                                                                                                exon2remove)
+                    )
+                    list_exon_size.append(
+                        boxplot_flanking_intron_size.get_exon_control_size(
+                            cnx, exon_type,
+                            exon2remove)
                     )
             if "genes" in name_file[i]:
                 print(name_file[i])
@@ -293,6 +303,8 @@ def main():
             dataframe_creator(list_gc_content, name_file, output, regulation, "GC_content", my_level)
             create_figure(list_intron_size, name_file, output, regulation, "min_intron_size", my_level)
             dataframe_creator(list_intron_size, name_file, output, regulation, "min_intron_size", my_level)
+            create_figure(list_exon_size, name_file, output, regulation, "exon_size", my_level)
+            dataframe_creator(list_exon_size, name_file, output, regulation, "exon_size", my_level)
         if my_level == "genes":
             # create_figure(list_intron_size, name_file, output, regulation, "median_intron_size", my_level)
             # dataframe_creator(list_intron_size, name_file, output, regulation, "median_intron_size", my_level)

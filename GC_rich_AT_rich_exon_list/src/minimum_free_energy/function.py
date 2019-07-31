@@ -26,7 +26,7 @@ def fasta_writer(exon_list, filename, splicing_site):
         for exon in exon_list:
             if splicing_site == "3ss":
                 if exon.seq_3ss is not None:
-                    out_file.write(">seq_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position))
+                    out_file.write(">seq_%s_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position, splicing_site))
                     out_file.write(exon.seq_3ss + "\n")
                 else:
                     print("WARNING : exons %s_%s with %s start_on_gene can't be written : gene_len : %s" %
@@ -34,7 +34,7 @@ def fasta_writer(exon_list, filename, splicing_site):
                     count += 1
             else:
                 if exon.seq_5ss is not None:
-                    out_file.write(">seq_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position))
+                    out_file.write(">seq_%s_%s_%s\n" % (exon.gene.name.replace(".", ","), exon.position, splicing_site))
                     out_file.write(exon.seq_5ss + "\n")
                 else:
                     print("WARNING : exons %s_%s with %s stop_on_gene can't be written : gene_len : %s" %
@@ -43,15 +43,21 @@ def fasta_writer(exon_list, filename, splicing_site):
     print("total missed %s : %s" % (splicing_site, count))
 
 
-def rnafold_launcher(rnafold_launcher, input_file, output_file):
+def rnafold_launcher(rnafold_launcher, input_file, output_file, ps=False):
     """
     Launch RNAfold.
 
     :param rnafold_launcher: (string) path where rnafold is installed
     :param input_file: (string) input fasta file
     :param output_file: (string) output rnafold.
+    :param ps: (boolean) true to create postscript false else
     """
     subprocess.check_call("%sRNAfold --noPS %s > %s" % (rnafold_launcher, input_file, output_file), shell=True)
+    if ps:
+        cmd = "%sRNAplot --pre '26 27 8 RED omark' < %s" % (rnafold_launcher, output_file)
+        subprocess.check_call(cmd, shell=True)
+        cmd = "mv *.ps %s" % (os.path.realpath(os.path.dirname(output_file)))
+        subprocess.check_call(cmd, shell=True)
 
 
 def extract_mfe(filename):
@@ -71,13 +77,16 @@ def extract_mfe(filename):
     return list_mfe
 
 
-def mfe_calculator(exon_list):
+def mfe_calculator(exon_list, output=None, ps=False):
     """
     Launch svm_bp finder for every exon in the exon list
     :param exon_list: (list of ExonClass object) list of exons
+    :param output: (str) the output file
+    :param ps: (boolean) true to create postscript false else
     :return: (2 lists of floats) lists of float
     """
-    output = os.path.realpath(os.path.dirname(__file__)) + "/control_dictionaries/"
+    if output is None:
+        output = os.path.realpath(os.path.dirname(__file__)) + "/control_dictionaries/"
     rnafold = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy", "data/RNAfold/")
     if not os.path.isdir(output):
         os.mkdir(output)
@@ -87,8 +96,8 @@ def mfe_calculator(exon_list):
     out_5ss = "%sout_rnafold_5ss.fa" % output
     fasta_writer(exon_list, file_3ss, "3ss")
     fasta_writer(exon_list, file_5ss, "5ss")
-    rnafold_launcher(rnafold, file_3ss, out_3ss)
-    rnafold_launcher(rnafold, file_5ss, out_5ss)
+    rnafold_launcher(rnafold, file_3ss, out_3ss, ps)
+    rnafold_launcher(rnafold, file_5ss, out_5ss, ps)
     mfe_3ss = extract_mfe(out_3ss)
     mfe_5ss = extract_mfe(out_5ss)
     return mfe_3ss, mfe_5ss

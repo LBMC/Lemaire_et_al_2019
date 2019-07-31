@@ -40,6 +40,35 @@ def get_exon_control_min_flanking_intron_size(cnx, exon_type, exon2remove):
     return median_intron_size
 
 
+def get_exon_control_size(cnx, exon_type, exon2remove):
+    """
+    Get the size of every exons with the exon type ``exon_type``.
+
+    :param cnx: (sqlite3 connect object) connection to sed database
+    :param exon_type: (string) the type of exon for which we want to get
+    :param exon2remove: (string) the list of exon we want to remove
+    :return: (list of float) the flanking intron size of exons with the exon type ``exon_tyep``
+    """
+    cursor = cnx.cursor()
+    if exon_type != "ALL":
+        query = """SELECT gene_id, exon_pos, exon_size
+                       FROM sed
+                       WHERE exon_type LIKE '%{}%'
+                       """.format(exon_type)
+    else:
+        query = """SELECT gene_id, exon_pos, exons_size
+                       FROM exons
+                    """
+    cursor.execute(query)
+    tuple_list = cursor.fetchall()
+    exon_size = [size[2] for size in tuple_list
+                          if [size[0], size[1]] not in exon2remove]
+    print("Control exons after removing those regulated (down or up) by a splicing factor : %s" %
+          len(exon_size))
+    # turn tuple into list
+    return exon_size
+
+
 def get_gene_control_median_flanking_intron_size(cnx, exon_type, gene2remove):
     """
     Get the median intron size of every gene containing at least one exon type ``exon_type``.
@@ -80,6 +109,22 @@ def calculate_exon_min_flanking_intron_size(cnx, gene_id, exon_pos):
     cursor.execute(query, (gene_id, exon_pos,))
     res = cursor.fetchone()
     return np.nanmin(np.array([res[0], res[1]], dtype=float))
+
+
+def calculate_exon_size(cnx, gene_id, exon_pos):
+    """
+    Get the exons size of the exons with ``gene_id`` and ``exon_pos``.
+
+    :param cnx: (sqlite3 connect object) connection to sed database.
+    :param gene_id: (int) the id of the gene containing the exons.
+    :param exon_pos: (int) the id of the exon of interest
+    :return: (float) the median flanking intron size of the exon with ``gene_id`` and ``exon_pos``
+    """
+    cursor = cnx.cursor()
+    query = "SELECT exon_size FROM sed WHERE gene_id = ? and exon_pos = ?"
+    cursor.execute(query, (gene_id, exon_pos,))
+    res = cursor.fetchone()
+    return res[0]
 
 
 def calculate_gene_median_intron_size(cnx, gene_id):
@@ -140,6 +185,24 @@ def extract_exon_min_flanking_intron_size_from_file(cnx, filename):
         while line:
             line = line.split("\t")
             median_intron_size.append(calculate_exon_min_flanking_intron_size(cnx, line[0], line[1]))
+            line = in_file.readline()
+    return median_intron_size
+
+
+def extract_exon_size_from_file(cnx, filename):
+    """
+    Get the min flanking intron size of the exon within the file ``filename``.
+
+    :param cnx: (sqlite3 connect object) connection to sed database
+    :param filename: (string) the file where the exons are stored
+    :return: (list of float) list of median intron size of the exon in ``filename``
+    """
+    median_intron_size = []
+    with open(filename, "r") as in_file:
+        line = in_file.readline()
+        while line:
+            line = line.split("\t")
+            median_intron_size.append(calculate_exon_size(cnx, line[0], line[1]))
             line = in_file.readline()
     return median_intron_size
 

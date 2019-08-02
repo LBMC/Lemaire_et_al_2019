@@ -35,7 +35,7 @@ dnt_dic = {"AA": 0, "AC": 1, "AG": 2, "AT": 3, "CA": 4, "CC": 5,
            "CG": 6, "CT": 7, "GA": 8, "GC": 9, "GG": 10, "GT": 11,
            "TA": 12, "TC": 13, "TG": 14, "TT": 15}
 log_columns = ["nb_intron_gene", "downstream_intron_size", "upstream_intron_size",
-               "median_flanking_intron_size", "min_flanking_intron_size"]
+               "median_flanking_intron_size", "min_flanking_intron_size", "exon_size"]
 exon_class.set_debug(0)
 exon_class_mfe.set_debug(0)
 size_bp_up_seq = 100
@@ -692,7 +692,7 @@ def main():
     # "median_flanking_intron_size", "force_donor", "force_acceptor", "iupac_upstream_intron_adjacent1",
     # "nb_intron_gene", "nb_good_bp_%s" % size_bp_up_seq, "hbound", "ag_count", "mfe_3ss", "mfe_5ss",
     # "iupac_upstream_intron_ppt_area"]
-    columns = ["force_donor", "force_acceptor", "iupac_exon", "iupac_upstream_intron", "iupac_downstream_intron"]
+    columns = ["exon_size", "force_donor", "force_acceptor", "iupac_exon", "iupac_upstream_intron", "iupac_downstream_intron"]
     ctrl_dic, ctrl_full = control_exon_adapter.control_handler(cnx, exon_type, size_bp_up_seq)
     if len(sys.argv) < 2:
         output = "/".join(os.path.realpath(__file__).split("/")[:-2]) + "/result/project_figures_new/"

@@ -90,21 +90,26 @@ def file_writer(list_exon, name_list, output):
 
 
 def main():
-
+    couples = [["AT-exons", "GC-exons"], ["AT-exons_U2", "GC_rich_U1"], ["U1-exons", "U2-exons"], ["GC-exons", "U1-exons"], ["AT-exons", "U1-exons"], ["GC-exons", "U2-exons"], ["AT-exons", "U2-exons"]]
     seddb = os.path.realpath(os.path.dirname(__file__)).replace("src", "data/sed.db")
     cnx = sqlite3.connect(seddb)
     output = os.path.realpath(os.path.dirname(__file__)).replace("src", "result/")
-    div_group = {"AT_rich": group_factor.at_rich_down, "GC_rich": group_factor.gc_rich_down,
-                 "AT_rich_U2": list(group_factor.at_rich_down) + list(group_factor.u2_factors),
-                 "GC_rich_U1": list(group_factor.gc_rich_down) + list(group_factor.u1_factors),
-                 "U1": group_factor.u1_factors, "U2": group_factor.u2_factors}
+    div_group = {"AT-exons-all": group_factor.at_rich_down, "GC-exons-all": group_factor.gc_rich_down,
+                 "AT-exons_U2": list(group_factor.at_rich_down) + list(group_factor.u2_factors),
+                 "GC-exons_U1": list(group_factor.gc_rich_down) + list(group_factor.u1_factors),
+                 "U1-exons": group_factor.u1_factors, "U2-exons": ["SF1", "SF3A3", "SF3B4", "U2AF2"]}
     dic_exon = {}
     for name_group in div_group.keys():
-        print("Getting all exon regulated by %s factor" % name_group)
-        dic_exon[name_group] = get_exons_list(cnx, div_group[name_group], "down")
-    for key in dic_exon.keys():
-        file_writer(dic_exon[key], "%s_with_intersection" % key, output)
-    for couple in [["AT_rich", "GC_rich"], ["AT_rich_U2", "GC_rich_U1"], ["U1", "U2"]]:
+        exon_list = get_exons_list(cnx, div_group[name_group], "down")
+        print("Exon regulated by %s : %s" % (name_group, len(exon_list)))
+        dic_exon[name_group] = exon_list
+    # for key in dic_exon.keys():
+    #     file_writer(dic_exon[key], "%s_with_intersection" % key, output)
+    dic_exon["GC-exons"] = [exon for exon in dic_exon["GC-exons-all"] if exon not in dic_exon["AT-exons-all"]]
+    dic_exon["AT-exons"] = [exon for exon in dic_exon["AT-exons-all"] if exon not in dic_exon["GC-exons-all"]]
+    print("GC-exons : %s exons" % len(dic_exon["GC-exons"]))
+    print("AT-exons : %s exons" % len(dic_exon["AT-exons"]))
+    for couple in couples:
         venn_diagram_creator(dic_exon[couple[0]], couple[0], dic_exon[couple[1]], couple[1], output)
         intersection_supresser_and_file_writer(dic_exon[couple[0]], couple[0], dic_exon[couple[1]], couple[1], output)
     cnx.close()

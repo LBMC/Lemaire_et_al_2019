@@ -28,7 +28,8 @@ def extract_exon_list(a_file):
     return exon_list
 
 
-def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend):
+def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend,
+         output=None, fasterdb=None):
     """
     Create meta_exon figures from the list of exons given in ``files``
     :param files: (list of strings) a file or many files, if many file are given, they have to be coma separated.
@@ -39,13 +40,17 @@ def main(files, name_files, nt_list, name_fig, exon_type, color_list, legend):
     :param exon_type: (string) the type of control exons we want to use
     :param color_list: (list of strings) the list of color we want to use
     :param legend: (boolean) True if you want to draw an exon + legend false else
+    :param output: (str) path were the result will be created
+    :param fasterdb: (str) path to the fasterdb database
     """
     exon_class_metaexon.set_debug(0)
     window_size = win_size.window_size
-    output = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "result/metaexon_figure/")
+    if output is None:
+        output = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "result/metaexon_figure/")
     if not os.path.isdir(output):
         os.mkdir(output)
-    fasterdb = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "data/fasterDB_lite.db")
+    if fasterdb is None:
+        fasterdb = os.path.realpath(os.path.dirname(__file__)).replace("src/metaexon_figure", "data/fasterDB_lite.db")
     cnx = sqlite3.connect(fasterdb)
     list_of_vector_5p = []
     list_of_vector_3p = []

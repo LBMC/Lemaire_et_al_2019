@@ -115,7 +115,8 @@ def web_logo_creator(sequence_list, sequence_name, output):
                   v.StrVector([sequence_name]), v.IntVector([len(sequence_list[0])]))
 
 
-def create_figure(list_values, list_name, output, regulation, splicing_site, type_fig):
+def create_figure(list_values, list_name, output, regulation, splicing_site, type_fig,
+                  num_fig=""):
     """
     Create a figure showing the values of ``target_name`` for every exon list regulated by ``list_name`` factor
 
@@ -132,12 +133,19 @@ def create_figure(list_values, list_name, output, regulation, splicing_site, typ
     color_b_dic = group_factor.color_dic_bright
     data = []
     title = """Minimum free energy of %s of %s exon regulated by different factors""" % (splicing_site, regulation)
-
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], color_dic["CCE"]]
+    default_bright = [color_b_dic["GC_pure"], color_b_dic["AT_pure"], color_b_dic["CCE"]]
     for i in range(len(list_values)):
+        try:
+            cur_color = color_dic[list_name[i]]
+            color_b = color_b_dic[list_name[i]]
+        except KeyError:
+            cur_color = default_colors[i]
+            color_b = default_bright[i]
         data.append({"y": list_values[i], "type": "violin",
-                     "name": list_name[i], "visible": True, "fillcolor": color_b_dic[list_name[i]], "opacity": 1,
+                     "name": list_name[i], "visible": True, "fillcolor": color_b, "opacity": 1,
                      "line": {"color": "black"},
-                     "box": {"visible": True, "fillcolor": color_dic[list_name[i]]}, "meanline": {"visible": False}})
+                     "box": {"visible": True, "fillcolor": cur_color}, "meanline": {"visible": False}})
 
     layout = go.Layout(
         title=title,
@@ -167,7 +175,7 @@ def create_figure(list_values, list_name, output, regulation, splicing_site, typ
     )
 
     fig = {"data": data, "layout": layout}
-    plotly.offline.plot(fig, filename="%sMFE_%s_%s.html" % (output, splicing_site, type_fig),
+    plotly.offline.plot(fig, filename="%s%sMFE_%s_%s.html" % (output, num_fig, splicing_site, type_fig),
                         auto_open=False, validate=False)
 
 
@@ -344,7 +352,7 @@ def extract_data(cnx, cnx_sed, list_files, list_names, pos):
     return exon_list
 
 
-def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig):
+def dataframe_creator(list_values, list_name, output, regulation, name_df, type_fig, fig_num=""):
     """
     Create a pandas dataframe.
 
@@ -354,6 +362,7 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     :param output: (string) folder where the result will be created
     :param regulation: (string) up or down
     :param type_fig: (string) the type of graphic build
+    :param fig_num: (str) a number
     :return: (pandas Dataframe) a dataFrame with the values in ``list_values`` and the names in ``list_names``
     """
     sns.set()
@@ -368,7 +377,7 @@ def dataframe_creator(list_values, list_name, output, regulation, name_df, type_
     df["values"] = list(map(math.sqrt, (df["values"].values * -1) + 3/8))
     g = sns.FacetGrid(data=df, row="project", height=20)
     g.map(sns.distplot, "values")
-    filename = "%s%s_%s_dataframe_%s_table.txt" % (output, name_df, regulation, type_fig)
+    filename = "%s%s%s_%s_dataframe_%s_table.txt" % (output, fig_num, name_df, regulation, type_fig)
     g.savefig(filename.replace("table.txt", "displot.pdf"), format="pdf")
     df.to_csv(filename, index=False, sep="\t")
     if type_fig == "exon":
@@ -421,6 +430,61 @@ def main():
         # create_figure_error_bar(mfe_5ss_score, name_file, output, "down", "5SS", type_analysis)
         # write_proportion_pvalues(mfe_5ss_score, name_file, output, "5SS", type_analysis)
 
+
+def main_2d(list_file, name_file, exon_type, output, seddb, fasterdb,
+            fig_nums=("2.1D", "2.2D")):
+    """
+    Create the figure 2.1D and 2.2D of the article with a given list of exons.
+
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param exon_type: (str) the control exons
+    :param output: (str) folder where the result will be created
+    :param seddb: (str) path to sed database
+    :param fasterdb: (str) path to fasterdb database
+    :param fig_nums: (list of str) list of figure names
+    :return:
+    """
+    exon_class.set_debug(0)
+    list_file.append(None)
+    name_file.append(exon_type)
+
+    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/minimum_free_energy",
+                                                                      "result/minimum_free_energy/")
+    if not os.path.isdir(ctrl_output):
+        os.mkdir(ctrl_output)
+    ctrl_dir = os.path.realpath(os.path.dirname(__file__)) + \
+               "/control_dictionaries/"
+    sys.path.insert(0, ctrl_dir)
+    cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+    type_analysis = "exon"
+
+    mfe_3ss_score = []
+    mfe_5ss_score = []
+    for i in range(len(name_file)):
+        if name_file[i] != exon_type:
+            exon_list = extract_data(cnx, cnx_sed, list_file, name_file, i)
+            mfe_3ss, mfe_5ss = get_mfe_score_list(ctrl_output, exon_list, name_file[i])
+            mfe_3ss_score.append(mfe_3ss)
+            mfe_5ss_score.append(mfe_5ss)
+        else:
+            mod = __import__("%s_mfe" % exon_type)
+            mfe_3ss_score.append(mod.mfe_3ss)
+            mfe_5ss_score.append(mod.mfe_5ss)
+
+    create_figure(mfe_5ss_score, name_file, output, "down", "5SS",
+                  type_analysis, fig_nums[0])
+    dataframe_creator(mfe_5ss_score, name_file, output, "down", "5SS",
+                      type_analysis, fig_nums[0])
+    create_figure(mfe_3ss_score, name_file, output, "down", "3SS",
+                  type_analysis, fig_nums[1])
+    dataframe_creator(mfe_3ss_score, name_file, output, "down", "3SS",
+                      type_analysis, fig_nums[1])
+    cnx.close()
+    cnx_sed.close()
 
 if __name__ == "__main__":
     main()

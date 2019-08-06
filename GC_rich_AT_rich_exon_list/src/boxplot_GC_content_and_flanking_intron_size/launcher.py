@@ -64,6 +64,8 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
         list_values2[i] = list(vect[~np.isnan(vect)])
     color_dic = group_factor.color_dic
     color_bright = group_factor.color_dic_bright
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], color_dic["CCE"]]
+    default_bright = [color_bright["GC_pure"], color_bright["AT_pure"], color_bright["CCE"]]
     data = []
     title = """%s of %s %s containing those exons regulated by different factors""" % (name_fig, regulation, type_fig)
     if "size" in name_fig:
@@ -80,8 +82,12 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                 pval1 = mann_withney_test_r(list_values2[i], list_values2[j], alt="two.sided")
                 title += "<br> mw 2-sided test %s vs %s : p = %.2E" % (list_name[i], list_name[j], pval1)
     for i in range(len(list_values2)):
-        cur_color = color_dic["_".join(list_name[i].split("_")[:-1])]
-        color_b = color_bright["_".join(list_name[i].split("_")[:-1])]
+        try:
+            cur_color = color_dic["_".join(list_name[i].split("_")[:-1])]
+            color_b = color_bright["_".join(list_name[i].split("_")[:-1])]
+        except KeyError:
+            cur_color = default_colors[i]
+            color_b = default_bright[i]
         if type_fig == "exons":
             data.append({"y": list_values2[i], "type": "violin",
                          "name": list_name[i], "visible": True, "fillcolor": color_b, "opacity": 1,
@@ -315,6 +321,53 @@ def main():
                                "gene_size", my_level)
             dataframe_creator2(list_intron_size, list_gc_content, name_file, output, regulation,
                                "median_intron_size", "GC_content", my_level)
+
+
+def main_1d(list_file, name_file, seddb, exon_type, regulation, output, nt):
+    """
+    Create the 1.D figure with custom list of exons
+
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param seddb: (str) path to sed database
+    :param exon_type: (str) the control exons
+    :param regulation: (str) the resultation wanted up or down
+    :param output: (str) pat were the result will be created
+    :param nt: (str) the nt we want to use for the figure 1.1D
+    """
+    cnx = sqlite3.connect(seddb)
+    exon2remove = union_dataset_function.get_exon_regulated_by_sf(
+        cnx, regulation)
+    my_level = "exons"
+    list_gc_content = []
+    list_intron_size = []
+    list_file.append(None)
+    name_file.append("%s_exons" % exon_type)
+    for i in range(len(name_file)):
+        if exon_type not in name_file[i]:
+            list_gc_content.append(boxplot_gc_content_maker.extract_exon_gc_content_from_file(
+                cnx, list_file[i], nt))
+            list_intron_size.append(
+                boxplot_flanking_intron_size.extract_exon_min_flanking_intron_size_from_file(cnx, list_file[i])
+            )
+        else:
+            list_gc_content.append(boxplot_gc_content_maker.get_exon_control_gc_content(cnx, exon_type,
+                                                                                        exon2remove, nt))
+            list_intron_size.append(
+                boxplot_flanking_intron_size.get_exon_control_min_flanking_intron_size(cnx, exon_type,
+                                                                                       exon2remove)
+            )
+    create_figure(list_gc_content, name_file, output, regulation,
+                  "1.1D_%s_content" % nt, my_level)
+    dataframe_creator(list_gc_content, name_file, output, regulation,
+                      "1.1D_%s_content" % nt, my_level)
+    create_figure(list_intron_size, name_file, output, regulation,
+                  "1.2D_min_intron_size", my_level)
+    dataframe_creator(list_intron_size, name_file, output, regulation,
+                      "1.2D_min_intron_size", my_level)
+    cnx.close()
 
 
 if __name__ == "__main__":

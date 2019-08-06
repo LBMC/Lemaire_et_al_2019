@@ -10,13 +10,17 @@ for the gene containing those exons)
 import numpy as np
 
 
-def get_exon_control_gc_content(cnx, exon_type, exon2remove):
+nt_dic = {"A": 0, "C": 1, "G": 2, "T": 3, "S": 4, "W": 5,
+          "R": 6, "Y": 7, "K": 8, "M": 9}
+
+def get_exon_control_gc_content(cnx, exon_type, exon2remove, nt="S"):
     """
     Get the GC content of every exon with ``exon_type``.
 
     :param cnx: (sqlite3 connect object) connection to sedb database
     :param exon_type: (string) the ``exon_type`` of interest
     :param exon2remove: (list of list of 2 int) list of exons 2 remove
+    :param nt: (str) the nucleotide of interest
     :return: (list of float) list of the gc content of every exons with the ``exon_type`` of interest
     """
     cursor = cnx.cursor()
@@ -32,7 +36,8 @@ def get_exon_control_gc_content(cnx, exon_type, exon2remove):
     cursor.execute(query)
     tuple_list = cursor.fetchall()
     print("Control exons before removing bad ones : %s" % len(tuple_list))
-    gc_content = [exon[2].split(";")[4] for exon in tuple_list if [exon[0], exon[1]] not in exon2remove]
+    gc_content = [exon[2].split(";")[nt_dic[nt]]
+                  for exon in tuple_list if [exon[0], exon[1]] not in exon2remove]
     print("Control exons after removing those regulated by a sf : %s" % len(gc_content))
     return gc_content
 
@@ -70,20 +75,21 @@ def get_gene_control_gc_content(cnx, exon_type, gene2remove):
     return gc_content
 
 
-def calculate_exon_gc_content(cnx, gene_id, exon_pos):
+def calculate_exon_gc_content(cnx, gene_id, exon_pos, nt="S"):
     """
     Get the GC content of an exon having the following ``gene_id`` and ``exon_pos``.
 
     :param cnx: (sqlite3 connect object) connection to sed database
     :param gene_id: (int) the fasterdb ``gene_id`` of a gene
     :param exon_pos: (int) the fasterDb position of an exon within the gene``gene_id``
+    :param nt: (str) the nucleotide we want to extract
     :return: (float) the gc content of the exon identified by ``gene_id`` and ``exon_position``
     """
     cursor = cnx.cursor()
     query = "SELECT iupac_exon FROM sed WHERE gene_id = ? and exon_pos = ?"
     cursor.execute(query, (gene_id, exon_pos,))
     res = cursor.fetchone()
-    return res[0].split(";")[4]
+    return res[0].split(";")[nt_dic[nt]]
 
 
 def calculate_gene_gc_content(cnx, gene_id):
@@ -106,12 +112,13 @@ def calculate_gene_gc_content(cnx, gene_id):
         return None
 
 
-def extract_exon_gc_content_from_file(cnx, filename):
+def extract_exon_gc_content_from_file(cnx, filename, nt="S"):
     """
     Extract the gc_content of a list of exon within a file ``filename``.
 
     :param cnx: (sqlite3 connect object) connection to sed database
     :param filename: (string) the name of the file containing  exons
+    :param nt: (str) the nucleotides we want to extract
     :return: (list of float) the list of the gc content of the exon in ``filename``
     """
     list_gc = []
@@ -119,7 +126,8 @@ def extract_exon_gc_content_from_file(cnx, filename):
         line = in_file.readline()
         while line:
             line = line.split("\t")
-            list_gc.append(calculate_exon_gc_content(cnx, line[0], line[1]))
+            list_gc.append(calculate_exon_gc_content(cnx, line[0], line[1],
+                                                     nt))
             line = in_file.readline()
     return list_gc
 

@@ -68,13 +68,13 @@ def get_id_and_name_project_wanted(cnx, sf_type):
     if sf_type is None:
         good_sf = at_rich_down + gc_rich_down + other
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "GC_rich":
+    elif sf_type == "GC_rich" or sf_type == "gc_rich_down":
         good_sf = gc_rich_down
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "AT_rich":
+    elif sf_type == "AT_rich" or sf_type == "at_rich_down":
         good_sf = at_rich_down
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "CF":
+    elif sf_type == "CF" or sf_type == "chromatin_factors":
         good_sf = chromatin_factors
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
     else:
@@ -92,11 +92,11 @@ def get_wanted_sf_name(sf_type):
     """
     if sf_type is None:
         name_projects = at_rich_down + gc_rich_down + other
-    elif sf_type == "GC_rich":
+    elif sf_type == "GC_rich" or sf_type == "gc_rich_down":
         name_projects = gc_rich_down
-    elif sf_type == "AT_rich":
+    elif sf_type == "AT_rich" or sf_type == "at_rich_down":
         name_projects = at_rich_down
-    elif sf_type == "CF":
+    elif sf_type == "CF" or sf_type == "chromatin_factors":
         name_projects = chromatin_factors
     elif sf_type == "all":
         name_projects = at_rich_down + gc_rich_down + other + u1_factors + u2_factors

@@ -75,7 +75,7 @@ def difference(exon_list1, name_exon_list, sf_type):
     """
     if sf_type in ["GC_rich", "AT_rich", "spliceosome"]:
         print("----------------- removing redundant exon of %s " % name_exon_list)
-        if "_" in name_exon_list:
+        if "_" in name_exon_list and name_exon_list not in ["DDX5_DDX17", "TRA2A_B"]:
             name_exon_list = name_exon_list.split("_")[0]
         if name_exon_list in group_factor.u1_factors + group_factor.u2_factors:
             exon_list_pur = [exon for exon in exon_list1 if exon not in redundant_u1_u2]
@@ -89,6 +89,24 @@ def difference(exon_list1, name_exon_list, sf_type):
             return exon_list1
     else:
         return exon_list1
+
+
+def mydiff(cnx, exon_list, sf_type, regulation):
+    """
+    Remove every exon of ``exon_list`` also persent in ``sf_type``.
+
+    :param exon_list: (list of list of 2 int) a list of exons
+    :param sf_type: (str) the type of splicing factor for which we don't \
+    want to display any exons.
+    :return:  (list of list of 2 int) the ``exon_list` without the \
+    exon regulated by a kind of splicing factor.
+    """
+    exon_sf = []
+    for sf_name in eval("group_factor.%s" % sf_type):
+        exon_sf += union_dataset_function.get_every_events_4_a_sl(cnx, sf_name,
+                                                                  regulation)
+    return [exon for exon in exon_list if exon not in exon_sf]
+
 
 
 def create_columns_names(target_columns):
@@ -204,6 +222,111 @@ def create_matrix(cnx, id_projects, names, target_columns, control_dic, ctrl_ful
                 project_col.append([new_targets[j]] * len(list_val))
                 project_res.append(final_value)
             projects_tab.append(project_res)
+    for j in range(len(new_targets)):
+        if "_nt_" in new_targets[j]:
+            nt = new_targets[j].split("_")[0]
+            name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
+            mctrl = np.array(ctrl_full[name_col][nt], dtype=float)
+            mctrl = list(mctrl[~np.isnan(mctrl)])
+        else:
+            mctrl = np.array(ctrl_full[new_targets[j]], dtype=float)
+            mctrl = list(mctrl[~np.isnan(mctrl)])
+        project_abs.append(mctrl)
+        project_vect_names.append(["CCE"] * len(mctrl))
+        project_col.append([new_targets[j]] * len(mctrl))
+    df = pd.DataFrame({"values": list(np.hstack(project_abs)), "project": list(np.hstack(project_vect_names)),
+                       "features": list(np.hstack(project_col))})
+    return projects_tab, df, project_names, new_targets
+
+
+def create_matrix_bis(cnx, names, target_columns, control_dic, ctrl_full, regulation, operation,
+                      sf_type):
+    """
+    Create a matrix of relative medians (toward control) for iupac characteristics of an exon set.
+
+    :param cnx: (sqlite3 connect object) connexion to sed database
+    :param id_projects: (list of ints) the list of splicing lore project id.
+    :param names: (list of strings) the list of projects name (corresponding - in the same order - of the projects \
+    in ``id_projects``) or if union is not none: list of sf_name.
+    :param target_columns: (list of strings) list of interest characteristics for a set of exons.
+    :param control_dic: (dictionary of float) dictionary storing medians values for every characteristics of \
+    teh control set of exons.
+    :param ctrl_full: (dictionary of list of float) dictionary storing every values for every characteristics of \
+    the control set of exons.
+    :param regulation: (string) the strings can be "up" or "down" only for up or down-regulated exons.
+    :param operation: (string) the type of heatmp we want to produce : i.e heatmap of the mean or median
+    :param union: (None or string) None if we want to work project by project, anything else to work \
+    with exons regulation by a particular splicing factor.
+    :param sf_type: (string) the type of splicing factor we want to remove
+    :return: (lif of list of float) the medians value for a project (line) for every characteristic of \
+    interests (number of value in one line corresponding to a project).
+    """
+    new_targets = create_columns_names(target_columns)
+    project_names = []
+    projects_tab = []
+    project_abs = []
+    project_vect_names = []
+    project_col = []
+    for i in range(len(names)):
+        project_res = []
+        project_names.append("%s" % (names[i]))
+
+        exon_list = union_dataset_function.get_every_events_4_a_sl(cnx, names[i], regulation)
+        print("Splicing factor : %s - exons %s - reg %s" % (names[i], len(exon_list), regulation))
+        exon_list = mydiff(cnx, exon_list, sf_type, regulation)
+        print("Splicing factor : %s - exons %s - reg %s" % (names[i], len(exon_list), regulation))
+        for j in range(len(new_targets)):
+            if "_nt_" in new_targets[j]:
+                nt = new_targets[j].split("_")[0]
+                name_col = new_targets[j].replace("%s_nt" % nt, "iupac")
+                if "mean_intron" in new_targets[j]:
+                    values1 = np.array(
+                        functions.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_upstream_intron", nt)
+                              )
+                    values2 = np.array(
+                        functions.get_list_of_value_iupac_dnt(cnx, exon_list, "iupac_downstream_intron", nt)
+                              )
+                    values = np.array([np.nanmean([values1[i], values2[i]]) for i in range(len(values1))])
+                else:
+                    values = np.array(functions.get_list_of_value_iupac_dnt(cnx, exon_list, name_col, nt))
+                    if names[i] == "QKI" and nt == "G":
+                        print(exon_list)
+                        print(values)
+                list_val = values[~np.isnan(values)]
+                val_obs = eval("np.%s(list_val)" % operation)
+                final_value = float(val_obs - control_dic[name_col][nt]) / \
+                    control_dic[name_col][nt] * 100
+                # ctrl_val = np.array(ctrl_full[name_col][nt], dtype=float)
+            else:
+                if new_targets[j] == "median_flanking_intron_size":
+                    values1 = np.array(
+                        functions.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                        dtype=float)
+                    values2 = np.array(
+                        functions.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                        dtype=float)
+                    values = np.array([np.nanmedian([values1[i], values2[i]]) for i in range(len(values1))])
+                elif new_targets[j] == "min_flanking_intron_size":
+                    values1 = np.array(
+                        functions.get_redundant_list_of_value(cnx, exon_list, "upstream_intron_size"),
+                        dtype=float)
+                    values2 = np.array(
+                        functions.get_redundant_list_of_value(cnx, exon_list, "downstream_intron_size"),
+                        dtype=float)
+                    values = np.array([np.nanmin([values1[i], values2[i]]) for i in range(len(values1))])
+                else:
+
+                    values = np.array(functions.get_list_of_value(cnx, exon_list, new_targets[j]))
+                list_val = values[~np.isnan(values)]
+                val_obs = eval("np.%s(values[~np.isnan(values)])" % operation)
+                final_value = float(val_obs - control_dic[new_targets[j]]) / \
+                    control_dic[new_targets[j]] * 100
+                # ctrl_val = np.array(ctrl_full[new_targets[j]], dtype=float)
+            project_abs.append(list_val)
+            project_vect_names.append([project_names[-1]] * len(list_val))
+            project_col.append([new_targets[j]] * len(list_val))
+            project_res.append(final_value)
+        projects_tab.append(project_res)
     for j in range(len(new_targets)):
         if "_nt_" in new_targets[j]:
             nt = new_targets[j].split("_")[0]
@@ -633,6 +756,44 @@ def main(union, columns, name, sf_type, contrast, operation):
                 simple_heatmap(np.array(projects_tab), new_targets, project_names, output, contrast, name)
             heatmap_gc_sorted(np.array(projects_tab), df_stat, new_targets,
                               project_names, output, contrast, name)
+
+
+def main_2bc(target_columns, name, seddb, exon_type,
+             output, sf_type, sf_type2remove, regulation="down",
+             contrast=20, operation="mean", morder='C', mascending=True):
+    """
+
+    :param target_columns: (list of str) list of columns of interest
+    :param name: (str) partial name of the figure
+    :param seddb: (str) path to sed database
+    :param exon_type: (str) the type of control exons we want
+    :param contrast: (int) the scale of contrast we want
+    :param operation: (str) the type of graphics we want (mean or median)
+    :param output: (str) the result folder
+    :param sf_type: (str) the type of splicing factor of interest
+    :param sf_type2remove: (str) the list of splicing factor we want to remove
+    :param regulation: (str) "down"
+    """
+    global nt_list
+    nt_list = ["A", "T", "G", "C"]
+    global write_order
+    write_order = "N"
+    global ascending
+    ascending = mascending
+    global order
+    order = morder
+    cnx = functions.connexion(seddb)
+    ctrl_dic, ctrl_full = \
+        control_exon_adapter.control_handler(cnx, exon_type, operation)
+    name_projects = group_factor.get_wanted_sf_name(sf_type)
+    # Creating heatmap
+    projects_tab, df_stat, project_names, new_targets = \
+        create_matrix_bis(cnx, name_projects, target_columns,
+                      ctrl_dic, ctrl_full, regulation, operation,
+                      sf_type2remove)
+
+    heatmap_gc_sorted(np.array(projects_tab), df_stat, new_targets,
+                      project_names, output, contrast, name)
 
 
 def launcher():

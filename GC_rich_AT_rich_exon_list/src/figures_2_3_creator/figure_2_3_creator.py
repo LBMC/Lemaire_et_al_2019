@@ -12,16 +12,24 @@ import sys
 import os
 import lazyparser as lp
 base1 = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
+base2 = os.path.dirname(os.path.dirname(base1))
 sys.path.insert(0, base1 + "/boxplot_GC_content_and_flanking_intron_size/")
 from launcher import main_1d
 sys.path.insert(0, base1 + "/metaexon_figure/")
 from launcher_metaexon import main as main_2a
+sys.path.insert(0, base2 + "/Figure_ESA/src/")
+from heatmap_maker import main_2bc
+
+
+sf_type_allowed = ['gc_rich_down', '', 'at_rich_down']
 
 
 @lp.parse(list_file="file", seddb="file", exon_type=["CCE", "ALL"],
-          regulation=["up", "down"], output="dir")
+          regulation=["up", "down"], output="dir",
+          sf_type=sf_type_allowed)
 def figure_creator(list_file, name_file, seddb, fasterdb, output,
-                   exon_type="CCE", regulation="down", nt="S"):
+                   exon_type="CCE", regulation="down", nt="S",
+                   sf_type=("", "")):
     """
     Create the figure 2 and 3 with custom list of exons.
 
@@ -34,6 +42,9 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output,
     :param regulation: (str) the resultation wanted up or down
     :param output: (str) pat were the result will be created
     :param nt: (str) the nt we want to use for the figure 1.1D
+    :param sf_type: (List(size=2, vtype=str)) the name of the 2 kind \
+    of splicing factors groups of interest
+
     :return:
     """
     if output[-1] != "/":
@@ -43,6 +54,21 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output,
     print("Creation of figure 2A...")
     main_2a(list_file, name_file, "C,S,A,T,G,W,Y,R".split(","), "2A_metaexon",
             exon_type, ["#0000FF", "#00aa00"], False, output, fasterdb)
+
+    if sf_type[0] != "" and sf_type[1] != "":
+        # Note, you have to modifiy the group factor.py script for other list
+        fig_num = ["2.1B", "2.2B", "2.1C", "2.2C"]
+        cols = ["iupac_downstream_intron_adjacent1"] * 2 + \
+            ["iupac_upstream_intron_adjacent1"] * 2
+        sf_type_tot = [sf_type, sf_type[::-1]] * 2
+        ascending = [True, False] * 2
+        for num, col, sf_type_cur, asc in zip(fig_num, cols, sf_type_tot,
+                                              ascending):
+            print("Creation of the figure %s" % num)
+            main_2bc([col], "%s_%s_%s" % (num, col, sf_type_cur[0]),
+                     seddb, exon_type, output, sf_type_cur[0], sf_type_cur[1],
+                     regulation="down", contrast=20, operation="mean",
+                     mascending=asc)
 
 
 if __name__ == "__main__":

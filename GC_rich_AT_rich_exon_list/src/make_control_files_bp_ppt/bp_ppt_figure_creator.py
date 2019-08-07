@@ -163,6 +163,10 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
     color_b_dic = group_factor.color_dic_bright
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"],
+                      color_dic["CCE"]]
+    default_bright = [color_b_dic["GC_pure"], color_b_dic["AT_pure"],
+                      color_b_dic["CCE"]]
     data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
     with open(filename.replace("html", "txt"), "w") as outfile:
@@ -172,11 +176,16 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
                 outfile.write("%s vs %s, p=%.2E\n" % (list_name[i], list_name[j], pval))
 
     for i in range(len(list_values)):
-        fill2 = color_dic[list_name[i]]
-        if figure == "violin":
-            fill1 = color_b_dic[list_name[i]]
-        else:
+        try:
+            fill2 = color_dic[list_name[i]]
             fill1 = fill2
+            if figure == "violin":
+                fill1 = color_b_dic[list_name[i]]
+        except KeyError:
+            fill2 = default_colors[i]
+            fill1 = fill2
+            if figure == "violin":
+                fill1 = default_bright[i]
         data.append({"y": list_values[i], "type": figure,
                      "name": list_name[i], "visible": True, "fillcolor": fill1, "opacity": 1,
                      "line": {"color": "black"},
@@ -230,13 +239,19 @@ def create_barplot_bp(list_values, list_name, output, regulation, name_fig, type
     list_name = [name.replace("_exons", "") for name in list_name]
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"],
+                      color_dic["CCE"]]
     data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
 
     for i in range(len(list_values)):
+        try:
+           mcol = color_dic[list_name[i]]
+        except KeyError:
+            mcol = default_colors[i]
         unique, counts = np.unique(list_values[i], return_counts=True)
         counts = counts / sum(counts) * 100
-        data.append(go.Bar(x=unique, y=counts, name=list_name[i], marker=dict(color=color_dic[list_name[i]])))
+        data.append(go.Bar(x=unique, y=counts, name=list_name[i], marker=dict(color=mcol)))
 
     layout = go.Layout(
         title=title,
@@ -424,13 +439,19 @@ def create_barplot(list_values, list_name, output, regulation, name_fig, type_fi
     """
     list_name = [name.replace("_exons", "") for name in list_name]
     color_dic = group_factor.color_dic
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"],
+                      color_dic["CCE"]]
     data = []
     abscissa2 = [val.replace("==", "=") for val in abscissa]
     for i in range(len(list_values)):
+        try:
+            mcol = color_dic[list_name[i]]
+        except KeyError:
+            mcol = default_colors[i]
         ordinate = []
         for val in abscissa:
             eval("ordinate.append(sum(np.array(list_values[i]) %s) / len(list_values[i]))" % val)
-        data.append(go.Bar(x=abscissa2, y=ordinate, name=list_name[i], marker=dict(color=color_dic[list_name[i]])))
+        data.append(go.Bar(x=abscissa2, y=ordinate, name=list_name[i], marker=dict(color=mcol)))
 
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
 
@@ -684,12 +705,14 @@ def main():
 
         for size in dict_score_3ss.keys():
             print("------------> %s nt " % size)
-            # create_barplot(dict_score_3ss[size]["nb_bp_list"], name_file, output, regulation,
-            #                "prop_nb_branch_point_(%snt)" % size, type_analysis)
-            create_distplot_bp(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                               "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                                     "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file,
+                           output, regulation,
+                           "prop_nb_good_branch_point_(%snt)" % size,
+                           type_analysis)
+            # create_distplot_bp(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            #                    "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            # write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            #                          "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
                               "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
             # create_barplot(dict_score_3ss[size]["ag_count"], name_file, output, regulation,
@@ -723,6 +746,88 @@ def main():
         # create_figure(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
         # create_barplot_with_error_bar(list_force_donor, name_file, output, regulation, "force_donor", type_analysis)
 
+
+def main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output):
+    """
+
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param exon_type: (str) the control exons of interest
+    :param seddb: (str) path to sed database
+    :param fasterdb: (str) path to fasterdb database
+    :param output: (str) path where the result will be created
+    """
+    list_file.append(None)
+    name_file.append(exon_type)
+    exon_class_bp.set_debug(0)
+    ctrl_output = os.path.realpath(os.path.dirname(__file__)).replace("src/make_control_files_bp_ppt",
+                                                                      "result/make_control_files_bp_ppt/")
+    if not os.path.isdir(ctrl_output):
+        os.mkdir(ctrl_output)
+    ctrl_dir = os.path.realpath(os.path.dirname(__file__)) + "/control_dictionaries/"
+    sys.path.insert(0, ctrl_dir)
+    cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+    type_analysis = "exons"
+    regulation = "down"
+
+    dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [], "gc_weblogo": [],
+                          "nb_good_bp_list": [], "ag_count": [], "hbound": [], "uaa_count": [],
+                          "una_count": []} for k in [100, 50, 25]}
+    for i in range(len(name_file)):
+        if name_file[i] != exon_type:
+            exon_list = extract_data(cnx, cnx_sed, list_file, name_file, i, regulation)
+            for size in dict_score_3ss.keys():
+                bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, bp_seq_list, ag_count_list,\
+                    hbound_list, uaa_list, una_list = \
+                    get_bp_ppt_score_list(ctrl_output, exon_list, name_file[i], size, regulation)
+                dict_score_3ss[size]["nb_good_bp_list"].append(nb_good_bp_list)
+                if size == 25:
+                    web_logo_creator(bp_seq_list, "2.1F_%s_%s_exons_%s_nt" % (name_file[i], regulation, size), output)
+                dict_score_3ss[size]["gc_weblogo"].append(get_weblogo_gc_count(bp_seq_list))
+                dict_score_3ss[size]["hbound"].append(hbound_list)
+                dict_score_3ss[size]["una_count"].append(una_list)
+
+        else:
+            for size in dict_score_3ss.keys():
+                mod = __import__("%s_%s_bp_ppt_score" % (exon_type, size))
+                dict_score_3ss[size]["nb_good_bp_list"].append(mod.nb_good_bp)
+                dict_score_3ss[size]["gc_weblogo"].append(get_weblogo_gc_count(mod.bp_seq))
+                dict_score_3ss[size]["hbound"].append(mod.hbound)
+                dict_score_3ss[size]["una_count"].append(mod.una_count)
+
+    for size in dict_score_3ss.keys():
+        if size == 25:
+            create_figure(dict_score_3ss[size]["hbound"], name_file, output,
+                          regulation,
+                          "2.2E_nb_h_bound_%s_nt" % size, type_analysis, "violin")
+            dataframe_creator(dict_score_3ss[size]["hbound"], name_file,
+                              output, regulation,
+                              "2.2E_nb_h_bound_%s_nt" % size, type_analysis)
+            create_figure(dict_score_3ss[size]["gc_weblogo"], name_file,
+                          output, regulation,
+                          "2.2F_gc_weblogo_%s_nt" % size, type_analysis, "box")
+            dataframe_creator(dict_score_3ss[size]["gc_weblogo"], name_file,
+                              output, regulation,
+                              "2.2F_gc_weblogo_%s_nt" % size, type_analysis)
+        if size == 50:
+            create_figure(dict_score_3ss[size]["una_count"], name_file, output,
+                          regulation,
+                          "2.1G_UNA_count(%snt)" % size, type_analysis, "box")
+            dataframe_creator(dict_score_3ss[size]["una_count"], name_file,
+                              output, regulation,
+                              "2.1G_UNA_count(%snt)" % size, type_analysis)
+        if size == 100:
+            create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                           "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            # write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            #                          "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                              "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+    cnx.close()
+    cnx_sed.close()
 
 if __name__ == "__main__":
     main()

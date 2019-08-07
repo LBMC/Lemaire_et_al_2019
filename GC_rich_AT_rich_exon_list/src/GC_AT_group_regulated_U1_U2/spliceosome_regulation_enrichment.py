@@ -15,6 +15,7 @@ import os
 import sqlite3
 import rpy2.robjects as robj
 import rpy2.robjects.vectors as v
+from barplot_pvalue_maker import fig_3g
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__).replace("/GC_AT_group_regulated_U1_U2", "")))
 import group_factor
 from figure_creator import get_exons_list
@@ -165,15 +166,13 @@ def adapt_reg(pvalue, regulation, alpha=0.05):
     return "="
 
 
-def analysis_maker(gc_exon_list, at_exon_list, gc_pure_exon_list, at_pure_exon_list, splicesome_dic,
+def analysis_maker(gc_pure_exon_list, at_pure_exon_list, splicesome_dic,
                    u1_u2_intersection, nb_iteration):
     """
     Make the comparison analysis of the frequencies of exons regulated by every spliceosome(U1) factors from \
     two exons list, one containing exons regulated by splicing factors regulating AT rich exons and the other \
     containing exons regulated by splicing factors regulating GC rich exons.
 
-    :param gc_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating GC rich exons.
-    :param at_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating AT rich exons.
     :param gc_pure_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating \
     GC rich exons and not regulated by splicing factors regulating AT rich exons.
     :param at_pure_exon_list: (list of list of 2 int) list of exons regulated by splicing factors regulating \
@@ -190,39 +189,98 @@ def analysis_maker(gc_exon_list, at_exon_list, gc_pure_exon_list, at_pure_exon_l
     """
     analysis_dic = {}
     super_dic = {}
-    at_gc = ["pure"]
-    ctrl = ["all"]
-    for gc_at_set in at_gc:
-        if gc_at_set == "all":
-            cur_gc_list = gc_exon_list
-            cur_at_list = at_exon_list
+    ctrl_set = "all"
+
+    cur_gc_list = gc_pure_exon_list
+    cur_at_list = at_pure_exon_list
+    for key in splicesome_dic.keys():
+        if ctrl_set == "all":
+            cur_ctrl = splicesome_dic[key]
         else:
-            cur_gc_list = gc_pure_exon_list
-            cur_at_list = at_pure_exon_list
-        for ctrl_set in ctrl:
-            for key in splicesome_dic.keys():
-                if ctrl_set == "all":
-                    cur_ctrl = splicesome_dic[key]
-                else:
-                    cur_ctrl = exon_difference(splicesome_dic[key], u1_u2_intersection)
-                list_at_intersect = []
-                gc_intersect = len(exon_intersection(cur_gc_list, cur_ctrl))
-                for i in range(nb_iteration):
-                    sys.stdout.write("%s/%s     \r" % (i, nb_iteration))
-                    new_at_list = None
-                    if len(cur_gc_list) > len(cur_at_list):
-                        print("Error : the GC-exons should not be greater than AT-exons list !")
-                        exit(1)
-                    else:
-                        new_at_list = subsample(cur_at_list, len(cur_gc_list))
-                    at_intersect = len(exon_intersection(new_at_list, cur_ctrl))
-                    list_at_intersect.append(at_intersect)
-                pval, reg = calculate_index(gc_intersect, list_at_intersect)
-                pval = max(pval, float(1 / nb_iteration))
-                analysis_dic["GC-AT-%s-vs-%s-%s" % (gc_at_set, key, ctrl_set)] = \
-                    [pval, adapt_reg(pval, reg)]
-                super_dic["GC-AT-%s-vs-%s-%s" % (gc_at_set, key, ctrl_set)] = \
-                    [pval, gc_intersect, list_at_intersect]
+            cur_ctrl = exon_difference(splicesome_dic[key], u1_u2_intersection)
+        list_at_intersect = []
+        gc_intersect = len(exon_intersection(cur_gc_list, cur_ctrl))
+        for i in range(nb_iteration):
+            sys.stdout.write("%s/%s     \r" % (i, nb_iteration))
+            new_at_list = None
+            if len(cur_gc_list) > len(cur_at_list):
+                print("Error : the GC-exons should not be greater than AT-exons list !")
+                exit(1)
+            else:
+                new_at_list = subsample(cur_at_list, len(cur_gc_list))
+            at_intersect = len(exon_intersection(new_at_list, cur_ctrl))
+            list_at_intersect.append(at_intersect)
+        pval, reg = calculate_index(gc_intersect, list_at_intersect)
+        pval = max(pval, float(1 / nb_iteration))
+        analysis_dic["GC-AT-vs-%s-%s" % (key, ctrl_set)] = \
+            [pval, adapt_reg(pval, reg)]
+        super_dic["GC-AT-vs-%s-%s" % (key, ctrl_set)] = \
+            [pval, gc_intersect, list_at_intersect]
+    return analysis_dic, super_dic
+
+
+def get_exon_list_file(list_file):
+    """
+
+    :param list_file: (str) a file containing exons
+    :return: (list of 2 int) a list of exons
+    """
+    exon_list = []
+    with open(list_file, "r") as infile:
+        for line in infile:
+            line = line.replace("\n", "")
+            line = line.split("\t")
+            exon_list.append(line)
+    return exon_list
+
+
+def analysis_maker_bis(list_file, name_file, splicesome_dic, nb_iteration):
+    """
+    Make the comparison analysis of the frequencies of exons regulated by every spliceosome(U1) factors from \
+    two exons list.
+
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param splicesome_dic: (dict of list of 2 int) dictionary that contains every list of exons regulated by a \
+    particular U1 spliceosome factors.
+    :param u1_u2_intersection: (list of list of 2 int) list of exons regulated by both u1 and u2 factors.
+    :param nb_iteration: (int) the number of iteration we gonna make
+    :return:
+        - analysis_dic: (dictionary of list of int) the dictionary that contains the enrichment analysis done to \
+    compare two different list of exons.
+        - super_dic: (dictionary of list of int) the dictionary that contains the enrichment analysis done for every \
+        subsampling realized.
+    """
+    analysis_dic = {}
+    super_dic = {}
+    if len(list_file) != 2:
+        raise IndexError("list_file should have a length of 2 elements")
+    cur_list1 = get_exon_list_file(list_file[0])
+    print("%s : %s" % (name_file[0], len(cur_list1)))
+    cur_list2 = get_exon_list_file(list_file[1])
+    print("%s : %s" % (name_file[1], len(cur_list2)))
+    for key in splicesome_dic.keys():
+        cur_ctrl = splicesome_dic[key]
+        list_at_intersect = []
+        gc_intersect = len(exon_intersection(cur_list1, cur_ctrl))
+        for i in range(nb_iteration):
+            sys.stdout.write("%s/%s     \r" % (i, nb_iteration))
+            new_at_list = None
+            if len(cur_list1) > len(cur_list2):
+                print("Error : the GC-exons should not be greater than AT-exons list !")
+                exit(1)
+            else:
+                new_at_list = subsample(cur_list2, len(cur_list1))
+            at_intersect = len(exon_intersection(new_at_list, cur_ctrl))
+            list_at_intersect.append(at_intersect)
+        pval, reg = calculate_index(gc_intersect, list_at_intersect)
+        pval = max(pval, float(1 / nb_iteration))
+        analysis_dic["%s-%s-vs-%s" % (name_file[0].replace("-", "_"), name_file[1].replace("-", "_"), key)] = \
+            [pval, reg]
+        super_dic["%s-%s-vs-%s" % (name_file[0].replace("-", "_"), name_file[1].replace("-", "_"), key)] = \
+            [pval, gc_intersect, list_at_intersect]
     return analysis_dic, super_dic
 
 
@@ -237,12 +295,14 @@ def file_writer(output, analysis_dic, nb_iteration, test_set, comparison):
     :param comparison: (string) list of exons compared to the gc list of exons
     :param test_set: (string) the test set used
     """
-    with open("%sresult_enrichment_analysis_%s_iteration_%s_vs_%s.txt" %
-              (output, nb_iteration, test_set, comparison), "w") as outfile:
+    filename = "%sresult_enrichment_analysis_%s_iteration_%s_vs_%s.txt" % \
+              (output, nb_iteration, test_set, comparison)
+    with open(filename, "w") as outfile:
         outfile.write("# nb iteration : %s" % nb_iteration)
         outfile.write("Name_analysis\tenpirical-pvalue\tregulation\n")
         for key in sorted(analysis_dic.keys()):
             outfile.write("%s\t%s\t%s\n" % (key, analysis_dic[key][0], analysis_dic[key][1]))
+    return filename
 
 
 def main():
@@ -278,14 +338,44 @@ def main():
         if "AT" not in key and "GC" not in key:
             dic_spliceosome[key] = dic_exon[key]
 
-    analysis_dic, super_dict = analysis_maker(dic_exon["GC_rich"], dic_exon["AT_rich"],
-                                              dic_exon["GC_pure"], dic_exon["AT_pure"],
+    analysis_dic, super_dict = analysis_maker(dic_exon["GC_pure"], dic_exon["AT_pure"],
                                               dic_spliceosome, u1_u2_intersection, nb_iteration)
     file_writer(output, analysis_dic, nb_iteration, "GC", "AT")
     with open("%ssuper_dict_%s.txt" % (output, nb_iteration), "w") as outfile:
         outfile.write("super_dict=%s\n" % str(super_dict))
     cnx.close()
 
+
+def main_3g(list_file, name_file, seddb, output):
+    """
+    Make the enrichment analysis comparing the frequencies of exon regulated by splicesome factors \
+     for an AT and GC exons list.
+    """
+    nb_iteration = 10000
+    cnx = sqlite3.connect(seddb)
+    div_group = {"SNRPC": ["SNRPC"], "SNRNP70": ["SNRNP70"],
+                 "DDX5_17": ["DDX5_DDX17"],
+                 "SF1": ["SF1"], "U2AF1": ["U2AF1"], "U2AF2": ['U2AF2'],
+                 "SF3A3": ["SF3A3"], "SF3B4": ["SF3B4"]}
+    dic_exon = {}
+    for name_group in div_group.keys():
+        print("Getting all exon regulated by %s factor" % name_group)
+        dic_exon[name_group] = get_exons_list(cnx, div_group[name_group], "down")
+    for key in dic_exon:
+        print("%s : %s" % (key, len(dic_exon[key])))
+    dic_spliceosome = {}
+    for key in dic_exon.keys():
+        if "AT" not in key and "GC" not in key:
+            dic_spliceosome[key] = dic_exon[key]
+
+    analysis_dic, super_dict = analysis_maker_bis(list_file, name_file,
+                                                  dic_spliceosome, nb_iteration)
+    filename = file_writer(output, analysis_dic, nb_iteration, name_file[0],
+                name_file[1])
+    fig_3g(filename, output)
+    with open("%ssuper_dict_%s.txt" % (output, nb_iteration), "w") as outfile:
+        outfile.write("super_dict=%s\n" % str(super_dict))
+    cnx.close()
 
 if __name__ == "__main__":
     main()

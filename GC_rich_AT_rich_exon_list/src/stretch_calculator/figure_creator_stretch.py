@@ -173,12 +173,18 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     list_name = [name.replace("_exons", "") for name in list_name]
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"],
+                      color_dic["CCE"]]
     data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
 
     for i in range(len(list_values)):
+        try:
+           mcol = color_dic[list_name[i]]
+        except KeyError:
+            mcol = default_colors[i]
         data.append({"y": list_values[i], "type": figure,
-                     "name": list_name[i], "visible": True, "fillcolor": color_dic[list_name[i]], "opacity": 1,
+                     "name": list_name[i], "visible": True, "fillcolor": mcol, "opacity": 1,
                      "line": {"color": "black"}})
 
     layout = go.Layout(
@@ -354,6 +360,56 @@ def main():
                                   "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
                 # write_proportion_pvalues(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
                 # "nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+
+
+def main_2g(list_file, name_file, exon_type, fasterdb, seddb, output):
+    """
+
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param exon_type: (str) the control exons
+    :param output: (str) folder where the result will be created
+    :param seddb: (str) path to sed database
+    :param fasterdb: (str) path to fasterdb database
+    """
+    list_file.append(None)
+    name_file.append(exon_type)
+    exon_class_bp.set_debug(0)
+    ctrl_dir = os.path.realpath(os.path.dirname(__file__)) + \
+               "/control_dictionaries/"
+    sys.path.insert(0, ctrl_dir)
+    cnx = sqlite3.connect(fasterdb)
+    cnx_sed = sqlite3.connect(seddb)
+
+    type_analysis = "exon"
+    regulation = "down"
+    dict_stretch_3ss = {"X".join(map(str, stretch_data)): {nt: [] for nt in config.nt_list}
+                        for stretch_data in config.stretches}
+    for j in range(len(name_file)):
+        if name_file[j] != exon_type:
+            exon_list = extract_data(cnx, cnx_sed, list_file, name_file, j, regulation)
+            for stretch_data in config.stretches:
+                stretch_dic = get_stretch_score_list(exon_list, stretch_data)
+                for nt in config.nt_list:
+                    dict_stretch_3ss["X".join(map(str, stretch_data))][nt].append(stretch_dic[nt])
+        else:
+            for stretch_data in config.stretches:
+                mod = __import__("%s_stretches" % exon_type)
+                st_name = "X".join(map(str, stretch_data))
+                ctrl_dic = eval("mod.stretch_%s" % st_name)
+                for nt in config.nt_list:
+                    dict_stretch_3ss[st_name][nt].append(ctrl_dic[nt])
+
+    for stretch_data in config.stretches:
+        st_name = "X".join(map(str, stretch_data))
+        for nt in config.nt_list:
+            create_figure(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
+                          "2.2G_nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+            dataframe_creator(dict_stretch_3ss[st_name][nt], name_file, output, regulation,
+                              "2.2G_nb_stretch_%s-%s_%s_nt" % (stretch_data[1], stretch_data[0], nt), type_analysis)
+
 
 
 if __name__ == "__main__":

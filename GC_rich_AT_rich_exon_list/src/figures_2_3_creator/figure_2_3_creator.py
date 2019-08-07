@@ -62,39 +62,39 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
     """
     if output[-1] != "/":
         output += "/"
-    # print("Creating figure 1D...")
-    # main_1d(list_file, name_file, seddb, exon_type, regulation, output, nt)
-    # print("Creation of figure 2A...")
-    # main_2a(list_file, name_file, "C,S,A,T,G,W,Y,R".split(","), "2A_metaexon",
-    #         exon_type, ["#0000FF", "#00aa00"], False, output, fasterdb)
-    #
-    # if sf_type[0] != "" and sf_type[1] != "":
-    #     # Note, you have to modifiy the group factor.py script for other list
-    #     fig_num = ["2.1B", "2.2B", "2.1C", "2.2C"]
-    #     cols = ["iupac_downstream_intron_adjacent1"] * 2 + \
-    #         ["iupac_upstream_intron_adjacent1"] * 2
-    #     sf_type_tot = [sf_type, sf_type[::-1]] * 2
-    #     ascending = [True, False] * 2
-    #     for num, col, sf_type_cur, asc in zip(fig_num, cols, sf_type_tot,
-    #                                           ascending):
-    #         print("Creation of the figure %s" % num)
-    #         main_2bc([col], "%s_%s_%s" % (num, col, sf_type_cur[0]),
-    #                  seddb, exon_type, output, sf_type_cur[0], sf_type_cur[1],
-    #                  regulation="down", contrast=20, operation="mean",
-    #                  mascending=asc)
-    # print("Creating figure")
-    # main_2d(list_file, name_file, exon_type, output, seddb, fasterdb,
-    #         fig_nums=("2.1D_", "2.2D_"))
-    #
-    # print("Creating figures 2E 2F and 2.1G")
-    # main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output)
-    #
-    # print("Creation of the figure 2.2G")
-    # main_2g(list_file, name_file, exon_type, fasterdb, seddb, output)
-    #
-    # print("Creation of the figures 2H")
-    # main_2h(bed_folder, list_file, name_file, refsize, seddb, fasterdb, output,
-    #         metagene_script, None, None, None, num_fig="2H")
+    print("Creating figure 1D...")
+    main_1d(list_file, name_file, seddb, exon_type, regulation, output, nt)
+    print("Creation of figure 2A...")
+    main_2a(list_file, name_file, "C,S,A,T,G,W,Y,R".split(","), "2A_metaexon",
+            exon_type, ["#0000FF", "#00aa00"], False, output, fasterdb)
+
+    if sf_type[0] != "" and sf_type[1] != "":
+        # Note, you have to modifiy the group factor.py script for other list
+        fig_num = ["2.1B", "2.2B", "2.1C", "2.2C"]
+        cols = ["iupac_downstream_intron_adjacent1"] * 2 + \
+            ["iupac_upstream_intron_adjacent1"] * 2
+        sf_type_tot = [sf_type, sf_type[::-1]] * 2
+        ascending = [True, False] * 2
+        for num, col, sf_type_cur, asc in zip(fig_num, cols, sf_type_tot,
+                                              ascending):
+            print("Creation of the figure %s" % num)
+            main_2bc([col], "%s_%s_%s" % (num, col, sf_type_cur[0]),
+                     seddb, exon_type, output, sf_type_cur[0], sf_type_cur[1],
+                     regulation="down", contrast=20, operation="mean",
+                     mascending=asc)
+    print("Creating figure")
+    main_2d(list_file, name_file, exon_type, output, seddb, fasterdb,
+            fig_nums=("2.1D_", "2.2D_"))
+
+    print("Creating figures 2E 2F and 2.1G")
+    main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output)
+
+    print("Creation of the figure 2.2G")
+    main_2g(list_file, name_file, exon_type, fasterdb, seddb, output)
+
+    print("Creation of the figures 2H")
+    main_2h(bed_folder, list_file, name_file, refsize, seddb, fasterdb, output,
+            metagene_script, None, None, None, num_fig="2H")
 
     print("Creation of the figure 3G")
     main_3g(list_file, name_file, seddb, output)

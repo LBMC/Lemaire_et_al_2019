@@ -249,6 +249,66 @@ def handle_bed_creator(cnx, cnx_fasterdb, annotation_name, template_fodler, chro
     return final_templates_start, final_templates_stop, finale_names_start, finale_names_stop
 
 
+def get_exon_list_file(list_file):
+    """
+
+    :param list_file: (str) a file containing exons
+    :return: (list of 2 int) a list of exons
+    """
+    exon_list = []
+    with open(list_file, "r") as infile:
+        for line in infile:
+            line = line.replace("\n", "")
+            line = line.split("\t")
+            exon_list.append(list(map(int, line)))
+    return exon_list
+
+
+def handle_bed_creator_file(cnx_fasterdb, list_file, name_file,
+                            template_fodler, chrom_size_file):
+    """
+    Get the name of the annotation file.
+
+    :param cnx_fasterdb: (sqtite3 connect object) connection to fasterDB
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param template_fodler: (string) a folder containing template bed file.
+    :param chrom_size_file: (string) a file containing the length of hg19 chromosomes.
+    :param regulation: (string) up or down
+    :return: 4 elements:
+
+        1. (string) the list of bed files (coma separated) corresponding to intron-exon junctions containing the 3'SS
+        2. (string) the list of bed files (coma separated) corresponding to intron-exon junctions containing the 5'SS
+        3. (string) the list of name (coma separated) for the bed files ) corresponding to intron-exon junctions \
+        containing the 3'SS
+        4. (string) the list of name (coma separated) for the bed files ) corresponding to intron-exon junctions \
+        containing the 5'SS
+    """
+    final_template_start = []
+    final_template_stop = []
+    for i in range(len(name_file)):
+        if not os.path.isfile("%s%s_%s_add_i50_o200.bed" % (template_fodler, name_file[i], "start")):
+            exon_list = get_exon_list_file(list_file[i])
+            templates_bed = bed_creator(cnx_fasterdb, exon_list, template_fodler, name_file[i], chrom_size_file)
+        else:
+            start = "%s%s_%s_add_i50_o200.bed" % (template_fodler, name_file[i], "start")
+            templates_bed = [start, start.replace("start", "stop")]
+            print("recovering template files : %s" % start)
+        final_template_start.append(templates_bed[0])
+        final_template_stop.append(templates_bed[1])
+    finale_names_start = []
+    finale_names_stop = []
+    for my_name in name_file:
+        finale_names_start.append(my_name + "_start")
+        finale_names_stop.append(my_name + "_stop")
+    finale_names_start = ",".join(finale_names_start)
+    finale_names_stop = ",".join(finale_names_stop)
+    final_templates_start = ",".join(final_template_start)
+    final_templates_stop = ",".join(final_template_stop)
+    return final_templates_start, final_templates_stop, finale_names_start, finale_names_stop
+
 def load_chrom_size_dic(chrom_size_file):
     """
     Load in the form a a dictionary the chromosome size file.
@@ -380,6 +440,92 @@ def main(input_bed, refsize, output, metagene_script, cond, annotation, color, o
                                    color, outname + "_stop", output_graph, 50)
     except subprocess.CalledProcessError:
         print("Error metagene script")
+
+
+def figure_2h(input_bed, list_file, name_file, refsize, seddb, fasterdb, output,
+              metagene_script, cond, color, outname):
+    """
+    Create the figure 2f.
+
+    :param input_bed: (string) a bed file
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param refsize: (string) a file containing the hg19 chromosome size.
+    :param output: (string) path where the result will be created.
+    :param metagene_script: (string) path where the metagene script is located
+    :param cond: (string) a title
+    :param color: (string) colors chosen
+    :param outname: (string) path of the output file
+    """
+    template_fodler = seddb.replace("data/sed.db", "result/template/")
+    if not os.path.isdir(template_fodler):
+        os.mkdir(template_fodler)
+
+    cnx = sqlite3.connect(seddb)
+    cnx_fasterdb = sqlite3.connect(fasterdb)
+    tplt_start, tplt_stop, n_start, n_stop = \
+        handle_bed_creator_file(cnx_fasterdb, list_file, name_file,
+                                template_fodler, refsize)
+    output_bw = output + "bigwig/"
+    output_graph = output + "figure/"
+    if not os.path.isdir(output_bw):
+        os.mkdir(output_bw)
+    if not os.path.isdir(output_graph):
+        os.mkdir(output_graph)
+    if not color:
+        color_dic = group_factor.color_dic
+        prefixe = n_start.split(",")
+        try:
+            color = [color_dic[my_name.split("_")[0].replace("retained", "CCE")] for my_name in prefixe]
+        except KeyError:
+            color = [color_dic["GC_pure"], color_dic["AT_pure"], color_dic["CCE"]]
+            color = color[:len(prefixe)]
+        color = ",".join(color).replace("#", "")
+
+    bw_file = bed2bw(input_bed, refsize, output_bw)
+    if not outname:
+        outname = "_".join(name_file)
+    try:
+        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_start,
+                                   n_start, color, outname + "_start", output_graph, 200)
+        metagene_covergae_launcher(metagene_script, bw_file, cond, tplt_stop, n_stop,
+                                   color, outname + "_stop", output_graph, 50)
+    except subprocess.CalledProcessError:
+        print("Error metagene script")
+    cnx.close()
+    cnx_fasterdb.close()
+
+
+def main_2h(bed_folder, list_file, name_file, refsize, seddb, fasterdb, output,
+            metagene_script, cond, color, outname, num_fig):
+    """
+
+    :param bed_folder: (string) a folder containing bed files
+    :param list_file: (list of str) list of exons files in the form \
+    of GC_rich_exon file.
+    :param name_file: (list of str) the name of each files of exons \
+    given in ``list_file``
+    :param refsize: (string) a file containing the hg19 chromosome size.
+    :param output: (string) path where the result will be created.
+    :param metagene_script: (string) path where the metagene script is located
+    :param cond: (string) a title
+    :param color: (string) colors chosen
+    :param outname: (string) path of the output file
+    :param num_fig: (str) the num of the fig
+    """
+
+    bed_list = os.listdir(bed_folder)
+    for input_bed in bed_list:
+        print("Working on %s" % input_bed)
+        noutput = output + "/" + num_fig + "_" + \
+            input_bed.replace(".bed.gz", "") + "/"
+        if not os.path.isdir(noutput):
+            os.mkdir(noutput)
+        figure_2h("%s/%s" % (bed_folder, input_bed), list_file, name_file,
+                  refsize, seddb, fasterdb, noutput, metagene_script, cond,
+                  color, outname)
 
 
 def launcher():

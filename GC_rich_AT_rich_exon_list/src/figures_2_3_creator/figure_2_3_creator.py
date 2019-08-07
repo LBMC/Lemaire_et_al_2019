@@ -21,6 +21,9 @@ sys.path.insert(0, base2 + "/Figure_ESA/src/")
 from heatmap_maker import main_2bc
 sys.path.insert(0, base1 + "/minimum_free_energy/")
 from mfe_figure_creator import main_2d
+sys.path.insert(0, base1 + "/make_control_files_bp_ppt/")
+from bp_ppt_figure_creator import main_2efg
+
 
 sf_type_allowed = ['gc_rich_down', '', 'at_rich_down']
 
@@ -70,9 +73,12 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output,
                      seddb, exon_type, output, sf_type_cur[0], sf_type_cur[1],
                      regulation="down", contrast=20, operation="mean",
                      mascending=asc)
-
+    print("Creating figure")
     main_2d(list_file, name_file, exon_type, output, seddb, fasterdb,
             fig_nums=("2.1D_", "2.2D_"))
+
+    print("Creating figures 2E 2F and 2G")
+    main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output)
 
 
 if __name__ == "__main__":

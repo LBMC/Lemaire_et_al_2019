@@ -25,14 +25,17 @@ sys.path.insert(0, base1 + "/make_control_files_bp_ppt/")
 from bp_ppt_figure_creator import main_2efg
 sys.path.insert(0, base1 + "/stretch_calculator/")
 from figure_creator_stretch import main_2g
-
+sys.path.insert(0, base2 + "/Clip_analysis/src/")
+from metaexon_coverage import main_2h
 sf_type_allowed = ['gc_rich_down', '', 'at_rich_down']
 
 
 @lp.parse(list_file="file", seddb="file", exon_type=["CCE", "ALL"],
-          regulation=["up", "down"], output="dir",
+          regulation=["up", "down"], output="dir", bed_folder="dir",
+          refsize="file", metagene_script="file",
           sf_type=sf_type_allowed)
-def figure_creator(list_file, name_file, seddb, fasterdb, output,
+def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
+                   refsize, metagene_script,
                    exon_type="CCE", regulation="down", nt="S",
                    sf_type=("", "")):
     """
@@ -46,6 +49,9 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output,
     :param exon_type: (str) the control exons
     :param regulation: (str) the resultation wanted up or down
     :param output: (str) pat were the result will be created
+    :param bed_folder: (str) a directory containing bed files
+    :param refsize: (str) a file containing chromosome length of hg19 genome
+    :param metagene_script: (str) path to metagene scriptS
     :param nt: (str) the nt we want to use for the figure 1.1D
     :param sf_type: (List(size=2, vtype=str)) the name of the 2 kind \
     of splicing factors groups of interest
@@ -83,6 +89,10 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output,
 
     print("Creation of the figure 2.2G")
     main_2g(list_file, name_file, exon_type, fasterdb, seddb, output)
+
+    print("Creation of the figures 2H")
+    main_2h(bed_folder, list_file, name_file, refsize, seddb, fasterdb, output,
+            metagene_script, None, None, None, num_fig="2H")
 
 if __name__ == "__main__":
     figure_creator()

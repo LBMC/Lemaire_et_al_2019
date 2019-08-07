@@ -105,6 +105,39 @@ def value_adapter(sub_dic):
     return list_values, list_factor_name, pos_reg, neg_reg
 
 
+def value_adapter_bis(sub_dic):
+    """
+    Transforms the values in sub dict into values that will be display in the graph
+    :param sub_dic: (a dictionary of  list float + string) links each comparison to its pvalue + \
+    the direction of the comparison
+    :return: (list of 3 lists (of float and  2 string respectively)
+    """
+    list_values = []
+    list_factor_name = []
+    list_reg = []
+    dic_reg = {"NA": 1}
+
+    for key in sub_dic.keys():
+        if sub_dic[key][1] not in list_reg and sub_dic[key][1] != "NA":
+            list_reg.append(sub_dic[key][1])
+    print(list_reg)
+    if len(list_reg) > 2:
+        print("error : only 2 regulations must be in the subsampled dic!")
+        exit(1)
+    if len(list_reg) > 0:
+        pos_reg = list_reg[0]
+        neg_reg = list_reg[1]
+        dic_reg[pos_reg] = -1
+        dic_reg[neg_reg] = 1
+    else:
+        raise ValueError("list_reg should contain a regulation")
+    print(dic_reg)
+    for key in sub_dic.keys():
+        list_values.append(math.log10(sub_dic[key][0]) * dic_reg[sub_dic[key][1]])
+        list_factor_name.append(key.split('-')[3])
+    return list_values, list_factor_name, pos_reg, neg_reg
+
+
 def sort_values(value_list, name_list):
     """
     Sort the values in ``value_list``
@@ -200,6 +233,14 @@ def main(filename):
             list_values, list_factor_name, pos_reg, neg_reg = value_adapter(sub_dic)
             list_values, list_factor_name = sort_values(list_values, list_factor_name)
             figure_maker(list_values, list_factor_name, pos_reg, neg_reg, group_exon, group_factor, output)
+
+
+def fig_3g(filename, output):
+    dic_res = file_reader(filename)
+    print(dic_res)
+    list_values, list_factor_name, pos_reg, neg_reg = value_adapter_bis(dic_res)
+    list_values, list_factor_name = sort_values(list_values, list_factor_name)
+    figure_maker(list_values, list_factor_name, pos_reg, neg_reg, "", "", output)
 
 
 if __name__ == "__main__":

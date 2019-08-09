@@ -27,7 +27,7 @@ sys.path.insert(0, base1 + "/stretch_calculator/")
 from figure_creator_stretch import main_2g
 sys.path.insert(0, base2 + "/Clip_analysis/src/")
 from metaexon_coverage import main_2h
-sf_type_allowed = ['gc_rich_down', '', 'at_rich_down']
+sf_type_allowed = ['gc_rich_down', '', 'at_rich_down', 'ga_rich_down', 'ct_rich_down', 'other']
 sys.path.insert(0, base1 + "/GC_AT_group_regulated_U1_U2/")
 from spliceosome_regulation_enrichment import main_3g
 
@@ -63,10 +63,12 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
     if output[-1] != "/":
         output += "/"
     print("Creating figure 1D...")
-    main_1d(list_file, name_file, seddb, exon_type, regulation, output, nt)
+    main_1d(list_file.copy(), name_file.copy(), seddb, exon_type, regulation,
+            output, nt)
     print("Creation of figure 2A...")
-    main_2a(list_file, name_file, "C,S,A,T,G,W,Y,R".split(","), "2A_metaexon",
-            exon_type, ["#0000FF", "#00aa00"], False, output, fasterdb)
+    main_2a(list_file.copy(), name_file.copy(), "C,S,A,T,G,W,Y,R".split(","),
+            "2A_metaexon", exon_type, ["#0000FF", "#00aa00"], False,
+            output, fasterdb)
 
     if sf_type[0] != "" and sf_type[1] != "":
         # Note, you have to modifiy the group factor.py script for other list
@@ -83,21 +85,23 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
                      regulation="down", contrast=20, operation="mean",
                      mascending=asc)
     print("Creating figure")
-    main_2d(list_file, name_file, exon_type, output, seddb, fasterdb,
-            fig_nums=("2.1D_", "2.2D_"))
+    main_2d(list_file.copy(), name_file.copy(), exon_type, output, seddb,
+            fasterdb, fig_nums=("2.1D_", "2.2D_"))
 
     print("Creating figures 2E 2F and 2.1G")
-    main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output)
+    main_2efg(list_file.copy(), name_file.copy(),
+              exon_type, seddb, fasterdb, output)
 
     print("Creation of the figure 2.2G")
-    main_2g(list_file, name_file, exon_type, fasterdb, seddb, output)
+    main_2g(list_file.copy(), name_file.copy(), exon_type, fasterdb,
+            seddb, output)
 
     print("Creation of the figures 2H")
-    main_2h(bed_folder, list_file, name_file, refsize, seddb, fasterdb, output,
-            metagene_script, None, None, None, num_fig="2H")
+    main_2h(bed_folder, list_file.copy(), name_file.copy(), refsize, seddb,
+            fasterdb, output, metagene_script, None, None, None, num_fig="2H")
 
     print("Creation of the figure 3G")
-    main_3g(list_file, name_file, seddb, output)
+    main_3g(list_file.copy(), name_file.copy(), seddb, output)
 
 if __name__ == "__main__":
     figure_creator()

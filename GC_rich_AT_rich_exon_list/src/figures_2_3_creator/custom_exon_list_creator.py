@@ -1,0 +1,207 @@
+#!/usr/bin env python3.5
+
+"""
+Description:
+    The goal of this script is to create custom list of exons:
+        - GA exons vs CT exons
+        - GC-exons (small introns) not regulated by a splicing factor vs
+          AT-exons (large introns) not regulated by a splicing
+        - SRSF2-SRSF3-HNRNPC vs GC-exons (already used)
+"""
+
+import sqlite3
+import numpy as np
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+import group_factor
+import union_dataset_function as udf
+from  figure_creator import get_exons_list
+
+
+def file_writer(list_exon, name_list, output):
+    """
+    Write a file containing exons (on per line) identified by their gene_id \
+    and their position within the hosting gene.
+
+    :param list_exon: (list of 2 int) list of exons identified by their \
+    gene_id and exon_position \
+    within the hosting gene
+    :param name_list: (string) the name of the list of exons named `list_exon`
+    :param output: (string) path where the file will be created
+    """
+    with open("%s%s_exons.txt" % (output, name_list), "w") as my_file:
+        for exon in list_exon:
+            my_file.write("%s\t%s\n" % (exon[0], exon[1]))
+
+
+def create_ct_ga_rich_exon_list(cnx, output):
+    """
+    Create the GA and the CT rich exons list.
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param output: (str) path were the exon files will be created
+    """
+    ga_exon_all = get_exons_list(cnx, group_factor.ga_rich_down, "down")
+    ct_exon_all = get_exons_list(cnx, group_factor.ct_rich_down, "down")
+    ga_exon = [exon for exon in ga_exon_all if exon not in ct_exon_all]
+    ct_exon = [exon for exon in ct_exon_all if exon not in ga_exon_all]
+    print("ga_exon_all : %s exons" % len(ga_exon_all))
+    print("ga_exon : %s exons" % len(ga_exon))
+    print("ct_exon_all : %s exons" % len(ct_exon_all))
+    print("ct_exon : %s exons" % len(ct_exon))
+    file_writer(ga_exon, "GA_rich", output)
+    file_writer(ct_exon, "CT_rich", output)
+
+
+def create_othergc_exon_file(cnx, output):
+    """
+    Create the GC-exons file regulated by SRSF2 HNRNPC and SRSF3.
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param output: (str) path were the exon files will be created
+    """
+    gc_exon_all = get_exons_list(cnx, group_factor.gc_rich_down, "down")
+    at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
+    gc_exon = [exon for exon in gc_exon_all if exon not in at_exon_all]
+    print("GC exons : %s" % len(gc_exon))
+    other_gc_all = get_exons_list(cnx, group_factor.other, "down")
+    print("Number of other_gc all exons : %s" % len(other_gc_all))
+    other_gc = [exon for exon in other_gc_all if exon not in gc_exon]
+    print("other GC exons : %s" % len(other_gc))
+    file_writer(other_gc, "other_GC_rich", output)
+
+
+def control_query_execution(cnx, exon_type):
+    """
+    query launcher
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param exon_type: (string) the type of control exon we want to use
+    :return: (list of tuple)
+    """
+    cursor = cnx.cursor()
+    if exon_type != "ALL":
+        query = """SELECT t1.gene_id, t1.exon_pos,
+                              t1.iupac_exon, t1.upstream_intron_size, 
+                              t1.downstream_intron_size
+                       FROM sed t1
+                       WHERE t1.exon_type LIKE '%{}%'""".format(exon_type)
+    else:
+        query = """SELECT t1.gene_id, t1.exon_pos,
+                              t1.iupac_exon, t1.upstream_intron_size, 
+                              t1.downstream_intron_size
+                       FROM sed t1
+                    """
+    cursor.execute(query)
+    return cursor.fetchall()
+
+
+def get_control_exon_information(cnx, exon_type, exon2remove):
+    """
+    Get the gene symbol, the gene id and the position of every ``exon_type`` \
+    exons in fasterDB.
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (list of list of 2int) list of exon to remove from\
+     the control list of exons
+    :return:
+        * result: (list of tuple) every information about control exons
+        * names: (list of string) the name of every column in sed table
+    """
+    result = control_query_execution(cnx, exon_type)
+    # turn tuple into list
+    print("number of control exon before removing bad ones : %s" % len(result))
+    nresult = [list(exon) for exon in result if
+               [exon[0], exon[1]] not in exon2remove]
+    print("number of control exon after removing bad ones : %s" % len(nresult))
+    min_flanking_intron_size = np.median([np.nanmin(
+                                    np.array([exon[3], exon[4]], dtype=float))
+                                          for exon in nresult])
+    gc_content = np.median([float(exon[2].split(";")[4]) for exon in
+                           nresult])
+    print("median GC content : %s" % gc_content)
+    print("median min flaking intron size : %s" % min_flanking_intron_size)
+    return min_flanking_intron_size, gc_content
+
+
+def get_exons_of_interest(cnx, exon_type, exon2remove, min_intron_size,
+                          gc_content, mtype):
+    """
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (list of list of 2int) list of exon to remove from\
+     the control list of exons
+    :param min_intron_size: (int) the median size of the smallest flaking \
+    intron
+    :param gc_content: (int) the median value of gc content
+    :param mtype: gc or at
+    :return: (list of 2 int) list of exons
+    """
+    result = control_query_execution(cnx, exon_type)
+    print("number of control exon before removing bad ones : %s" % len(result))
+    if mtype == "GC":
+        nresult = [[exon[0], exon[1]] for exon in result if
+                   [exon[0], exon[1]] not in exon2remove and
+                   np.nanmin(np.array([exon[3], exon[4]], dtype=float)) <
+                   min_intron_size and
+                   float(exon[2].split(";")[4]) > gc_content]
+    else:
+        nresult = [[exon[0], exon[1]] for exon in result if
+                   [exon[0], exon[1]] not in exon2remove and
+                   np.nanmin(np.array([exon[3], exon[4]], dtype=float)) >
+                   min_intron_size and
+                   float(exon[2].split(";")[4]) < gc_content]
+    print("number of control exon after removing bad ones : %s" % len(nresult))
+    return nresult
+
+
+def create_unregulated_exon_list(cnx, output, exon_type):
+    """
+    Create the list of GC/At rich unregulated exons
+
+    :param cnx: (sqlite3 connect objecy) connection to sed database
+    :param output: (str) path were the exon files will be created
+    :param exon_type: (str) the type of control exons
+    """
+    exon2remove = udf.get_exon_regulated_by_sf(cnx, "down")
+    min_intron_size, gc_content = \
+        get_control_exon_information(cnx, exon_type, exon2remove)
+    gc_exon = get_exons_of_interest(cnx, exon_type, exon2remove,
+                                    min_intron_size, gc_content, "GC")
+    at_exon = get_exons_of_interest(cnx, exon_type, exon2remove,
+                                    min_intron_size, gc_content, "AT")
+    gc_exon = [exon for exon in gc_exon if exon not in at_exon]
+    at_exon = [exon for exon in at_exon if exon not in gc_exon]
+    print("gc_exon : %s exons" % len(gc_exon))
+    print("at_exon : %s exons" % len(at_exon))
+    file_writer(gc_exon, "GC_unregulated", output)
+    file_writer(at_exon, "AT_unregulated", output)
+    cnx.close()
+
+
+def main():
+    exon_type = "CCE"
+    seddb = os.path.realpath(os.path.dirname(os.path.dirname(__file__)
+                                             ).replace("src","data/sed.db"))
+    cnx = sqlite3.connect(seddb)
+    output = os.path.realpath(
+        os.path.dirname(os.path.dirname(__file__)
+                        )).replace("src", "result/figure_2_3/exon_list/")
+
+    if not os.path.isdir(output):
+        os.mkdir(output)
+    print("%sCreate GA and CT exons list%s" % ("-" * 20, "-" * 20))
+    create_ct_ga_rich_exon_list(cnx, output)
+    print("%sCreate other GC exons list%s" % ("-" * 20, "-" * 20))
+    create_othergc_exon_file(cnx, output)
+    print("%sCreate unregulated AT/GC exons list%s" % ("-" * 20, "-" * 20))
+    create_unregulated_exon_list(cnx, output, exon_type)
+    cnx.close()
+    print("Finished !")
+
+
+if __name__ == "__main__":
+    main()

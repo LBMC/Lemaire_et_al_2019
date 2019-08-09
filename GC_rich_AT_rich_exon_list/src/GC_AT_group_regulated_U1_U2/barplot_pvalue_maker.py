@@ -40,7 +40,7 @@ def file_reader(filename):
                     dic_res[line[0]] = [float(line[1]), name2]
                 else:
                     dic_res[line[0]] = [float(line[1]), "NA"]
-    return dic_res
+    return dic_res, name1, name2
 
 
 def subsample_result_dic(res_dic, group_exon, group_factor):
@@ -105,7 +105,7 @@ def value_adapter(sub_dic):
     return list_values, list_factor_name, pos_reg, neg_reg
 
 
-def value_adapter_bis(sub_dic):
+def value_adapter_bis(sub_dic, pos_reg, neg_reg):
     """
     Transforms the values in sub dict into values that will be display in the graph
     :param sub_dic: (a dictionary of  list float + string) links each comparison to its pvalue + \
@@ -125,8 +125,6 @@ def value_adapter_bis(sub_dic):
         print("error : only 2 regulations must be in the subsampled dic!")
         exit(1)
     if len(list_reg) > 0:
-        pos_reg = list_reg[0]
-        neg_reg = list_reg[1]
         dic_reg[pos_reg] = -1
         dic_reg[neg_reg] = 1
     else:
@@ -135,7 +133,7 @@ def value_adapter_bis(sub_dic):
     for key in sub_dic.keys():
         list_values.append(math.log10(sub_dic[key][0]) * dic_reg[sub_dic[key][1]])
         list_factor_name.append(key.split('-')[3])
-    return list_values, list_factor_name, pos_reg, neg_reg
+    return list_values, list_factor_name
 
 
 def sort_values(value_list, name_list):
@@ -224,7 +222,7 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
 def main(filename):
     output = os.path.realpath(os.path.dirname(__file__)).replace("src/GC_AT_group_regulated_U1_U2",
                                                                  "result/GC_AT_group_regulated_U1_U2/")
-    dic_res = file_reader(filename)
+    dic_res, pos_reg, neg_reg = file_reader(filename)
     groups_factor = ["all"]
     groups_exon = ["pure"]
     for group_exon in groups_exon:
@@ -236,9 +234,9 @@ def main(filename):
 
 
 def fig_3g(filename, output):
-    dic_res = file_reader(filename)
+    dic_res, pos_reg, neg_reg = file_reader(filename)
     print(dic_res)
-    list_values, list_factor_name, pos_reg, neg_reg = value_adapter_bis(dic_res)
+    list_values, list_factor_name = value_adapter_bis(dic_res, pos_reg, neg_reg)
     list_values, list_factor_name = sort_values(list_values, list_factor_name)
     figure_maker(list_values, list_factor_name, pos_reg, neg_reg, "", "", output)
 

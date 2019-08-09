@@ -25,6 +25,15 @@ u2_factors = ("SF1", "SF3A3", "SF3B1", "SF3B4", "U2AF1", "U2AF2")
 chromatin_factors = ("DNMT3A", "EZH2", "KMT2A", "KMT2D", "MBD2", "MBD3", "SETD2", "SUV39H1",
                      "SUV39H2", "TDG", "TET2", "EED")
 
+# -- additional list of exons --
+ct_rich_down = ("SRSF9", "RBMX", "PCBP1", "HNRNPF", "SRSF5", "RBFOX2",
+                "RBM25", "MBNL2", "RBM22", "HNRNPH1", "SRSF6", "SRSF2",
+                "SRSF7", "DAZAP1", "HNRNPC", "HNRNPA1", "PCBP2", "QKI",
+                "FUS", "HNRNPL", "HNRNPU")
+ga_rich_down = ("SRSF1", "SFPQ", "MBNL1", "HNRNPM", "PTBP1", "KHSRP",
+                "HNRNPA2B1", "RBM15", "RBM39", "HNRNPK", "TRA2A_B")
+
+
 color_dic = {"GC_pure": "#5555FF", "AT_pure": "#00aa00", "GC_all": "#0394d9",
              "AT_all": "#03d994", "CCE": "red", "ALL": "red", "ACE": "red",
              "DDX5_DDX17": "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#5555D0", "SNRPC": "cyan",

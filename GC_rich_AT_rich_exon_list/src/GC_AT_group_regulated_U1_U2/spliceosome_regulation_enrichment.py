@@ -258,29 +258,38 @@ def analysis_maker_bis(list_file, name_file, splicesome_dic, nb_iteration):
     if len(list_file) != 2:
         raise IndexError("list_file should have a length of 2 elements")
     cur_list1 = get_exon_list_file(list_file[0])
-    print("%s : %s" % (name_file[0], len(cur_list1)))
+    name_list1 = name_file[0].replace("-", "_")
+    print("%s : %s" % (name_list1, len(cur_list1)))
     cur_list2 = get_exon_list_file(list_file[1])
-    print("%s : %s" % (name_file[1], len(cur_list2)))
+    name_list2 = name_file[1].replace("-", "_")
+    print("%s : %s" % (name_list2, len(cur_list2)))
     for key in splicesome_dic.keys():
         cur_ctrl = splicesome_dic[key]
-        list_at_intersect = []
-        gc_intersect = len(exon_intersection(cur_list1, cur_ctrl))
+        list_intersect = []
+        if len(cur_list1) < len(cur_list2):
+            intersect1 = len(exon_intersection(cur_list1, cur_ctrl))
+            interb = len(exon_intersection(cur_list2, cur_ctrl))
+        else:
+            intersect1 = len(exon_intersection(cur_list2, cur_ctrl))
+            interb = len(exon_intersection(cur_list1, cur_ctrl))
         for i in range(nb_iteration):
             sys.stdout.write("%s/%s     \r" % (i, nb_iteration))
-            new_at_list = None
             if len(cur_list1) > len(cur_list2):
-                print("Error : the GC-exons should not be greater than AT-exons list !")
-                exit(1)
+                intersect2 = subsample(cur_list1, len(cur_list2))
             else:
-                new_at_list = subsample(cur_list2, len(cur_list1))
-            at_intersect = len(exon_intersection(new_at_list, cur_ctrl))
-            list_at_intersect.append(at_intersect)
-        pval, reg = calculate_index(gc_intersect, list_at_intersect)
+                intersect2 = subsample(cur_list2, len(cur_list1))
+            at_intersect = len(exon_intersection(intersect2, cur_ctrl))
+            list_intersect.append(at_intersect)
+        pval, reg = calculate_index(intersect1, list_intersect)
         pval = max(pval, float(1 / nb_iteration))
-        analysis_dic["%s-%s-vs-%s" % (name_file[0].replace("-", "_"), name_file[1].replace("-", "_"), key)] = \
+        name_file = [name_list1, name_list2]
+        if len(cur_list2) < len(cur_list1):
+            name_file = name_file[::-1]
+
+        analysis_dic["%s-%s-vs-%s" % (name_file[0], name_file[1], key)] = \
             [pval, reg]
-        super_dic["%s-%s-vs-%s" % (name_file[0].replace("-", "_"), name_file[1].replace("-", "_"), key)] = \
-            [pval, gc_intersect, list_at_intersect]
+        super_dic["%s-%s-vs-%s" % (name_file[0], name_file[1], key)] = \
+            [pval, intersect1, list_intersect, interb]
     return analysis_dic, super_dic
 
 

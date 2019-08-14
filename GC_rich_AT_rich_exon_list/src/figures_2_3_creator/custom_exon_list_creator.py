@@ -13,9 +13,10 @@ import sqlite3
 import numpy as np
 import os
 import sys
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import group_factor
-import union_dataset_function as udf
 from  figure_creator import get_exons_list
 
 
@@ -54,6 +55,24 @@ def create_ct_ga_rich_exon_list(cnx, output):
     file_writer(ct_exon, "CT_rich", output)
 
 
+def venn_diagram_creator(list_exons, list_names, output):
+    """
+    Create a venn diagram of the `list1` and `list2` lists of values.
+
+    :param list_exons: (list of list of 2 int) list of exons
+    :param list_names: (list of string) the names of the list of exons
+    :param output: (string) path where the result venn diagram will be created
+    :return:
+    """
+    def flaten_list(x): return ["%s_%s" % (a[0], a[1]) for a in x]
+    new_lists = [set(flaten_list(my_list)) for my_list in list_exons]
+    venn3(new_lists, set_labels=list_names)
+    plt.savefig("%sVenn_%s.pdf" % (output, "_".join(list_names)))
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+
 def create_othergc_exon_file(cnx, output):
     """
     Create the GC-exons file regulated by SRSF2 HNRNPC and SRSF3.
@@ -62,14 +81,27 @@ def create_othergc_exon_file(cnx, output):
     :param output: (str) path were the exon files will be created
     """
     gc_exon_all = get_exons_list(cnx, group_factor.gc_rich_down, "down")
-    at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
-    gc_exon = [exon for exon in gc_exon_all if exon not in at_exon_all]
-    print("GC exons : %s" % len(gc_exon))
+    print("GC exons : %s" % len(gc_exon_all))
     other_gc_all = get_exons_list(cnx, group_factor.other, "down")
     print("Number of other_gc all exons : %s" % len(other_gc_all))
-    other_gc = [exon for exon in other_gc_all if exon not in gc_exon]
+    other_gc = [exon for exon in other_gc_all if exon not in gc_exon_all]
+    gc_exon = [exon for exon in gc_exon_all if exon not in other_gc_all]
     print("other GC exons : %s" % len(other_gc))
     file_writer(other_gc, "other_GC_rich", output)
+    print("other GC exons all: %s" % len(other_gc_all))
+    file_writer(other_gc_all, "other_GC_all_rich", output)
+    print("GC exons: %s" % len(gc_exon))
+    file_writer(gc_exon, "GC_rich", output)
+    at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
+    print("Number of at exons all: %s" % len(at_exon_all))
+    other_gc2 = [exon for exon in other_gc_all if exon not in at_exon_all]
+    at_exon = [exon for exon in at_exon_all if exon not in other_gc_all]
+    print("other GC exons (for AT comparison): %s" % len(other_gc2))
+    print("Number of at exons : %s" % len(at_exon))
+    file_writer(other_gc2, "other_GC_rich4ATcomp", output)
+    file_writer(at_exon, "AT_rich", output)
+    venn_diagram_creator([other_gc_all, gc_exon_all, at_exon_all],
+                         ["otherGC-exons", "GC-exons", "AT-exons"], output)
 
 
 def control_query_execution(cnx, exon_type):
@@ -166,7 +198,12 @@ def create_unregulated_exon_list(cnx, output, exon_type):
     :param output: (str) path were the exon files will be created
     :param exon_type: (str) the type of control exons
     """
-    exon2remove = udf.get_exon_regulated_by_sf(cnx, "down")
+    gc_exon_all = get_exons_list(cnx, group_factor.gc_rich_down, "down")
+    at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
+    gc_exon = [exon for exon in gc_exon_all if exon not in at_exon_all]
+    at_exon = [exon for exon in at_exon_all if exon not in gc_exon_all]
+    exon2remove = gc_exon + at_exon
+    print("exon to remove : %s" % len(exon2remove))
     min_intron_size, gc_content = \
         get_control_exon_information(cnx, exon_type, exon2remove)
     gc_exon = get_exons_of_interest(cnx, exon_type, exon2remove,

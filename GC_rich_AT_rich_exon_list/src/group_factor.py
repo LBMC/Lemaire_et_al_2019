@@ -119,6 +119,12 @@ def get_wanted_sf_name(sf_type):
         name_projects = at_rich_down
     elif sf_type == "CF" or sf_type == "chromatin_factors":
         name_projects = chromatin_factors
+    elif sf_type == "GA_rich" or sf_type == "ga_rich_down":
+        name_projects = ga_rich_down
+    elif sf_type == "CT_rich" or sf_type == "ct_rich_down":
+        name_projects = ct_rich_down
+    elif sf_type == "other":
+        name_projects = other
     elif sf_type == "all":
         name_projects = at_rich_down + gc_rich_down + other + u1_factors + u2_factors
     else:

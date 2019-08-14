@@ -770,7 +770,7 @@ def main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output):
     sys.path.insert(0, ctrl_dir)
     cnx = sqlite3.connect(fasterdb)
     cnx_sed = sqlite3.connect(seddb)
-    type_analysis = "exons"
+    type_analysis = "exon"
     regulation = "down"
 
     dict_score_3ss = {k: {"bp_score_list": [], "ppt_score_list": [], "nb_bp_list": [], "gc_weblogo": [],
@@ -822,10 +822,10 @@ def main_2efg(list_file, name_file, exon_type, seddb, fasterdb, output):
         if size == 100:
             create_barplot(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
                            "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            # write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-            #                          "prop_nb_good_branch_point_(%snt)" % size, type_analysis)
-            dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
-                              "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            write_proportion_pvalues(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+                                     "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
+            # dataframe_creator(dict_score_3ss[size]["nb_good_bp_list"], name_file, output, regulation,
+            #                   "2.1E_prop_nb_good_branch_point_(%snt)" % size, type_analysis)
     cnx.close()
     cnx_sed.close()
 

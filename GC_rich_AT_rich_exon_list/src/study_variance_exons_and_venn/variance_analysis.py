@@ -191,6 +191,84 @@ def get_two_groups_of_exon(dic_size, threshold, target_columns):
     return small_exons, big_exons
 
 
+def write_test_result(big_gc, small_gc, threshold, output, name_exons):
+    """
+    Write a file containing the result of a levene test between the GC-content \
+     of a group of big exons and a group of small exons.
+
+    :param big_gc: (list of float) list of gc content of big exons : exons \
+    with a size greater than ``threshold``
+    :param small_gc: (list of float) list of gc content of big exons : exons \
+    with a size lower or equal than ``threshold``
+    :param threshold: (float) the size chosen to separate big and small exons
+    :param output: (str) folder where the result will be created
+    :param name_exons: (str ) the name of the exons studied
+    """
+    w, pvalue = levene(small_gc, big_gc)
+    print("levene (homoscedaticity test) pvalue = %s" % pvalue)
+    with open("%s/pvalue_levene_test_%s.txt" % (output, name_exons), "w") \
+            as ouf:
+        ouf.write("Levene test comparing exons:\n")
+        ouf.write("\t-with a size below/equal to %s nt (%s exons)\n" %
+                  (threshold, len(small_gc)))
+        ouf.write("\t-with a size greater to %s nt (%s exons)\n" %
+                  (threshold, len(big_gc)))
+        ouf.write("====  PVALUE : %s =====\n" % pvalue)
+        ouf.write("std gc content small exons : %s\n" % (np.std(small_gc)))
+        ouf.write("std gc content big exons : %s\n" % (np.std(big_gc)))
+
+
+def my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
+                      target_column, level="control"):
+    """
+    Create the histogram of the size of exons and make a levene test \
+    to test if the variance of GC content of a group of big exons \
+    and a group of small exons is different.
+
+    :param cnx: (pymysql connection object) connection to Sed database.
+    :param exon_type: (str) the type of control exons to analyse
+    :param output: (str) folder where the results will be created
+    :param regulation: (str) the regulation
+    :param size_threshold: (int) the threshold
+    :param target_column: (str) the feature of interest
+    :param level: (str) the level
+    """
+    sizefig = "hist_of_%s_exon_size" % exon_type
+    if level == "control":
+        exon_2_remove = udf.get_exon_regulated_by_sf(cnx, regulation)
+        exon_list = get_control_exon(cnx, exon_type, exon_2_remove, regulation)
+    else:
+        exon_list = udf.get_exon_regulated_by_sf(cnx, regulation)
+        exon_type = "SF-down"
+    dic_size = get_list_of_value(cnx, exon_list, target_column)
+    # dic_size = {"exon": [], target_column: []}
+    # for i in range(len(tmp["exon"])):
+    #     if tmp[target_column][i] > 10:
+    #         dic_size["exon"].append(tmp["exon"][i])
+    #         dic_size[target_column].append(tmp[target_column][i])
+    list_size = np.array(dic_size["exon_size"])
+    print(" min : %s" % min(list_size))
+    print(" max : %s" % max(list_size))
+    print(" nb exons having a size below/equal %s : %s" %
+          (size_threshold, len(list_size[list_size <= size_threshold])))
+    make_histogram(list_size, output, sizefig, target_column, log=True)
+    small_exons, big_exons = get_two_groups_of_exon(dic_size, size_threshold,
+                                                    target_column)
+    print(" nb exons having a size below/equal to %s nt : %s" %
+          (size_threshold, len(small_exons)))
+    print(" nb exons having a size greater to %s nt : %s" %
+          (size_threshold, len(big_exons)))
+    small_gc = get_list_of_value_iupac_dnt(cnx, small_exons,
+                                           "iupac_exon", "S")
+    big_gc = get_list_of_value_iupac_dnt(cnx, big_exons,
+                                           "iupac_exon", "S")
+    make_histogram(small_gc, output, "gc_content_small_%s_exon" % exon_type,
+                   "GC content exons <= %s nt" % size_threshold)
+    make_histogram(big_gc, output, "gc_content_big_%s_exon" % exon_type,
+                   "GC content exons > %s nt" % size_threshold)
+    write_test_result(big_gc, small_gc, size_threshold, output, exon_type)
+
+
 def main():
     """
     Create the graphics wanted
@@ -204,47 +282,13 @@ def main():
     exon_type = "CCE"
     regulation = "down"
     target_column = "exon_size"
-    sizefig = "hist_of_%s_exon_size" % exon_type
-    size_threshold = 30
+    size_threshold = 27
     cnx = sqlite3.connect(seddb)
-    exon_2_remove = udf.get_exon_regulated_by_sf(cnx, regulation)
-    exon_list = get_control_exon(cnx, exon_type, exon_2_remove, regulation)
-    tmp = get_list_of_value(cnx, exon_list, target_column)
-    dic_size = {"exon": [], target_column: []}
-    for i in range(len(tmp["exon"])):
-        if tmp[target_column][i] > 10:
-            dic_size["exon"].append(tmp["exon"][i])
-            dic_size[target_column].append(tmp[target_column][i])
-    list_size = np.array(dic_size["exon_size"])
-    # list_size = list_size[list_size <= 5000]
-
-    print(" min : %s" % min(list_size))
-    print(" max : %s" % max(list_size))
-    print(" nb exons having a size below/equal %s : %s" % (size_threshold, len(list_size[list_size <= size_threshold])))
-    make_histogram(list_size, output, sizefig, target_column, log=True)
-    small_exons, big_exons = get_two_groups_of_exon(dic_size, size_threshold,
-                                                    target_column)
-    print(" nb exons having a size below/equal to %s nt : %s" %
-          (size_threshold, len(small_exons)))
-    print(" nb exons having a size greater to %s nt : %s" %
-          (size_threshold, len(big_exons)))
-    small_gc = get_list_of_value_iupac_dnt(cnx, small_exons,
-                                           "iupac_exon", "S")
-    big_gc = get_list_of_value_iupac_dnt(cnx, big_exons,
-                                           "iupac_exon", "S")
-    make_histogram(small_gc, output, "gc_content_small_exon", "GC content exons <= 25 nt")
-    make_histogram(big_gc, output, "gc_content_big_exon", "GC content exons > 25 nt")
-    w, pvalue = levene(small_gc, big_gc)
-    print("levene (homoscedaticity test) pvalue = %s" % pvalue)
-    with open("%s/pvalue_levene_test.txt" % output, "w") as ouf:
-        ouf.write("Levene test comparing exons:\n")
-        ouf.write("\t-with a size below/equal to %s nt (%s exons)\n" %
-                  (size_threshold, len(small_gc)))
-        ouf.write("\t-with a size greater to %s nt (%s exons)\n" %
-                  (size_threshold, len(big_gc)))
-        ouf.write("====  PVALUE : %s =====\n" % pvalue)
-        ouf.write("std gc content small exons : %s\n" % (np.std(small_gc)))
-        ouf.write("std gc content big exons : %s\n" % (np.std(big_gc)))
+    my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
+                           target_column)
+    my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
+                           target_column, level="SF-down")
+    cnx.close()
 
 
 if __name__ == "__main__":

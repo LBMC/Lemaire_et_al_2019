@@ -190,6 +190,69 @@ def get_exons_of_interest(cnx, exon_type, exon2remove, min_intron_size,
     return nresult
 
 
+def find_first_exons(cnx, exon_type):
+    """
+    Find every first exons with the type ``exon_type``.
+
+    :param cnx: (sqlite3 connection object) connection to sed database
+    :param exon_type: (srt) the control exon type chosen (CCE, ACE)..
+    :return: (list of 2 int) list of first exons
+    """
+    cursor = cnx.cursor()
+    query = """SELECT t1.gene_id, t1.exon_pos
+               FROM sed t1
+               WHERE t1.exon_type LIKE '%{}%'
+               AND t1.exon_pos = 1""".format(exon_type)
+    cursor.execute(query)
+    res = cursor.fetchall()
+    res = [list(exon) for exon in res]
+    print('First exons :', res[0:5])
+    return
+
+
+def find_gene_id(cnx, exon_type):
+    """
+    Find every gene id.
+
+    :param cnx: (sqlite3 connection object) connection to sed database
+    :param exon_type: (srt) the control exon type chosen (CCE, ACE)..
+    :return: (list of int) list genes
+    """
+    cursor = cnx.cursor()
+    query = """SELECT t1.gene_id
+               FROM sed t1
+               WHERE t1.exon_type LIKE '%{}%'""".format(exon_type)
+    cursor.execute(query)
+    res = cursor.fetchall()
+    return [exon[0] for exon in res]
+
+
+def find_last_exons(cnx, exon_type):
+    """
+    Find every last intron.
+
+    :param cnx: (sqlite3 connection object) connection to sed database
+    :param exon_type: (srt) the control exon type chosen (CCE, ACE)..
+    :return:
+    """
+    gene_list = find_gene_id(cnx, exon_type)
+    result = []
+    cursor = cnx.cursor()
+    for mgene in gene_list:
+        query = """SELECT t1.gene_id, t1.exon_pos
+               FROM sed t1
+               WHERE t1.gene_id = {}
+               ORDER BY t1.exon_pos DESC
+               LIMIT 1""".format(mgene)
+        cursor.execute(query)
+        res = cursor.fetchone()
+        exon = "_".join(list(map(str, res)))
+        result.append(exon)
+    result = list(np.unique(result))
+    print("Last exons :", result[0:5])
+    return result
+
+
 def create_unregulated_exon_list(cnx, output, exon_type):
     """
     Create the list of GC/At rich unregulated exons
@@ -202,7 +265,9 @@ def create_unregulated_exon_list(cnx, output, exon_type):
     at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
     gc_exon = [exon for exon in gc_exon_all if exon not in at_exon_all]
     at_exon = [exon for exon in at_exon_all if exon not in gc_exon_all]
-    exon2remove = gc_exon + at_exon
+    first_exons = find_first_exons(cnx, exon_type)
+    last_exons = find_last_exons(cnx, exon_type)
+    exon2remove = gc_exon + at_exon + last_exons
     print("exon to remove : %s" % len(exon2remove))
     min_intron_size, gc_content = \
         get_control_exon_information(cnx, exon_type, exon2remove)
@@ -230,10 +295,10 @@ def main():
 
     if not os.path.isdir(output):
         os.mkdir(output)
-    print("%sCreate GA and CT exons list%s" % ("-" * 20, "-" * 20))
-    create_ct_ga_rich_exon_list(cnx, output)
-    print("%sCreate other GC exons list%s" % ("-" * 20, "-" * 20))
-    create_othergc_exon_file(cnx, output)
+    # print("%sCreate GA and CT exons list%s" % ("-" * 20, "-" * 20))
+    # create_ct_ga_rich_exon_list(cnx, output)
+    # print("%sCreate other GC exons list%s" % ("-" * 20, "-" * 20))
+    # create_othergc_exon_file(cnx, output)
     print("%sCreate unregulated AT/GC exons list%s" % ("-" * 20, "-" * 20))
     create_unregulated_exon_list(cnx, output, exon_type)
     cnx.close()

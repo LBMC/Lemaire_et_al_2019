@@ -165,6 +165,24 @@ def get_exon_regulated_by_sf(cnx, regulation):
     return exon_list
 
 
+def get_exon_regulated(cnx, regulation, my_set=None):
+    """
+    Get the exons ``regulation`` regulated by a splicing factors.
+
+    :param cnx: (sqlite3 connect object) connection to sed database
+    :param regulation: (string) up or down
+    :param my_set: (str) the name of exons we want to get
+    :return: (list of list of 2 int) list of exons regulated by a splicing factor
+    """
+    name_projects = group_factor.get_wanted_sf_name(my_set)
+    exon_list = []
+    for sf_name in name_projects:
+        exon_list += get_every_events_4_a_sl(cnx, sf_name, regulation)
+    exon_list = np.unique(exon_list, axis=0).tolist()
+    exon_list = [list(map(int, exon)) for exon in exon_list]
+    print("Number of exons regulated by a splicing factor : %s" % len(exon_list))
+    return exon_list
+
 # def get_events_4_a_sl(cnx, sf_name, regulation):
 #     """
 #     Get every splicing events for a give splicing factor. Every exon down or up saw at least once will be reported \

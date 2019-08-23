@@ -238,7 +238,7 @@ def my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
         exon_2_remove = udf.get_exon_regulated_by_sf(cnx, regulation)
         exon_list = get_control_exon(cnx, exon_type, exon_2_remove, regulation)
     else:
-        exon_list = udf.get_exon_regulated_by_sf(cnx, regulation)
+        exon_list = udf.get_exon_regulated(cnx, regulation)
         exon_type = "SF-down"
     dic_size = get_list_of_value(cnx, exon_list, target_column)
     # dic_size = {"exon": [], target_column: []}

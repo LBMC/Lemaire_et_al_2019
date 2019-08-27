@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import numpy as np
+from check_enrichment_in_GC_AT_group import bed2dic
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import union_dataset_function as udf
 from scipy.stats import levene
@@ -269,6 +270,67 @@ def my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
     write_test_result(big_gc, small_gc, size_threshold, output, exon_type)
 
 
+def get_size(dic_bed):
+    """
+    Return the list of exon size for every exon in dic_bed
+    :param dic_bed: (dictionary of list of value) bed dic
+    :return: (list of int) list of size
+    """
+    list_size = []
+    for exon in dic_bed.keys():
+        list_size.append(dic_bed[exon][2] - dic_bed[exon][1])
+    return list_size
+
+
+def get_gc_content(dic_bed):
+    """
+    Return the list of exon size for every exon in dic_bed
+    :param dic_bed: (dictionary of list of value) bed dic
+    :return: (list of int) list of size
+    """
+    gc_content = []
+    for exon in dic_bed.keys():
+        gc_content.append(dic_bed[exon][-1]["GC_content"])
+    return gc_content
+
+
+def irimia_analysis(cnx, exon_type, output, regulation, size_threshold,
+                    target_column, dic_bed):
+    """
+    Create the histogram of the size of exons and make a levene test \
+    to test if the variance of GC content of a group of big CCE exons \
+    and a group of small exons (taken from Irimia et al) is different.
+
+    :param cnx: (pymysql connection object) connection to Sed database.
+    :param exon_type: (str) the type of control exons to analyse
+    :param output: (str) folder where the results will be created
+    :param regulation: (str) the regulation
+    :param size_threshold: (int) the threshold
+    :param target_column: (str) the feature of interest
+    """
+    exon_2_remove = udf.get_exon_regulated_by_sf(cnx, regulation)
+    exon_list = get_control_exon(cnx, exon_type, exon_2_remove, regulation)
+    dic_size = get_list_of_value(cnx, exon_list, target_column)
+    small_exons, big_exons = get_two_groups_of_exon(dic_size, size_threshold,
+                                                    target_column)
+    del(small_exons)
+    list_size = get_size(dic_bed)
+    sizefig = "hist_of_Irimia_exon_size"
+    make_histogram(list_size, output, sizefig, target_column, log=True)
+    print(" nb exons having a size below/equal to %s nt (Irimia) : %s" %
+          (size_threshold, len(dic_bed.keys())))
+    print(" nb exons having a size greater to %s nt : %s" %
+          (size_threshold, len(big_exons)))
+    small_gc = get_gc_content(dic_bed)
+    big_gc = get_list_of_value_iupac_dnt(cnx, big_exons,
+                                           "iupac_exon", "S")
+    make_histogram(small_gc, output, "gc_content_small_Irimia_exon",
+                   "GC content Irimia micro-exons (<= %s nt)" % size_threshold)
+    make_histogram(big_gc, output, "gc_content_big_%s_exon" % exon_type,
+                   "GC content exons > %s nt" % size_threshold)
+    write_test_result(big_gc, small_gc, size_threshold, output, exon_type)
+
+
 def main():
     """
     Create the graphics wanted
@@ -277,8 +339,13 @@ def main():
         os.path.dirname(os.path.abspath(__file__))))
     seddb = base + "/data/sed.db"
     output = base + "/result/variance_analysis"
+    irimia_bed = base + "/result/irimia_bed/Irimia_et_al_microexons_freq.bed"
+    dic_bed = bed2dic(irimia_bed)
     if not os.path.isdir(output):
         os.mkdir(output)
+    output_irimia = base + "/result/variance_analysis_irimia"
+    if not os.path.isdir(output_irimia):
+        os.mkdir(output_irimia)
     exon_type = "CCE"
     regulation = "down"
     target_column = "exon_size"
@@ -288,6 +355,8 @@ def main():
                            target_column)
     my_level_analysis(cnx, exon_type, output, regulation, size_threshold,
                            target_column, level="SF-down")
+    irimia_analysis(cnx, exon_type, output_irimia, regulation, size_threshold,
+                    target_column, dic_bed)
     cnx.close()
 
 

@@ -295,10 +295,10 @@ def main():
 
     if not os.path.isdir(output):
         os.mkdir(output)
-    # print("%sCreate GA and CT exons list%s" % ("-" * 20, "-" * 20))
-    # create_ct_ga_rich_exon_list(cnx, output)
-    # print("%sCreate other GC exons list%s" % ("-" * 20, "-" * 20))
-    # create_othergc_exon_file(cnx, output)
+    print("%sCreate GA and CT exons list%s" % ("-" * 20, "-" * 20))
+    create_ct_ga_rich_exon_list(cnx, output)
+    print("%sCreate other GC exons list%s" % ("-" * 20, "-" * 20))
+    create_othergc_exon_file(cnx, output)
     print("%sCreate unregulated AT/GC exons list%s" % ("-" * 20, "-" * 20))
     create_unregulated_exon_list(cnx, output, exon_type)
     cnx.close()

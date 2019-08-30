@@ -244,7 +244,7 @@ def main():
     output = base + "/result/correlation_GC-AT-exons_TAD/"
     gc_at_exons_file = output + "/GC_content_of_GC-AT_exons.bed"
     tad_file = base + "/data/K562_Lieberman-raw_TADs.hg19.nochr.bed"
-    list_target = ["GC_content", "min_flanking_intron_size"]
+    list_target = ["GC_content", "log_min_flanking_intron_size"]
     gc_at_exon_list = read_bed(gc_at_exons_file)
     tad_list = read_bed(tad_file)
     create_figure_for_targets(gc_at_exon_list, tad_list, output, list_target,

@@ -9,8 +9,13 @@ import sqlite3
 import os
 import numpy as np
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+import math
+mydir = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, mydir)
 import union_dataset_function as udf
+
+
+
 
 
 def get_exon_from_file(exon_file):

@@ -13,6 +13,7 @@ import plotly
 import plotly.graph_objs as go
 from scipy import stats
 import sys
+from functools import reduce
 
 
 def read_bed(bed_file):
@@ -31,7 +32,7 @@ def read_bed(bed_file):
                 line[1] = int(line[1])
                 line[2] = int(line[2])
                 if len(line) > 6:
-                    line[-1] = float(line[-1])
+                    line[-1] = eval(line[-1])
                 bed_list.append(line)
     return bed_list
 
@@ -94,22 +95,23 @@ def intersection_exon(tad, list_exons, exon):
     return res
 
 
-def compute_data(exon_list, tad_list, output):
+def compute_data(exon_list, tad_list, output, target):
     """
-    Return a dataframe showing the GC content of exons and the \
-    average of GC content of the other exon in the same tad.
+    Return a dataframe showing the ``target`` feature of exons and the \
+    average ``target`` feature`` of the other exon in the same tad.
 
     :param exon_list: (list of list of 7 data) list of exons in bed order
     :param tad_list: (list of list of 6 data) list of tad in bed order
     :param output: (str) folder were the result will be created
+    :param target: (str) the target of interest
     :return: (pandas dataframe) table containing the GC content \
     of every exons and the one of other exons in the same tad
     """
     count = 0
     tot = len(exon_list)
     mfile = open("%s/intersection.log" % output, "w")
-    dic = {"exon": [], "tad": [], "GC_exon": [],
-           "GC_other_exons_in_same_tad": []}
+    ctarget = "%s_other_exons_in_same_tad" % target
+    dic = {"exon": [], "tad": [], target: [], ctarget: []}
     for exon in exon_list:
         count += 1
         sys.stdout.write("Processing : %s / %s\t\t\t\r" % (count, tot))
@@ -123,14 +125,14 @@ def compute_data(exon_list, tad_list, output):
             exons = intersection_exon(tad, exon_list, exon)
             mfile.write("\t\t|_ exons in tad -> %s\n" % str(exons))
             if exons is not None:
-                gc_other = np.mean([e[-1] for e in exons])
+                gc_other = np.mean([float(e[-1][target]) for e in exons])
                 dic["exon"].append(exon[3])
                 dic["tad"].append(tad[3])
-                dic["GC_exon"].append(exon[-1])
-                dic["GC_other_exons_in_same_tad"].append(gc_other)
+                dic[target].append(exon[-1][target])
+                dic[ctarget].append(float(gc_other))
     mfile.close()
     df = pd.DataFrame(dic)
-    return df[["exon", "tad", "GC_exon", "GC_other_exons_in_same_tad"]]
+    return df[["exon", "tad", target, ctarget]]
 
 
 
@@ -151,6 +153,8 @@ def figure_creator_exon(values_xaxis, values_yaxis, exon_name, name_xaxis,
     :param output: (string) path where the results will be created
     :param name_fig: (string) the name of the graphics
     """
+    values_xaxis = np.array(values_xaxis, dtype=float)
+    values_yaxis = np.array(values_yaxis, dtype=float)
     data = []
     slope, intercept, r_value, p_value, std_err = \
         stats.linregress(values_xaxis, values_yaxis)
@@ -200,6 +204,36 @@ def figure_creator_exon(values_xaxis, values_yaxis, exon_name, name_xaxis,
     plotly.offline.plot(fig, filename=figname, auto_open=False)
 
 
+def create_figure_for_targets(exon_list, tad_list, output, list_target,
+                              name_exon):
+    """
+    Create on correlation figure for every targets in ``list_target``.
+
+    :param exon_list: (list of list of 7 data) list of exons in bed order
+    :param tad_list: (list of list of 6 data) list of tad in bed order
+    :param output: (str) folder were the result will be created
+    :param list_target: (list of str) list of the targets of interest.
+    :param name_exon: (str= the name of the list of exons used
+    """
+    list_df = []
+    for target in list_target:
+        print("Computing %s data" % target)
+        df = compute_data(exon_list, tad_list, output, target)
+        list_df.append(df)
+        ctarget = "%s_other_exons_in_same_tad" % target
+        print("Creating figure")
+        figure_creator_exon(df[ctarget], df[target],
+                            df[ctarget],
+                            "%s of exons in same tad" % target,
+                            "%s exons" % target, output,
+                            "correlation_%s_of_%s_VS_exon_same_tad" %
+                            (target, name_exon))
+    final_df = reduce(lambda left, right:
+                      pd.merge(left, right, on=['exon', 'tad']),
+                      list_df)
+    final_df.to_csv("%s/target_4_%s_and_exons_in_same_TAD.csv" %
+                    (output, name_exon), sep="\t", index=False)
+
 def main():
     """
     Create the correlation graphic bewteen the GC content of GC and AT exons \
@@ -210,34 +244,16 @@ def main():
     output = base + "/result/correlation_GC-AT-exons_TAD/"
     gc_at_exons_file = output + "/GC_content_of_GC-AT_exons.bed"
     tad_file = base + "/data/K562_Lieberman-raw_TADs.hg19.nochr.bed"
+    list_target = ["GC_content", "min_flanking_intron_size"]
     gc_at_exon_list = read_bed(gc_at_exons_file)
     tad_list = read_bed(tad_file)
-    print("Computing GC content data")
-    df = compute_data(gc_at_exon_list, tad_list, output)
-    df.to_csv("%s/GC_content_4_GC-AT_exons_and_exons_in_same_TAD.csv" % output,
-              sep="\t", index=False)
-    values_yaxis = df["GC_exon"]
-    values_xaxis = df["GC_other_exons_in_same_tad"]
-    exon_name = df["exon"]
-    print("Creating figure")
-    figure_creator_exon(values_xaxis, values_yaxis, exon_name,
-                        "GC content of exons in same tad",
-                        "GC content exons", output,
-                        "correlation_GC_content_of_GC-AT_exons_VS_exon_same_tad")
+    create_figure_for_targets(gc_at_exon_list, tad_list, output, list_target,
+                              "GC-AT_exons")
 
     cce_exons_file = output + "/GC_content_of_CCE_exons.bed"
     cce_exon_list = read_bed(cce_exons_file)
-    df = compute_data(cce_exon_list, tad_list, output)
-    df.to_csv("%s/GC_content_4_CCE_exons_and_exons_in_same_TAD.csv" % output,
-              sep="\t", index=False)
-    values_yaxis = df["GC_exon"]
-    values_xaxis = df["GC_other_exons_in_same_tad"]
-    exon_name = df["exon"]
-    print("Creating figure")
-    figure_creator_exon(values_xaxis, values_yaxis, exon_name,
-                        "GC content of exons in same tad",
-                        "GC content exons", output,
-                        "correlation_GC_content_of_CCE_exons_VS_exon_same_tad")
+    create_figure_for_targets(cce_exon_list, tad_list, output, list_target,
+                              "GC-AT_exons")
 
 if __name__ == "__main__":
     main()

@@ -62,9 +62,9 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
             exon = list(exon)
             exon[3] = int(exon[3]) - 1
             dic_info = {"GC_content": exon[6].split(";")[4],
-                        "min_flanking_intron_size":
+                        "log_min_flanking_intron_size":math.log10(
                             np.nanmin(np.array([exon[7], exon[8]],
-                                               dtype=float))}
+                                               dtype=float)))}
             new_res.append(exon[2:5] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[exon[5]]] + [str(dic_info)])
         return new_res
@@ -92,8 +92,8 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
         tmp = list(res[0])
         tmp[1] = int(tmp[1]) - 1
         dic_info = {"GC_content": tmp[4].split(";")[4],
-                    "min_flanking_intron_size": np.nanmin(
-                     np.array([tmp[5], tmp[6]], dtype=float))}
+                    "log_min_flanking_intron_size": math.log10(np.nanmin(
+                     np.array([tmp[5], tmp[6]], dtype=float)))}
         exon_data = tmp[0:3] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[tmp[3]]] + [str(dic_info)]
         result.append(exon_data)

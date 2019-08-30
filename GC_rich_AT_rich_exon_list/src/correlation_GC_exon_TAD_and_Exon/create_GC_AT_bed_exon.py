@@ -7,6 +7,7 @@ Description:
 
 import sqlite3
 import os
+import numpy as np
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import union_dataset_function as udf
@@ -46,7 +47,8 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
         query = """
                 SELECT t1.id_gene, t1.pos_on_gene, t1.chromosome, 
                        t1.start_on_chromosome, t1.end_on_chromosome, 
-                       t2.strand, t3.iupac_exon
+                       t2.strand, t3.iupac_exon, t3.upstream_intron_size,
+                       t3.downstream_intron_size
                 FROM fasterdb.exons as t1, fasterdb.genes as t2, sed.sed as t3
                 WHERE t3.gene_id =  t1.id_gene
                 AND   t3.exon_pos = t1.pos_on_gene
@@ -59,8 +61,12 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
         for exon in res:
             exon = list(exon)
             exon[3] = int(exon[3]) - 1
+            dic_info = {"GC_content": exon[6].split(";")[4],
+                        "min_flanking_intron_size":
+                            np.nanmin(np.array([exon[7], exon[8]],
+                                               dtype=float))}
             new_res.append(exon[2:5] + ["%s_%s" % (exon[0], exon[1])] + \
-                    ["0", dic[exon[5]]] + [exon[-1].split(";")[4]])
+                    ["0", dic[exon[5]]] + [str(dic_info)])
         return new_res
     count = 0
     tot = len(exon_list)
@@ -69,7 +75,8 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
         count += 1
         query = """
                 SELECT t1.chromosome, t1.start_on_chromosome, 
-                       t1.end_on_chromosome, t2.strand, t3.iupac_exon
+                       t1.end_on_chromosome, t2.strand, t3.iupac_exon,
+                       t3.upstream_intron_size, t3.downstream_intron_size
                 FROM fasterdb.exons as t1, fasterdb.genes as t2, sed.sed as t3
                 WHERE t3.gene_id =  t1.id_gene
                 AND   t3.exon_pos = t1.pos_on_gene
@@ -84,8 +91,11 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
                              exon)
         tmp = list(res[0])
         tmp[1] = int(tmp[1]) - 1
+        dic_info = {"GC_content": tmp[4].split(";")[4],
+                    "min_flanking_intron_size": np.nanmin(
+                     np.array([tmp[5], tmp[6]], dtype=float))}
         exon_data = tmp[0:3] + ["%s_%s" % (exon[0], exon[1])] + \
-                    ["0", dic[tmp[3]]] + [tmp[-1].split(";")[4]]
+                    ["0", dic[tmp[3]]] + [str(dic_info)]
         result.append(exon_data)
         sys.stdout.write("Processing %s/%s\t\t\t\r" % (count, tot))
         sys.stdout.flush()

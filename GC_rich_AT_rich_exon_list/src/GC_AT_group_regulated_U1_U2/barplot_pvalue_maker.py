@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.realpath(os.path.dirname(__file__)).replace("/GC_AT_g
 import group_factor
 
 
-def file_reader(filename):
+def file_reader(filename, reverse=False):
     """
     Load the results in ``filename`` (produced by the script  ``spliceosome_regulation_enrichment``)
     :param filename: (string) a result file created by the script ``spliceosome_regulation_enrichment``
@@ -40,7 +40,10 @@ def file_reader(filename):
                     dic_res[line[0]] = [float(line[1]), name2]
                 else:
                     dic_res[line[0]] = [float(line[1]), "NA"]
-    return dic_res, name1, name2
+    if not reverse:
+        return dic_res, name1, name2
+    else:
+        return dic_res, name2, name1
 
 
 def subsample_result_dic(res_dic, group_exon, group_factor):
@@ -163,9 +166,6 @@ def figure_maker(value_list, name_list, pos_reg, neg_reg, group_exon, group_fact
     :param group_factor_content: (string) the type of exon sets regulated by a factor(pure or all)
     :param output: (string) path where te result will be created
     """
-    for i in range(len(value_list)):
-        if value_list[i] < 0.0001:
-            value_list[i] += 0.01
     color = []
     for name in name_list:
         color.append(group_factor.color_dic[name])
@@ -233,11 +233,12 @@ def main(filename):
             figure_maker(list_values, list_factor_name, pos_reg, neg_reg, group_exon, group_factor, output)
 
 
-def fig_3g(filename, output):
-    dic_res, pos_reg, neg_reg = file_reader(filename)
+def fig_3g(filename, output, reverse=False):
+    dic_res, pos_reg, neg_reg = file_reader(filename, reverse)
     print(dic_res)
     list_values, list_factor_name = value_adapter_bis(dic_res, pos_reg, neg_reg)
     list_values, list_factor_name = sort_values(list_values, list_factor_name)
+    print(list_values)
     figure_maker(list_values, list_factor_name, pos_reg, neg_reg, "", "", output)
 
 

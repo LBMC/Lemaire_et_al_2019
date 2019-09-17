@@ -13,7 +13,19 @@ import math
 mydir = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, mydir)
 import union_dataset_function as udf
-
+bp_dir = mydir + "/make_control_files_bp_ppt"
+sys.path.insert(0, bp_dir)
+import exon_class_bp
+exon_class_bp.set_debug(0)
+from function_bp import bp_ppt_calculator
+mfe_dir = mydir + "/minimum_free_energy"
+sys.path.insert(0, mfe_dir)
+import exon_class
+exon_class.set_debug(0)
+from function import mfe_calculator
+stretch_dir = mydir + "/stretch_calculator"
+sys.path.insert(0, stretch_dir)
+from stretch_calculator import stretch_counter
 
 
 
@@ -34,6 +46,13 @@ def get_exon_from_file(exon_file):
                 exon_list.append(list(map(int, line)))
     return exon_list
 
+
+def catch_index_error(mlist, index):
+    try:
+        val = mlist[index]
+    except IndexError:
+        val = None
+    return val
 
 def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
     """
@@ -66,10 +85,20 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
         for exon in res:
             exon = list(exon)
             exon[3] = int(exon[3]) - 1
+            cexon = exon_class_bp.ExonClass(cnx, str(exon[0]), exon[0], exon[1])
+            exon_data = bp_ppt_calculator([cexon])
+            mexon = exon_class.ExonClass(cnx, str(exon[0]), exon[0], exon[1])
+            mfe_5ss, mfe_3ss = mfe_calculator([mexon])
+            stretch = catch_index_error(stretch_counter([cexon], [-75, -35])["T"], 0)
             dic_info = {"GC_content": exon[6].split(";")[4],
-                        "log_min_flanking_intron_size":math.log10(
-                            np.nanmin(np.array([exon[7], exon[8]],
-                                               dtype=float)))}
+                        "upstream_intron_size": exon[7],
+                        "downstream_intron_size": exon[8],
+                        "UNA_count": catch_index_error(exon_data[8], 0),
+                        "Hbound_count": catch_index_error(exon_data[6], 0),
+                        "good_bp": catch_index_error(exon_data[3], 0),
+                        "MFE_5SS": catch_index_error(mfe_5ss, 0),
+                        "MFE_3SS": catch_index_error(mfe_3ss, 0),
+                        "T_stretch": stretch}
             new_res.append(exon[2:5] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[exon[5]]] + [str(dic_info)])
         return new_res
@@ -96,9 +125,20 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
                              exon)
         tmp = list(res[0])
         tmp[1] = int(tmp[1]) - 1
+        cexon = exon_class_bp.ExonClass(cnx, str(exon[0]), exon[0], exon[1])
+        exon_data = bp_ppt_calculator([cexon])
+        mexon = exon_class.ExonClass(cnx, str(exon[0]), exon[0], exon[1])
+        mfe_5ss, mfe_3ss = mfe_calculator([mexon])
+        stretch = catch_index_error(stretch_counter([cexon])["T"], 0)
         dic_info = {"GC_content": tmp[4].split(";")[4],
-                    "log_min_flanking_intron_size": math.log10(np.nanmin(
-                     np.array([tmp[5], tmp[6]], dtype=float)))}
+                    "upstream_intron_size": tmp[5],
+                    "downstream_intron_size": tmp[6],
+                    "UNA_count": catch_index_error(exon_data[8], 0),
+                    "Hbound_count": catch_index_error(exon_data[6], 0),
+                    "good_bp": catch_index_error(exon_data[3], 0),
+                    "MFE_5SS": catch_index_error(mfe_5ss, 0),
+                    "MFE_3SS": catch_index_error(mfe_3ss, 0),
+                    "T_stretch": stretch}
         exon_data = tmp[0:3] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[tmp[3]]] + [str(dic_info)]
         result.append(exon_data)

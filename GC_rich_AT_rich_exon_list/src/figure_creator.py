@@ -125,7 +125,7 @@ def main():
     div_group = {"AT-exons-all": group_factor.at_rich_down, "GC-exons-all": group_factor.gc_rich_down,
                  "AT-exons_U2": list(group_factor.at_rich_down) + list(group_factor.u2_factors),
                  "GC-exons_U1": list(group_factor.gc_rich_down) + list(group_factor.u1_factors),
-                 "U1-exons": group_factor.u1_factors, "U2-exons": ["SF1", "SF3A3", "SF3B4", "U2AF2"]}
+                 "U1-exons": ["SNRPC", "SNRNP70"], "U2-exons": ["SF1", "U2AF2"]}
     dic_exon = {}
     for name_group in div_group.keys():
         exon_list = get_exons_list(cnx, div_group[name_group], "down")

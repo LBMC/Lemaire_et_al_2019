@@ -35,11 +35,11 @@ from spliceosome_regulation_enrichment import main_3g
 @lp.parse(list_file="file", seddb="file", exon_type=["CCE", "ALL"],
           regulation=["up", "down"], output="dir", bed_folder="dir",
           refsize="file", metagene_script="file",
-          sf_type=sf_type_allowed)
+          sf_type=sf_type_allowed, reverse=["y", "n"])
 def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
                    refsize, metagene_script,
                    exon_type="CCE", regulation="down", nt="S",
-                   sf_type=("", "")):
+                   sf_type=("", ""), reverse="n"):
     """
     Create the figure 2 and 3 with custom list of exons.
 
@@ -57,6 +57,7 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
     :param nt: (str) the nt we want to use for the figure 1.1D
     :param sf_type: (List(size=2, vtype=str)) the name of the 2 kind \
     of splicing factors groups of interest
+    :param reverse: (str) reverse the figure 3g
 
     :return:
     """
@@ -101,7 +102,9 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
             fasterdb, output, metagene_script, None, None, None, num_fig="2H")
 
     print("Creation of the figure 3G")
-    main_3g(list_file.copy(), name_file.copy(), seddb, output)
+    dic_rev = {"y": True, "n": False}
+    main_3g(list_file.copy(), name_file.copy(), seddb, output,
+            dic_rev[reverse])
 
 if __name__ == "__main__":
     figure_creator()

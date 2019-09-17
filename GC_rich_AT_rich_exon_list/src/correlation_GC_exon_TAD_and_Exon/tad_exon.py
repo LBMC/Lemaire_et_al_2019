@@ -125,7 +125,8 @@ def compute_data(exon_list, tad_list, output, target):
             exons = intersection_exon(tad, exon_list, exon)
             mfile.write("\t\t|_ exons in tad -> %s\n" % str(exons))
             if exons is not None:
-                gc_other = np.mean([float(e[-1][target]) for e in exons])
+                gc_other = np.mean([float(e[-1][target]) for e in exons if
+                                    e[-1][target] is not None])
                 dic["exon"].append(exon[3])
                 dic["tad"].append(tad[3])
                 dic[target].append(exon[-1][target])
@@ -244,7 +245,8 @@ def main():
     output = base + "/result/correlation_GC-AT-exons_TAD/"
     gc_at_exons_file = output + "/GC_content_of_GC-AT_exons.bed"
     tad_file = base + "/data/K562_Lieberman-raw_TADs.hg19.nochr.bed"
-    list_target = ["GC_content", "log_min_flanking_intron_size"]
+    list_target = ["GC_content", "upstream_intron_size", "downstream_intron_size", "Hbound_count", "good_bp", "MFE_5SS", "UNA_count",
+                   "MFE_3SS", "T_stretch"]
     gc_at_exon_list = read_bed(gc_at_exons_file)
     tad_list = read_bed(tad_file)
     create_figure_for_targets(gc_at_exon_list, tad_list, output, list_target,

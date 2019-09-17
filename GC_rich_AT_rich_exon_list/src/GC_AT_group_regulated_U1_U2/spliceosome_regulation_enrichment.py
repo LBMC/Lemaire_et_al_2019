@@ -355,7 +355,7 @@ def main():
     cnx.close()
 
 
-def main_3g(list_file, name_file, seddb, output):
+def main_3g(list_file, name_file, seddb, output, reverse):
     """
     Make the enrichment analysis comparing the frequencies of exon regulated by splicesome factors \
      for an AT and GC exons list.
@@ -363,9 +363,10 @@ def main_3g(list_file, name_file, seddb, output):
     nb_iteration = 10000
     cnx = sqlite3.connect(seddb)
     div_group = {"SNRPC": ["SNRPC"], "SNRNP70": ["SNRNP70"],
-                 "DDX5_17": ["DDX5_DDX17"],
+                 # "DDX5_17": ["DDX5_DDX17"],
                  "SF1": ["SF1"], "U2AF1": ["U2AF1"], "U2AF2": ['U2AF2'],
-                 "SF3A3": ["SF3A3"], "SF3B4": ["SF3B4"]}
+                 # "SF3A3": ["SF3A3"], "SF3B4": ["SF3B4"]
+                 }
     dic_exon = {}
     for name_group in div_group.keys():
         print("Getting all exon regulated by %s factor" % name_group)
@@ -381,7 +382,7 @@ def main_3g(list_file, name_file, seddb, output):
                                                   dic_spliceosome, nb_iteration)
     filename = file_writer(output, analysis_dic, nb_iteration, name_file[0],
                 name_file[1])
-    fig_3g(filename, output)
+    fig_3g(filename, output, reverse)
     with open("%ssuper_dict_%s.txt" % (output, nb_iteration), "w") as outfile:
         outfile.write("super_dict=%s\n" % str(super_dict))
     cnx.close()

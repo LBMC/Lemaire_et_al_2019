@@ -42,7 +42,7 @@ def stretch_finder_nt(sequence, nt, stretch_len, stretch_content):
     return nb_stretch
 
 
-def stretch_counter(exon_list, stretch_data, sequence_boundaries):
+def stretch_counter(exon_list, stretch_data=config.stretches[0], sequence_boundaries=config.sequence_boundaries):
     """
     Launch stretch_finder_nt  for every exon in the exon list.
 

@@ -61,6 +61,9 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
 
     :return:
     """
+    colors = ["#0000FF", "#00aa00", "#F3A431", "#A000A0", "#5c0001"]
+    if len(list_file) > len(colors):
+        colors = colors[0:len(list_file)]
     if output[-1] != "/":
         output += "/"
     print("Creating figure 1D...")
@@ -68,7 +71,7 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
             output, nt)
     print("Creation of figure 2A...")
     main_2a(list_file.copy(), name_file.copy(), "C,S,A,T,G,W,Y,R".split(","),
-            "2A_metaexon", exon_type, ["#0000FF", "#00aa00"], False,
+            "2A_metaexon", exon_type, colors, False,
             output, fasterdb)
 
     if sf_type[0] != "" and sf_type[1] != "":
@@ -98,13 +101,16 @@ def figure_creator(list_file, name_file, seddb, fasterdb, output, bed_folder,
             seddb, output)
 
     print("Creation of the figures 2H")
+    colors = ",".join(colors).replace("#", "")
     main_2h(bed_folder, list_file.copy(), name_file.copy(), refsize, seddb,
-            fasterdb, output, metagene_script, None, None, None, num_fig="2H")
+            fasterdb, output, metagene_script, None,
+            colors, None, num_fig="2H")
 
     print("Creation of the figure 3G")
-    dic_rev = {"y": True, "n": False}
-    main_3g(list_file.copy(), name_file.copy(), seddb, output,
-            dic_rev[reverse])
+    if len(list_file) < 3:
+        dic_rev = {"y": True, "n": False}
+        main_3g(list_file.copy(), name_file.copy(), seddb, output,
+                dic_rev[reverse])
 
 if __name__ == "__main__":
     figure_creator()

@@ -73,6 +73,27 @@ def venn_diagram_creator(list_exons, list_names, output):
     plt.close()
 
 
+def get_multi_list_common_exons(lists_of_exons):
+    """
+    From a list of list of exons, get the exons shared in at least two lists.
+
+    :param lists_of_exons: (List of list of list of 2 int) list of list of exon
+    :return: (list of list of 2 int) list of exons shared by at least two \
+    lists.
+    """
+    res_dic = {}
+    common = []
+    for my_list in lists_of_exons:
+        for exon in my_list:
+            exon2 = "_".join(exon)
+            if exon2 not in res_dic.keys():
+                res_dic[exon2] = 1
+            else:
+                res_dic[exon2] += 1
+                common.append(exon)
+    return common
+
+
 def create_othergc_exon_file(cnx, output):
     """
     Create the GC-exons file regulated by SRSF2 HNRNPC and SRSF3.
@@ -80,28 +101,32 @@ def create_othergc_exon_file(cnx, output):
     :param cnx: (sqlite3 object) allow connection to sed database
     :param output: (str) path were the exon files will be created
     """
+    output = output + "/other_GC_exons/"
+    if not os.path.isdir(output):
+        os.mkdir(output)
     gc_exon_all = get_exons_list(cnx, group_factor.gc_rich_down, "down")
     print("GC exons : %s" % len(gc_exon_all))
-    other_gc_all = get_exons_list(cnx, group_factor.other, "down")
-    print("Number of other_gc all exons : %s" % len(other_gc_all))
-    other_gc = [exon for exon in other_gc_all if exon not in gc_exon_all]
-    gc_exon = [exon for exon in gc_exon_all if exon not in other_gc_all]
-    print("other GC exons : %s" % len(other_gc))
-    file_writer(other_gc, "other_GC_rich", output)
-    print("other GC exons all: %s" % len(other_gc_all))
-    file_writer(other_gc_all, "other_GC_all_rich", output)
-    print("GC exons: %s" % len(gc_exon))
-    file_writer(gc_exon, "GC_rich", output)
     at_exon_all = get_exons_list(cnx, group_factor.at_rich_down, "down")
     print("Number of at exons all: %s" % len(at_exon_all))
-    other_gc2 = [exon for exon in other_gc_all if exon not in at_exon_all]
-    at_exon = [exon for exon in at_exon_all if exon not in other_gc_all]
-    print("other GC exons (for AT comparison): %s" % len(other_gc2))
-    print("Number of at exons : %s" % len(at_exon))
-    file_writer(other_gc2, "other_GC_rich4ATcomp", output)
-    file_writer(at_exon, "AT_rich", output)
+    other_gc_all = get_exons_list(cnx, group_factor.other, "down")
     venn_diagram_creator([other_gc_all, gc_exon_all, at_exon_all],
-                         ["otherGC-exons", "GC-exons", "AT-exons"], output)
+                         ["hnRNPC & SRSF3 & SRSF2", "GC-exons", "AT-exons"],
+                         output)
+    other_gc_list = [get_exons_list(cnx, [fact], "down")
+                     for fact in group_factor.other]
+    full_list = other_gc_list + [gc_exon_all, at_exon_all]
+    full_names = list(group_factor.other) + ["GC_exons", "AT_exons"]
+    common = get_multi_list_common_exons(full_list)
+    for exon_list, list_name in zip(full_list, full_names):
+        start = len(exon_list)
+        print("%s : %s exons" % (list_name, start))
+        file_writer(exon_list, list_name + "_all", output)
+        exon_list = [exon for exon in exon_list if exon not in common]
+        stop = len(exon_list)
+        loss = round((start - stop) / start * 100, 1)
+        print("%s : %s exons after filter (loss of %s percent)" %
+              (list_name, stop, loss))
+        file_writer(exon_list, list_name, output)
 
 
 def control_query_execution(cnx, exon_type):

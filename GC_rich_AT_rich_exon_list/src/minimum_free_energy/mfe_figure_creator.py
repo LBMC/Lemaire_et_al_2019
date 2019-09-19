@@ -133,8 +133,15 @@ def create_figure(list_values, list_name, output, regulation, splicing_site, typ
     color_b_dic = group_factor.color_dic_bright
     data = []
     title = """Minimum free energy of %s of %s exon regulated by different factors""" % (splicing_site, regulation)
-    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], color_dic["CCE"]]
-    default_bright = [color_b_dic["GC_pure"], color_b_dic["AT_pure"], color_b_dic["CCE"]]
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], "#F3A431",
+                      "#A000A0", "#5c0001", color_dic["CCE"]]
+    default_bright = [color_b_dic["GC_pure"], color_b_dic["AT_pure"],
+                      "#FFDB65", "#d055d0", "#b05544", color_b_dic["CCE"]]
+    if len(default_colors) != len(list_values):
+        default_colors = default_colors[0:len(list_values) - 1] + \
+                         [default_colors[-1]]
+        default_bright = default_bright[0:len(list_values) - 1] + \
+                 [default_bright[-1]]
     for i in range(len(list_values)):
         try:
             cur_color = color_dic[list_name[i]]

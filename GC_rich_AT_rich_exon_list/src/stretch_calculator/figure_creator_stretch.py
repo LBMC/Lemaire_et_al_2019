@@ -173,8 +173,11 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     list_name = [name.replace("_exons", "") for name in list_name]
     list_values[-1] = list(map(float, list_values[-1]))
     color_dic = group_factor.color_dic
-    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"],
-                      color_dic["CCE"]]
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], "#F3A431",
+                      "#A000A0", "#5c0001", color_dic["CCE"]]
+    if len(default_colors) != len(list_values):
+        default_colors = default_colors[0:len(list_values) - 1] + \
+                         [default_colors[-1]]
     data = []
     title = """%s of %s exons regulated by different factors""" % (name_fig, regulation)
 

@@ -58,14 +58,22 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     :param name_fig: (string) the name of the graphic
     :param type_fig: (string) the type of graphic build
     """
+    filename = "%s%s_%s_boxplot_%s.html" % (output, name_fig, regulation, type_fig)
     list_values2 = copy.deepcopy(list_values)
     for i in range(len(list_values2)):
         vect = np.array(list_values2[i], dtype=float)
         list_values2[i] = list(vect[~np.isnan(vect)])
     color_dic = group_factor.color_dic
     color_bright = group_factor.color_dic_bright
-    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], color_dic["CCE"]]
-    default_bright = [color_bright["GC_pure"], color_bright["AT_pure"], color_bright["CCE"]]
+    default_colors = [color_dic["GC_pure"], color_dic["AT_pure"], "#F3A431",
+                      "#A000A0", "#5c0001", color_dic["CCE"]]
+    default_bright = [color_bright["GC_pure"], color_bright["AT_pure"],
+                      "#FFDB65", "#d055d0", "#b05544", color_bright["CCE"]]
+    if len(default_colors) != len(list_values):
+        default_colors = default_colors[0:len(list_values) - 1] + \
+                         [default_colors[-1]]
+        default_bright = default_bright[0:len(list_values) - 1] + \
+                 [default_bright[-1]]
     data = []
     title = """%s of %s %s containing those exons regulated by different factors""" % (name_fig, regulation, type_fig)
     if "size" in name_fig:
@@ -77,10 +85,14 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
         name_fig = "log " + name_fig
         title = """%s of %s exons of different exons set""" % (name_fig, regulation)
     if type_fig == "exons" or name_fig == "log median_intron_size":
+        mfile = open(filename.replace(".html", "_stat.txt"), "w")
+        content = ""
         for i in range(len(list_name) - 1):
             for j in range(i + 1, len(list_name)):
                 pval1 = mann_withney_test_r(list_values2[i], list_values2[j], alt="two.sided")
-                title += "<br> mw 2-sided test %s vs %s : p = %.2E" % (list_name[i], list_name[j], pval1)
+                content += "mw 2-sided test %s vs %s : p = %.2E\n" % (list_name[i], list_name[j], pval1)
+        mfile.write(content)
+        mfile.close()
     for i in range(len(list_values2)):
         try:
             cur_color = color_dic["_".join(list_name[i].split("_")[:-1])]
@@ -125,7 +137,7 @@ def create_figure(list_values, list_name, output, regulation, name_fig, type_fig
     )
 
     fig = {"data": data, "layout": layout}
-    plotly.offline.plot(fig, filename="%s%s_%s_boxplot_%s.html" % (output, name_fig, regulation, type_fig),
+    plotly.offline.plot(fig, filename=filename,
                         auto_open=False, validate=False)
 
 

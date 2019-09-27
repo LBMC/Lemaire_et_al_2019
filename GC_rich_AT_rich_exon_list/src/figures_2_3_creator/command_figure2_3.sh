@@ -71,3 +71,13 @@ python3.5 src/figures_2_3_creator/figure_2_3_creator.py \
 -r ../Clip_analysis/data/hg19.ren.chrom.sizes \
 -m /media/nicolas/DD_1/Splicing_Lore_project/FarLine_exons_results_summary/src/skipped_exon_list_results_summary/coverage_summary/metagene_coverage.r
 
+
+# Creation of custom figures
+mkdir result/figure_2_3/custom_figure_oGC_exons
+python3.5 src/figures_2_3_creator/custom_figure_creator.py \
+-l result/GC_rich_exons result/AT_rich_exons result/figure_2_3/exon_list/other_GC_exons/SRSF2_all_exons.txt result/figure_2_3/exon_list/other_GC_exons/SRSF3_all_exons.txt result/figure_2_3/exon_list/other_GC_exons/HNRNPC_all_exons.txt \
+-n GC-exons AT-exons SRSF2-down-all SRSF3-down-all hnRNPC-down-all \
+-s data/sed.db \
+-f data/fasterDB_lite.db \
+-o result/figure_2_3/custom_figure_oGC_exons \
+-t force_donor force_acceptor iupac_exon upstream_intron_size downstream_intron_size exon_size

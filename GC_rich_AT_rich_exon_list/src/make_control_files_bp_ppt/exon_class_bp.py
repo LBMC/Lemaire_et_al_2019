@@ -42,7 +42,8 @@ class ExonClass(ExonClassMain):
         printd("Exon " + str(gene_name) + "_" + str(exon_position))
         ExonClassMain.__init__(self, gene_name, gene_id, exon_position)
         self.gene.gene_filler(cnx)
-        self.upstream_intron = Intron(cnx, gene_id, self.position - 1, "upstream", self.gene.sequence)
+        self.upstream_intron = Intron(cnx, gene_id, self.position - 1, "upstream",
+                                      self.gene.sequence, self.gene.strand)
         # once the exon is fully created we delete the gene sequence for memory efficiency
         printd("Upstream proxi sequence")
         printd(self.upstream_intron.sequence_proxi)
@@ -64,6 +65,8 @@ class Gene:
         self.id = gene_id
         self.length = None
         self.sequence = None
+        self.chr = None
+        self.strand = None
 
     def gene_filler(self, cnx):
         """
@@ -72,7 +75,7 @@ class Gene:
         :param cnx: (sqlite3 object) connection to fasterDB
         """
         cursor = cnx.cursor()
-        query = """SELECT sequence
+        query = """SELECT sequence, chromosome, strand
                    FROM genes
                    WHERE id = """ + str(self.id) + """;"""
         cursor.execute(query)
@@ -85,13 +88,15 @@ class Gene:
         self.sequence = sequence
         if len(sequence) > 0:
             self.length = len(sequence)
+            self.strand = "+" if result[0][2] == 1 else "-"
+            self.chr = result[0][1]
         else:
             self.length = None
 
 
 class Intron:
     """Create an intron"""
-    def __init__(self, cnx, gene_id, pos_on_gene, location, gene_seq):
+    def __init__(self, cnx, gene_id, pos_on_gene, location, gene_seq, strand):
         """
 
         :param cnx: (sqlite3 object) allow connection to **FasterDB Lite** database
@@ -99,6 +104,7 @@ class Intron:
         :param pos_on_gene: (int) an intron position on a gene
         :param location: (string) upstream or downstream
         :param gene_seq: (string) the sequence of the gene
+        :param strand: (str) the strand of the gene
         """
         self.gene_id = gene_id
         self.position = pos_on_gene
@@ -106,21 +112,25 @@ class Intron:
         self.start = None
         self.end = None
         self.sequence_proxi = None
-        self.get_intron_information(cnx, gene_seq)
+        self.chr_start = None
+        self.chr_stop = None
+        self.get_intron_information(cnx, gene_seq, strand)
 
-    def get_intron_information(self, cnx, gene_seq):
+    def get_intron_information(self, cnx, gene_seq, strand):
         """
         Get the intron coordinates on it's gene
 
         :param cnx: (sqlite3 object) allows connection to **FasterDB Lite** database
         :param gene_seq: (string) the sequence of the gene
+        :param strand: (string) the strand of the gene
         :return: The following information is returned
             - length: (int) intron length
             - proximal: (string) the proximal (0:25) frequency in the intron
             - distal: (string)  the proximal (26:100) iupac frequency in the intorn
         """
         cursor = cnx.cursor()
-        query = """SELECT start_on_gene, end_on_gene
+        query = """SELECT start_on_gene, end_on_gene, start_on_chromosome, 
+                   end_on_chromosome
                    FROM introns
                    WHERE id_gene = """ + str(self.gene_id) + """
                    AND pos_on_gene = """ + str(self.position) + ";"
@@ -134,6 +144,8 @@ class Intron:
             return None
         start = result[0][0] - 1
         end = result[0][1]
+        start_on_chromosome = result[0][2] - 1
+        end_on_chromosome = result[0][3]
         if start < end:
             self.start = start
             self.end = end
@@ -143,8 +155,16 @@ class Intron:
         if len(sequence) > 19:
             if len(sequence) < 100:
                 self.sequence_proxi = sequence
+                self.chr_start = start_on_chromosome
+                self.chr_stop = end_on_chromosome
             else:
                 self.sequence_proxi = sequence[-100:]
+                if strand == "+":
+                    self.chr_stop = end_on_chromosome
+                    self.chr_start = end_on_chromosome - 100
+                else:
+                    self.chr_start = start_on_chromosome
+                    self.chr_stop = start_on_chromosome + 100
 
 
 def set_debug(debug=0):

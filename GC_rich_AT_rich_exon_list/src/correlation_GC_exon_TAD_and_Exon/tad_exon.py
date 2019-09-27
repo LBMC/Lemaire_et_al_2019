@@ -255,7 +255,7 @@ def main():
     cce_exons_file = output + "/GC_content_of_CCE_exons.bed"
     cce_exon_list = read_bed(cce_exons_file)
     create_figure_for_targets(cce_exon_list, tad_list, output, list_target,
-                              "GC-AT_exons")
+                              "CCE-exons")
 
 if __name__ == "__main__":
     main()

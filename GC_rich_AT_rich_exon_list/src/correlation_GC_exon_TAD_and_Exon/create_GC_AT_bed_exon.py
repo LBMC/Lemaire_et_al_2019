@@ -7,12 +7,11 @@ Description:
 
 import sqlite3
 import os
-import numpy as np
 import sys
-import math
 mydir = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, mydir)
 import union_dataset_function as udf
+from figure_creator import get_exons_list
 bp_dir = mydir + "/make_control_files_bp_ppt"
 sys.path.insert(0, bp_dir)
 import exon_class_bp
@@ -54,13 +53,59 @@ def catch_index_error(mlist, index):
         val = None
     return val
 
-def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
+
+def get_control_exon_information(cnx, exon_type, exon2remove):
+    """
+    Get the gene symbol, the gene id and the position of every ``exon_type`` exons in fasterDB.
+
+    :param cnx: (sqlite3 object) allow connection to sed database
+    :param exon_type: (string) the type of control exon we want to use
+    :param exon2remove: (list of list of 2int) list of exon to remove frome the control list of exons
+    :return:
+        * result: (list of tuple) every information about control exons
+        * names: (list of string) the name of every column in sed table
+    """
+    cursor = cnx.cursor()
+    if exon_type != "ALL":
+        query = """SELECT t1.id_gene, t1.pos_on_gene
+                   FROM exons t1, genes t2
+                   WHERE t1.exon_type LIKE '%{}%'
+                   AND t1.id_gene = t2.id""".format(exon_type)
+    else:
+        query = """SELECT t1.id_gene, t1.pos_on_gene
+                   FROM exons t1, genes t2
+                   AND t1.id_gene = t2.id
+                """
+    cursor.execute(query)
+    result = cursor.fetchall()
+    # turn tuple into list
+    print("number of control exon before removing bad ones : %s" % len(result))
+    nresult = [list(exon) for exon in result if [exon[0], exon[1]]
+               not in exon2remove]
+    print("number of control exon after removing bad ones : %s" % len(nresult))
+    return nresult
+
+
+def is_in(exon, list_exons):
+    """
+    Return 1 if ``exon`` is in ``list_exons`` 0 else.
+
+    :param exons: (list of 2 int)
+    :param list_exons: (list of list of 2 int) list of exons
+    :return: (int) Return 1 if ``exon`` is in ``list_exons`` 0 else.
+    """
+    return 1 if exon in list_exons else 0
+
+
+def get_exon_info(cnx, sedb, fasterdb_file, exon_list, u1_exons, u2_exons):
     """
 
     :param cnx: (sqlite3 connect object) connexion to fasterdb
     :param fasterdb_file: (str) an sqlite3 database file
     :param sedb: (str) path to sed database
     :param exon_list:  (list of 2 int) list of exons
+    :param u1_exons: (list of list of 2 int) list of exons regulated by U1
+    :param u2_exons: (list of list of 2 int) list of exons regulated by U2
     :return: (list of list of value) list of data
     """
     dic = {-1: "-", 1: "+"}
@@ -89,7 +134,7 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
             exon_data = bp_ppt_calculator([cexon])
             mexon = exon_class.ExonClass(cnx, str(exon[0]), exon[0], exon[1])
             mfe_5ss, mfe_3ss = mfe_calculator([mexon])
-            stretch = catch_index_error(stretch_counter([cexon], [-75, -35])["T"], 0)
+            stretch = catch_index_error(stretch_counter([cexon])["T"], 0)
             dic_info = {"GC_content": exon[6].split(";")[4],
                         "upstream_intron_size": exon[7],
                         "downstream_intron_size": exon[8],
@@ -98,7 +143,11 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
                         "good_bp": catch_index_error(exon_data[3], 0),
                         "MFE_5SS": catch_index_error(mfe_5ss, 0),
                         "MFE_3SS": catch_index_error(mfe_3ss, 0),
-                        "T_stretch": stretch}
+                        "T_stretch": stretch,
+                        "U1-regulated": is_in(exon[0:2], u1_exons),
+                        "U2-regulated": is_in(exon[0:2], u2_exons),
+                        }
+
             new_res.append(exon[2:5] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[exon[5]]] + [str(dic_info)])
         return new_res
@@ -138,7 +187,10 @@ def get_exon_info(cnx, sedb, fasterdb_file, exon_list):
                     "good_bp": catch_index_error(exon_data[3], 0),
                     "MFE_5SS": catch_index_error(mfe_5ss, 0),
                     "MFE_3SS": catch_index_error(mfe_3ss, 0),
-                    "T_stretch": stretch}
+                    "T_stretch": stretch,
+                    "U1-regulated": is_in(exon[0:2], u1_exons),
+                    "U2-regulated": is_in(exon[0:2], u2_exons),
+                    }
         exon_data = tmp[0:3] + ["%s_%s" % (exon[0], exon[1])] + \
                     ["0", dic[tmp[3]]] + [str(dic_info)]
         result.append(exon_data)
@@ -170,30 +222,34 @@ def main():
     seddb = base + "/data/sed.db"
     fasterdb = base + "/data/fasterDB_lite.db"
     output = base + "/result/correlation_GC-AT-exons_TAD"
-    at_rich_file = base + "/result/AT_rich_exons"
-    gc_rich_file = base + "/result/GC_rich_exons"
     if not os.path.isdir(output):
         os.mkdir(output)
     cnx = sqlite3.connect(seddb)
-    exon2remove = udf.get_exon_regulated_by_sf(cnx, "down")
-    exons_at = get_exon_from_file(at_rich_file)
-    print("Exons AT : %s" % len(exons_at))
-    exons_gc = get_exon_from_file(gc_rich_file)
-    print("Exons GC : %s" % len(exons_gc))
-    exon_list = exons_at + exons_gc
+    u1_exons = [list(map(int, exon)) for exon in
+        get_exons_list(cnx, ["SNRPC", "SNRNP70", "DDX5_DDX17"], "down")]
+    u2_exons = [list(map(int, exon)) for exon in
+                get_exons_list(cnx, ["U2AF2", "SF1", "SF3A3", "SF3B4"], "down")]
+    print("U1-exons : %s exons" % len(u1_exons))
+    print("U2-exons : %s exons" % len(u2_exons))
+    exon_list = udf.get_exon_regulated_by_sf(cnx, "down")
     print("Getting exon data ...")
-    exon_data = get_exon_info(cnx, seddb, fasterdb, exon_list)
+    exon_data = get_exon_info(cnx, seddb, fasterdb, exon_list, u1_exons,
+                              u2_exons)
     print("Writing bed")
-    write_bed(output, exon_data, "GC_content_of_GC-AT_exons")
+    write_bed(output, exon_data, "data_for_regulated_exons")
 
     cnx.close()
     cnx = sqlite3.connect(seddb)
-    print("Getting CCE exon data ...")
-    exon_data = get_exon_info(cnx, seddb, fasterdb, None)
-    exon_list = ["%s_%s" % (exon[0], exon[1]) for exon in exon2remove]
-    new_exon_data = [exon for exon in exon_data if exon[3] not in exon_list]
+    exon2remove = udf.get_exon_regulated_by_sf(cnx, "down")
+    cnx_fasterdb = sqlite3.connect(fasterdb)
+    exon_list = get_control_exon_information(cnx_fasterdb, "CCE", exon2remove) + exon2remove
+    cnx_fasterdb.close()
+    print("CCE exons + regulated exons : %s" % len(exon_list))
+    print("Getting CCE + regulated exon data ...")
+    exon_data = get_exon_info(cnx, seddb, fasterdb, exon_list, u1_exons, u2_exons)
     print("Writing bed")
-    write_bed(output, new_exon_data, "GC_content_of_CCE_exons")
+    write_bed(output, exon_data, "data_for_regulated_CCE_exons")
+    cnx.close()
 
 
 if __name__ == "__main__":

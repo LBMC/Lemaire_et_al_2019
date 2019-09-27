@@ -169,6 +169,55 @@ def svm_bp_finder_launcher(svm_bp_launcher, input_file, exon, size):
         return None, None, 0, 0, None, None, None, uaa_motif, una_motif
 
 
+def compute_pos(row, exon):
+    """
+    Compute the position of the good branch points in exons.
+
+    :param row: (pandas row object) a row of a pandas dataframe
+    :param exon: (Exonclass object) an exons
+    :return: (list of value) list of branch point position
+    """
+    name = "%s_%s_%s" % (exon.gene.id, exon.position, row.bp_seq)
+    if exon.gene.strand == "+":
+        start = exon.upstream_intron.chr_stop - row.ss_dist
+        stop = exon.upstream_intron.chr_stop - row.ss_dist + 1
+    else:
+        start = exon.upstream_intron.chr_start + row.ss_dist - 1
+        stop = exon.upstream_intron.chr_start + row.ss_dist
+    my_pos = [exon.gene.chr, start, stop, name, ".", exon.gene.strand]
+    return my_pos
+
+
+def svm_bp_finder_simple_launcher(svm_bp_launcher, input_file, exon):
+    """
+    Launch svm_bp_finder
+    :param svm_bp_launcher: (string)svm_bp finder launcher
+    :param exon: (ExonClass instance) an exon
+    :param input_file: (string) input fasta file
+    :return: (2 floats, 2 int, and 1 string) branch point score and ppt \
+    score, nb_putative branch point and sequence
+    """
+    result = subprocess.check_output([svm_bp_launcher, "--input",
+                                      input_file, "--species", "Hsap",
+                                      "-l", "100"]).decode("ascii")
+    result = StringIO(result)
+    df = pd.read_csv(result, sep="\t")
+    subprocess.check_call(['rm', input_file])
+    if not df.empty:
+        nb_good_bp = sum(df["svm_scr"] > 0)
+        df = df.sort_values(by=["svm_scr"], ascending=False)
+        if nb_good_bp > 0:
+            list_pos = []
+            df = df[df["svm_scr"] > 0]
+            for row in df.itertuples():
+                list_pos.append(compute_pos(row, exon))
+        else:
+            list_pos = []
+        return nb_good_bp, list_pos
+    else:
+        return 0, []
+
+
 def bp_ppt_calculator(exon_list, size=100):
     """
     Launch svm_bp finder for every exon in the exon list
@@ -216,3 +265,20 @@ def bp_ppt_calculator(exon_list, size=100):
                 una_motif_list.append(una_motif)
     return bp_score_list, ppt_score_list, nb_bp_list, nb_good_bp_list, sequence_list, \
         ag_count_list, hbound_list, uaa_motif_list, una_motif_list
+
+
+def goob_bp_only(exon, size=100):
+    """
+    Launch svm_bp finder one exon.
+
+    :param exon: (ExonClass object) an exon
+    :param size: (string) the size of the upstream sequence wanted
+    :return: (2 lists of floats) lists of float of bp
+    """
+
+    if exon.upstream_intron.sequence_proxi is not None:
+        input_file = fasta_writer(exon, output, size)
+        nb_good_bp, list_pos = \
+            svm_bp_finder_simple_launcher(svm_launcher, input_file, exon)
+        return nb_good_bp, list_pos
+    return None, None

@@ -2,8 +2,8 @@
 
 """
 Description:
-    The goal of this script is to compute for given lists of \
-    exons boxplots of wanted target features.
+    displays for every given list  of exons their violin plots for a \
+    wanted feature
 """
 
 

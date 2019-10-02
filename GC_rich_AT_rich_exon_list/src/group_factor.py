@@ -18,10 +18,11 @@ gc_rich_down = ("SRSF9", "RBM25", "RBM22", "HNRNPF", "SRSF5",
                 "PCBP1", "RBFOX2", "HNRNPH1", "RBMX", "SRSF6", "MBNL2", "SRSF1")
 
 other = ("SRSF2", "HNRNPC", "SRSF3")
+other_spliceosome = ("U2AF1", "SF3B1")
 # list of factors that compose U1 snrnp
 u1_factors = ("SNRNP70", "SNRPC", "DDX5_DDX17")
 # list of factor that compose U2 snrnp
-u2_factors = ("SF1", "SF3A3", "SF3B1", "SF3B4", "U2AF1", "U2AF2")
+u2_factors = ("SF1", "SF3A3", "SF3B4", "U2AF2")
 chromatin_factors = ("DNMT3A", "EZH2", "KMT2A", "KMT2D", "MBD2", "MBD3", "SETD2", "SUV39H1",
                      "SUV39H2", "TDG", "TET2", "EED")
 
@@ -126,7 +127,7 @@ def get_wanted_sf_name(sf_type):
     elif sf_type == "other":
         name_projects = other
     elif sf_type == "all":
-        name_projects = at_rich_down + gc_rich_down + other + u1_factors + u2_factors
+        name_projects = at_rich_down + gc_rich_down + other + u1_factors + u2_factors + other_spliceosome
     else:
         name_projects = u1_factors + u2_factors
     return name_projects

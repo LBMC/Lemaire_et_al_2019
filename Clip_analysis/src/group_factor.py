@@ -18,19 +18,34 @@ gc_rich_down = ("SRSF9", "RBM25", "RBM22", "HNRNPF", "SRSF5",
                 "PCBP1", "RBFOX2", "HNRNPH1", "RBMX", "SRSF6", "MBNL2", "SRSF1")
 
 other = ("SRSF2", "HNRNPC", "SRSF3")
+other_spliceosome = ("U2AF1", "SF3B1")
 # list of factors that compose U1 snrnp
 u1_factors = ("SNRNP70", "SNRPC", "DDX5_DDX17")
 # list of factor that compose U2 snrnp
-u2_factors = ("SF1", "SF3A3", "SF3B1", "SF3B4", "U2AF1", "U2AF2")
+u2_factors = ("SF1", "SF3A3", "SF3B4", "U2AF2")
 chromatin_factors = ("DNMT3A", "EZH2", "KMT2A", "KMT2D", "MBD2", "MBD3", "SETD2", "SUV39H1",
                      "SUV39H2", "TDG", "TET2", "EED")
 
-color_dic = {"GC": "#0000FF", "AT": "#00aa00", "GC_all": "#0394d9",
-             "AT_all": "#03d994", "CCE": "#FF0000", "ALL": "#FF0000", "ACE": "#FF0000",
-             "U1-FACTORS": "#7777F0", "U2-FACTORS": "#33EE33", "DDX5-17": "#AA00FF", "DDX5_DDX17":
-             "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#000080", "SNRPC": "#00FFFF",
-             "U2AF1": "#006400", "U2AF2": "#808000", "SF1": "#55FF55", "SF3A3": "#D8EF48", "SF3B4": "#8FBC8F",
-             }
+# -- additional list of exons --
+ct_rich_down = ("SRSF9", "RBMX", "PCBP1", "HNRNPF", "SRSF5", "RBFOX2",
+                "RBM25", "MBNL2", "RBM22", "HNRNPH1", "SRSF6", "SRSF2",
+                "SRSF7", "DAZAP1", "HNRNPC", "HNRNPA1", "PCBP2", "QKI",
+                "FUS", "HNRNPL", "HNRNPU")
+ga_rich_down = ("SRSF1", "SFPQ", "MBNL1", "HNRNPM", "PTBP1", "KHSRP",
+                "HNRNPA2B1", "RBM15", "RBM39", "HNRNPK", "TRA2A_B")
+
+
+color_dic = {"GC_pure": "#5555FF", "AT_pure": "#00aa00", "GC_all": "#0394d9",
+             "AT_all": "#03d994", "CCE": "red", "ALL": "red", "ACE": "red",
+             "DDX5_DDX17": "#AA00FF", "DDX5_17": "#AA00FF", "SNRNP70": "#5555D0", "SNRPC": "cyan",
+             "U1-factors": "#7777F0", "U2-factors": "#33EE33",
+             "U2AF1": "#006400", "U2AF2": "olive", "SF1": "#55FF55", "SF3A3": "#D8EF48", "SF3B4": "#8FBC8F"}
+
+color_dic_bright = {"GC_pure": "#AAAAFF", "AT_pure": "#99FF99", "GC_all": "#53D4FF",
+                    "AT_all": "#50FFDF", "CCE": "#FF9999", "ALL": "#FF9999", "ACE": "#FF9999",
+                    "DDX5_DDX17": "#DD99FF", "DDX5_17": "#DD99FF", "SNRNP70": "#9999F0", "SNRPC": "#77FFFF",
+                    "U1-factors": "#9999FF", "U2-factors": "#66FF66",
+                    "U2AF1": "#55AA55", "U2AF2": "#DDDD55", "SF1": "#AAFFAA", "SF3A3": "#E8FF88", "SF3B4": "#AFECAF"}
 
 # The id project we have to delete
 bad_id_projects = [139, 13, 164]
@@ -64,29 +79,28 @@ def get_projects_links_to_a_splicing_factor_list(cnx, sf_list):
 
 def get_id_and_name_project_wanted(cnx, sf_type):
     """
-    Get the list of project of interest and the name of the project wanted.
-
+    Get the list of project of interest and the name of the project wanted
     :param cnx: (sqlite3 connect object) connection to sed database
     :param sf_type: (string) the type of sf we want to analyze
     :return: (2 lists):
+
         * (list of int) the list of project we want to analye
         * (list of string) the list of projects name we want to  analyse
     """
     if sf_type is None:
         good_sf = at_rich_down + gc_rich_down + other
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-
-    elif sf_type == "GC_rich":
-        good_sf = gc_rich_down + u1_factors
+    elif sf_type == "GC_rich" or sf_type == "gc_rich_down":
+        good_sf = gc_rich_down
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "AT_rich":
+    elif sf_type == "AT_rich" or sf_type == "at_rich_down":
         good_sf = at_rich_down
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
-    elif sf_type == "CF":
+    elif sf_type == "CF" or sf_type == "chromatin_factors":
         good_sf = chromatin_factors
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
     else:
-        good_sf = u1_factors + u2_factors + ["DDX5_DDX17"]
+        good_sf = u1_factors + u2_factors
         id_projects, name_projects = get_projects_links_to_a_splicing_factor_list(cnx, good_sf)
     return id_projects, name_projects
 
@@ -100,12 +114,20 @@ def get_wanted_sf_name(sf_type):
     """
     if sf_type is None:
         name_projects = at_rich_down + gc_rich_down + other
-    elif sf_type == "GC_rich":
-        name_projects = gc_rich_down + u1_factors
-    elif sf_type == "AT_rich":
+    elif sf_type == "GC_rich" or sf_type == "gc_rich_down":
+        name_projects = gc_rich_down
+    elif sf_type == "AT_rich" or sf_type == "at_rich_down":
         name_projects = at_rich_down
-    elif sf_type == "CF":
+    elif sf_type == "CF" or sf_type == "chromatin_factors":
         name_projects = chromatin_factors
+    elif sf_type == "GA_rich" or sf_type == "ga_rich_down":
+        name_projects = ga_rich_down
+    elif sf_type == "CT_rich" or sf_type == "ct_rich_down":
+        name_projects = ct_rich_down
+    elif sf_type == "other":
+        name_projects = other
+    elif sf_type == "all":
+        name_projects = at_rich_down + gc_rich_down + other + u1_factors + u2_factors + other_spliceosome
     else:
         name_projects = u1_factors + u2_factors
     return name_projects

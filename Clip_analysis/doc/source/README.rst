@@ -1,5 +1,5 @@
-Figures for CLIP peaks documentation
-====================================
+metaexon_coverage script documentation
+======================================
 
 .. _bedtools: https://bedtools.readthedocs.io/en/latest/content/installation.html
 .. _bedGraphToBigWig: http://hgdownload.soe.ucsc.edu/admin/exe/
@@ -63,7 +63,6 @@ It was written in Ubuntu 16.04 environment and shoud work on unix system with a 
   2. You have to install argparse v1.1 as it the only one not contained in default library in python3. You can use the following command : ``pip3 install argparse==1.1``.
   3. You also need to install the bedtools_ and the bedGraphToBigWig_ program. They must be available in you PATH.
   4. The folder `data/` (inside ``Clip_analysis/``) must contains the ``fasterDB_lite.bd`` and the ``sed.db`` files. The creation of those database is explained inside  ``Database_creator`` folder.
-  5. You have to locate the script ``metagene_coverage.r`` and print the full path of this file under the argument ``--metagene_script``
 
 
 Execution of the program
@@ -76,7 +75,7 @@ To display some help:
   python3 src/metaexon_coverage.py --help
 
 
-Command executed:
+Commands executed:
 
 .. code::
 

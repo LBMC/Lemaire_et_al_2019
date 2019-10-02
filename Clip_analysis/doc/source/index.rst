@@ -11,6 +11,7 @@ Welcome to CLIP peaks's documentation!
    :caption: Contents:
 
    README.rst
+   other.rst
    api.rst
 
 Indices and tables

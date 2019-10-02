@@ -30,7 +30,7 @@ def main(input_folder, folder_exon, exon_bed, chrom_size_file, output,
     :param input_folder: (str) a folder containing clip bed files files
     :param folder_exon: (str) a folder containing exon list
     :param exon_bed: (str) a bed file corresponding to fasterdb exons
-    :param chrom_size_file: (str) a file indicating the length of every
+    :param chrom_size_file: (str) a file indicating the length of every \
     human chromosome
     :param output: (str) path where the result will be created
     :param metagene_script: (str) path to the metagene script.

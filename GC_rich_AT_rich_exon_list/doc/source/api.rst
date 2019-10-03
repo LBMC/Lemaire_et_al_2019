@@ -61,6 +61,78 @@ Source code of the ``stat_maker`` script
   :members:
 
 
+Folder ``correlation_GC_exon_TAD_and_Exon``
+------------------------------------------------------
+
+Source code of the ``create_GC_AT_bed_exon`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: create_GC_AT_bed_exon
+   :members:
+
+Source code of the ``tad_exon`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: tad_exon
+  :members:
+
+Source code of the ``branch_point_homogeneity_in_tad`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: branch_point_homogeneity_in_tad
+   :members:
+
+
+Folder ``experimental_branch_point``
+------------------------------------------------------
+
+Source code of the ``branch_poin_bed_merged`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: branch_poin_bed_merged
+   :members:
+
+Source code of the ``GC_AT_analysis_experimental_bp`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: GC_AT_analysis_experimental_bp
+  :members:
+
+Source code of the ``create_predicted_bp_bed`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: create_predicted_bp_bed
+   :members:
+
+Source code of the ``compute_intersection_between_experiment_and_predicted_branch_point`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: compute_intersection_between_experiment_and_predicted_branch_point
+   :members:
+
+
+Folder ``figures_2_3_creator``
+------------------------------------------------------
+
+Source code of the ``custom_exon_list_creator`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: custom_exon_list_creator
+   :members:
+
+Source code of the ``figure_2_3_creator`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: figure_2_3_creator
+   :members:
+
+Source code of the ``custom_figure_creator`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: custom_figure_creator
+  :members:
+
+
 Folder ``GC_AT_group_regulated_U1_U2``
 ------------------------------------------------------
 
@@ -213,3 +285,25 @@ Source code of the ``stretch_calculator`` script
 
 .. automodule:: stretch_calculator
   :members:
+
+
+Folder ``study_microexons``
+------------------------------------------------------
+
+Source code of the ``variance_analysis`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: variance_analysis
+   :members:
+
+Source code of the ``bed_file_creator_from_sed`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: bed_file_creator_from_sed
+  :members:
+
+Source code of the ``check_enrichment_in_GC_AT_group`` script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: check_enrichment_in_GC_AT_group
+   :members:

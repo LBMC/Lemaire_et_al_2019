@@ -69,7 +69,7 @@ def get_small_sf_down_exons(cnx, seddb, fasterdb, threshold):
     """
     Return every small exons data.
 
-    :param cnx: (sqlite3     print("\n", query, "\n")connection object) connection to sed database.
+    :param cnx: (sqlite3 connection object) connection to sed database.
     :param seddb: (str) path to the simple exons description database
     :param fasterdb: (str) path to fasterdb
     :param threshold: (int) the size threshold
